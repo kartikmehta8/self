@@ -58,7 +58,7 @@ library CustomVerifier {
         verificationConfig = VerificationConfig.fromV1Config(verificationConfigPrevious);
       }
     } else {
-      verificationConfig = VerificationConfig.fromBytes(verificationConfigPrevious);
+      verificationConfig = VerificationConfig.fromV2Config(verificationConfigPrevious);
     }
 
     if (attestationId == 0) {
@@ -173,7 +173,7 @@ library VerificationConfig {
     });
   }
 
-  function fromBytes(bytes memory verificationConfig) internal pure returns (GenericVerficationConfigV2 memory verificationConfig) {
+  function fromV2Config(bytes memory verificationConfig) internal pure returns (GenericVerficationConfigV2 memory verificationConfig) {
     return abi.decode(verificationConfig, (GenericVerficationConfigV2));
   }
 }
