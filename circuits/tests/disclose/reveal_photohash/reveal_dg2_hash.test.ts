@@ -181,7 +181,7 @@ testSuite.forEach(
         const expt_dg2Hash = dg2Hash.map((byte) => byte & 0xff);
         const w = await circuit.calculateWitness(input);
         await circuit.checkConstraints(w);
-        const out = await circuit.getOutput(w, ['dg2ShaBytes[32]']);
+        const out = await circuit.getOutput(w, [`dg2ShaBytes[${expt_dg2Hash.length}]`]);
         for (let i = 0; i < expt_dg2Hash.length; i++) {
           expect(BigInt(out[`dg2ShaBytes[${i}]`])).to.equal(BigInt(expt_dg2Hash[i]));
         }
