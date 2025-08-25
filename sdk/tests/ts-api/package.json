@@ -8,7 +8,10 @@
     "build": "tsc",
     "dev": "tsx watch server.ts",
     "start": "node dist/server.js",
-    "test": "echo \"No tests specified yet\"",
+    "test": "./test-api.sh",
+    "docker:build": "./docker-build.sh",
+    "docker:run": "docker run -p 3000:3000 selfxyz-ts-api:latest",
+    "docker:compose": "docker-compose up --build",
     "clean": "rm -rf dist"
   },
   "dependencies": {
