@@ -1,0 +1,45 @@
+# Binaries and build artifacts
+go-api
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go build cache
+.cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker files (except the one being used)
+.dockerignore
+
+# Documentation
+*.md
+
+# Test files
+*_test.go
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp

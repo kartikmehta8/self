@@ -154,9 +154,78 @@ This Go API provides identical functionality to the TypeScript version:
 - **Same error handling**: HTTP status codes and messages
 - **Same verification logic**: Uses Self protocol SDK
 
+## Docker Setup
+
+### Building and Running with Docker
+
+**Option 1: Using the build script (Recommended)**
+```bash
+# From the monorepo root directory
+./sdk/tests/go-api/docker-build.sh
+
+# Run the container
+docker run -p 8080:8080 selfxyz-go-api:latest
+```
+
+**Option 2: Manual Docker build**
+```bash
+# From the monorepo root directory
+docker build -f sdk/tests/go-api/Dockerfile -t selfxyz-go-api:latest .
+
+# Run the container
+docker run -p 8080:8080 selfxyz-go-api:latest
+```
+
+**Option 3: Using Docker Compose**
+```bash
+# From the go-api directory
+cd sdk/tests/go-api
+docker-compose up --build
+```
+
+The Docker container includes:
+- Health check endpoint at `/health`
+- Automatic restart policy
+- Non-root user for security
+- Production optimizations
+- Multi-stage build for minimal image size
+
+### Docker Environment Variables
+
+- `PORT`: Server port (default: 8080)
+
+## Development vs Docker
+
+### Local Development
+```bash
+go run main.go      # Direct Go execution
+go build && ./go-api  # Compiled binary
+```
+
+### Docker Production
+```bash
+go build -o go-api  # Compiles Go binary
+./go-api            # Runs compiled binary
+```
+
+## Testing
+
+### API Testing Script
+```bash
+# Test the running API
+./test-api.sh
+```
+
+This script tests:
+- Health endpoint functionality
+- Save options endpoint with sample data
+- Verify endpoint structure (with mock data)
+- 404 error handling
+
 ## Environment
 
 - Default port: 8080 (vs 3000 for TypeScript)
 - Go version: 1.23+
 - In-memory storage with TTL
 - CORS-enabled for browser compatibility
+- Docker support with multi-stage builds
