@@ -16,7 +16,10 @@ import {
   getCircuitNameFromPassportData,
   getSolidityPackedUserContextData,
 } from '@selfxyz/common/utils';
-import { checkPCR0Mapping, validatePKIToken } from '@selfxyz/common/utils/attest';
+import {
+  checkPCR0Mapping,
+  validatePKIToken,
+} from '@selfxyz/common/utils/attest';
 import {
   clientKey,
   clientPublicKeyHex,
@@ -336,7 +339,8 @@ export const useProvingStore = create<ProvingState>((set, get) => {
           trackEvent(ProofEvents.ATTESTATION_RECEIVED);
           const attestationData = result.result.attestation;
           set({ attestation: attestationData });
-          const attestationToken = Buffer.from(attestationData).toString('utf-8');
+          const attestationToken =
+            Buffer.from(attestationData).toString('utf-8');
 
           const { userPubkey, serverPubkey, imageHash, verified } =
             validatePKIToken(attestationToken, __DEV__);
@@ -556,9 +560,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
         method: 'openpassport_hello',
         id: 1,
         params: {
-          user_pubkey: [
-            ...Array.from(Buffer.from(clientPublicKeyHex, 'hex')),
-          ],
+          user_pubkey: [...Array.from(Buffer.from(clientPublicKeyHex, 'hex'))],
           uuid: connectionUuid,
         },
       };
