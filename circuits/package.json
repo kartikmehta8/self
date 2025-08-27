@@ -16,14 +16,16 @@
       "import": "./dist/esm/testing/index.js",
       "require": "./dist/cjs/testing/index.cjs"
     },
-    "./circuits/*": "./circuits/*"
+    "./circuits/*": "./circuits/*",
+    "./tests/consts/ofac/*": "./tests/consts/ofac/*"
   },
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "files": [
     "dist/**/*",
-    "circuits/**/*"
+    "circuits/**/*",
+    "tests/consts/ofac/*"
   ],
   "scripts": {
     "build": "tsup && yarn build:types && yarn postbuild",
