@@ -15,7 +15,7 @@ const configStore = new Map<string, string>();
 
 export class KVConfigStore implements IConfigStorage {
   async getActionId(userIdentifier: string, data: string): Promise<string> {
-    return userIdentifier;
+    return "1";
   }
 
   async setConfig(id: string, config: VerificationConfig): Promise<boolean> {
@@ -63,7 +63,7 @@ export const verifyHandler = async (
     const selfBackendVerifier = new SelfBackendVerifier(
       "self-playground",
       "http://localhost:3000",
-      false,
+      true,
       AllIds,
       configStoreInstance,
       "uuid"
