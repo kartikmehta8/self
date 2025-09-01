@@ -1,73 +1,35 @@
 # Multi-stage build for TypeScript API
-FROM node:22-alpine AS base
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Install dependencies stage
-FROM base AS deps
-
-# Enable Corepack to use the correct Yarn version
+# Enable Corepack and configure Yarn
 RUN corepack enable
+COPY .yarnrc.yml .
 
-# Copy package files
+# Copy workspace configuration and package files
 COPY package.json yarn.lock* ./
 COPY sdk/tests/ts-api/package.json ./sdk/tests/ts-api/
 COPY sdk/core/package.json ./sdk/core/
 COPY common/package.json ./common/
 
-# Install dependencies using yarn workspaces
-# Force Yarn to use node_modules instead of PnP mode
-RUN yarn config set nodeLinker node-modules
-
-# Create .yarnrc.yml with proper configuration
-RUN echo 'nodeLinker: node-modules' > .yarnrc.yml
-
-RUN yarn install
-
-# Build stage
-FROM base AS builder
-
-# Enable Corepack in builder stage too
-RUN corepack enable
-
-# Configure Yarn for workspaces (same as deps stage)
-RUN yarn config set nodeLinker node-modules
-
-# Create .yarnrc.yml with proper configuration
-RUN echo 'nodeLinker: node-modules' > .yarnrc.yml
-
-# Copy workspace configuration files first
-COPY package.json yarn.lock* ./
-COPY sdk/tests/ts-api/package.json ./sdk/tests/ts-api/
-COPY sdk/core/package.json ./sdk/core/
-COPY common/package.json ./common/
-
-# Copy source code for workspace dependencies
+# Copy source code
 COPY common/ ./common/
 COPY sdk/core/ ./sdk/core/
 COPY sdk/tests/ts-api/ ./sdk/tests/ts-api/
 
-# Fresh install to establish proper workspace state (cached from deps stage)
+# Install dependencies and build
 RUN yarn install
-
-# Build workspace dependencies using correct workspace names
 RUN yarn workspace @selfxyz/common run build
 RUN yarn workspace @selfxyz/core run build
-
-# Build the TypeScript API (correct name from workspaces list)
 RUN yarn workspace @selfxyz/ts-api-test run build
 
 # Production stage
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Enable Corepack for production dependencies
+# Enable Corepack
 RUN corepack enable
-
-# Create .yarnrc.yml for production
-RUN echo 'nodeLinker: node-modules' > .yarnrc.yml
-
-ENV NODE_ENV=production
-ENV PORT=3000
+COPY .yarnrc.yml .
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
@@ -93,6 +55,9 @@ COPY --from=builder --chown=apiuser:nodejs /app/node_modules ./node_modules
 # Set working directory to the API
 WORKDIR /app/sdk/tests/ts-api
 
+# Set environment and user
+ENV NODE_ENV=production
+ENV PORT=3000
 USER apiuser
 
 EXPOSE 3000
