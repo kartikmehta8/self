@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # TypeScript API Service
+  ts-api:
+    build:
+      context: ..  # Build from monorepo root (parent directory)
+      dockerfile: sdk/tests/ts-api/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - api-network
+
+  # Go API Service
+  go-api:
+    build:
+      context: ..  # Build from monorepo root (parent directory)
+      dockerfile: sdk/tests/go-api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
+
+volumes:
+  ts-api-logs:
+  go-api-logs:
