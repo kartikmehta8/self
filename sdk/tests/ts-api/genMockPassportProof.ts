@@ -4,6 +4,7 @@ import { genAndInitMockPassportData } from "@selfxyz/common/utils/passports/genM
 import { getProofGeneratedUpdate, handshakeAndGetUuid, runGenerateVcAndDiscloseRawProof } from "./utils/helper.js";
 import { generateCircuitInputsDSC, generateCircuitInputsRegister, getCircuitNameFromPassportData } from "@selfxyz/common";
 import { REGISTER_URL ,DSC_URL} from "./utils/constant.js";
+import axios from "axios";
 
 
 
@@ -21,11 +22,11 @@ async function main() {
     "300101",
   );
 
-  const dscTree = await fetch(DSC_URL);
-  const serialized_dsc_tree: any = await dscTree.json();
+  const dscTree = await axios.get(DSC_URL);
+  const serialized_dsc_tree: any = dscTree.data;
 
-  const response = await fetch("http://tree.staging.self.xyz/csca");
-  const data : any = await response.json();
+  const response = await axios.get("http://tree.staging.self.xyz/csca");
+  const data : any = response.data;
 
 
   //DSC proof generation
