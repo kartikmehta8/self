@@ -414,34 +414,17 @@ export const getProofGeneratedUpdate = async (
       request_id?: string;
       [key: string]: any;
     }) => {
-      try {
-        console.log(`[getProofGeneratedUpdate] Received status update:`, {
-          status: data.status,
-          request_id: data.request_id ? `${data.request_id.substring(0, 8)}...` : 'N/A',
-          has_created_at: !!data.created_at,
-          has_witness_generated_at: !!data.witness_generated_at,
-          has_proof_generated_at: !!data.proof_generated_at,
-          timestamp: new Date().toISOString()
-        });
-
         if (data.status === 3 || data.status === 5) {
-          console.error(`[getProofGeneratedUpdate] Proof generation failed with status ${data.status}. Request ID: ${data.request_id ? data.request_id.substring(0, 8) + '...' : 'N/A'}`);
           socket2.close();
           reject(`Proof generation failed:  ${data.request_id}`);
         } else if (data.status === 4) {
-          console.log(`[getProofGeneratedUpdate] Proof generation completed successfully. Status: ${data.status}`);
           socket2.close();
           resolve({
             created_at: data.created_at || "",
             witness_generated_at: data.witness_generated_at || "",
             proof_generated_at: data.proof_generated_at || ""
           });
-        } else {
-          console.log(`[getProofGeneratedUpdate] Intermediate status received: ${data.status}. Waiting for completion...`);
         }
-      } catch (e) {
-        console.error(`[getProofGeneratedUpdate] Error parsing status message:`, e);
-      }
     });
   });
 };
