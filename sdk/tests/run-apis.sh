@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Self SDK API Services Management Script
-# This script helps manage both TypeScript and Go API services from the sdk directory
+# This script helps manage both TypeScript and Go API services from the sdk/tests directory
 
 set -e
 
@@ -46,7 +46,7 @@ show_usage() {
     echo "  clean       Stop services and remove containers/volumes"
     echo "  help        Show this help message"
     echo ""
-    echo "Note: Run this script from the sdk directory"
+    echo "Note: Run this script from the sdk/tests directory"
     echo "Services will be available at:"
     echo "  - TypeScript API: http://localhost:3000"
     echo "  - Go API: http://localhost:8080"
@@ -68,12 +68,12 @@ check_requirements() {
 # Check if we're in the correct directory
 check_directory() {
     if [[ ! -f "docker-compose.yml" ]]; then
-        print_error "docker-compose.yml not found. Please run this script from the sdk directory."
+        print_error "docker-compose.yml not found. Please run this script from the sdk/tests directory."
         exit 1
     fi
 
-    if [[ ! -d "tests/ts-api" ]] || [[ ! -d "tests/go-api" ]]; then
-        print_error "API test directories not found. Please run this script from the sdk directory."
+    if [[ ! -d "ts-api" ]] || [[ ! -d "go-api" ]]; then
+        print_error "API test directories not found. Please run this script from the sdk/tests directory."
         exit 1
     fi
 }

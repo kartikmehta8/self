@@ -4,7 +4,7 @@ services:
   # TypeScript API Service
   ts-api:
     build:
-      context: ..  # Build from monorepo root (parent directory)
+      context: ../..  # Build from monorepo root (two levels up)
       dockerfile: sdk/tests/ts-api/Dockerfile
     ports:
       - "3000:3000"
@@ -24,7 +24,7 @@ services:
   # Go API Service
   go-api:
     build:
-      context: ..  # Build from monorepo root (parent directory)
+      context: ../..  # Build from monorepo root (two levels up)
       dockerfile: sdk/tests/go-api/Dockerfile
     ports:
       - "8080:8080"
