@@ -22,7 +22,7 @@ async function main() {
     "300101",
   );
 
-  const dscTree = await axios.get(DSC_URL);
+  const dscTree = await axios.get("http://tree.staging.self.xyz/dsc");
   const serialized_dsc_tree: any = dscTree.data;
 
   const response = await axios.get("http://tree.staging.self.xyz/csca");
