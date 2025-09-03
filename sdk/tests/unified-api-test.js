@@ -39,7 +39,7 @@ async function callAPI(url, requestBody) {
 }
 
 // Compare two API responses
-function compareAPIs(testName, tsResponse, goResponse, expectedStatus = 200) {
+function compareAPIs(testName, tsResponse, goResponse, expectedStatus = 200, expectedKeywords = []) {
     const issues = [];
 
     // Check connectivity
@@ -62,11 +62,29 @@ function compareAPIs(testName, tsResponse, goResponse, expectedStatus = 200) {
         issues.push(`Result mismatch: TS=${tsResult}, Go=${goResult}`);
     }
 
+    // Check error message keywords (for error cases)
+    if (expectedKeywords.length > 0 && expectedStatus >= 400) {
+        const tsMessage = tsResponse.data?.message || tsResponse.data?.error || '';
+        const goMessage = goResponse.data?.message || goResponse.data?.error || '';
+
+        for (const keyword of expectedKeywords) {
+            const tsHasKeyword = tsMessage.toLowerCase().includes(keyword.toLowerCase());
+            const goHasKeyword = goMessage.toLowerCase().includes(keyword.toLowerCase());
+
+            if (!tsHasKeyword) {
+                issues.push(`TS error message missing keyword "${keyword}": "${tsMessage}"`);
+            }
+            if (!goHasKeyword) {
+                issues.push(`Go error message missing keyword "${keyword}": "${goMessage}"`);
+            }
+        }
+    }
+
     return { passed: issues.length === 0, issues };
 }
 
 // Run a single test
-async function runTest(testName, requestBody, expectedStatus = 200) {
+async function runTest(testName, requestBody, expectedStatus = 200, expectedKeywords = []) {
     console.log(`\n🧪 ${testName}`);
 
     const [tsResponse, goResponse] = await Promise.all([
@@ -74,7 +92,7 @@ async function runTest(testName, requestBody, expectedStatus = 200) {
         callAPI(GO_API_URL, requestBody)
     ]);
 
-    const result = compareAPIs(testName, tsResponse, goResponse, expectedStatus);
+    const result = compareAPIs(testName, tsResponse, goResponse, expectedStatus, expectedKeywords);
 
     if (result.passed) {
         console.log(`✅ PASS`);
@@ -112,12 +130,14 @@ function createTestCases() {
         {
             name: 'Valid Proof Verification',
             body: { attestationId: 1, proof: proof, publicSignals: proofData.publicSignals, userContextData: validUserContext },
-            expectedStatus: 200
+            expectedStatus: 200,
+            expectedKeywords: []
         },
         {
             name: 'Invalid User Context',
             body: { attestationId: 1, proof: proof, publicSignals: proofData.publicSignals, userContextData: invalidUserContext },
-            expectedStatus: 500
+            expectedStatus: 500,
+            expectedKeywords: ['context hash']
         },
         {
             name: 'Invalid Scope',
@@ -127,25 +147,59 @@ function createTestCases() {
                 publicSignals: proofData.publicSignals.map((sig, i) => i === 19 ? "17121382998761176299335602807450250650083579600718579431641003529012841023067" : sig),
                 userContextData: validUserContext
             },
-            expectedStatus: 500
+            expectedStatus: 500,
+            expectedKeywords: ['Scope']
+        },
+        {
+            name: 'Invalid Merkle Root',
+            body: {
+                attestationId: 1,
+                proof: proof,
+                publicSignals: proofData.publicSignals.map((sig, i) => i === 9 ? "9656656992379025128519272376477139373854042233370909906627112932049610896732" : sig),
+                userContextData: validUserContext
+            },
+            expectedStatus: 500,
+            expectedKeywords: ['Onchain root']
+        },
+        {
+            name: 'Invalid Attestation ID',
+            body: {
+                attestationId: 999, // Using invalid attestation ID that's not in allowed list
+                proof: proof,
+                publicSignals: proofData.publicSignals,
+                userContextData: validUserContext
+            },
+            expectedStatus: 500,
+            expectedKeywords: ['Attestation ID', 'not allowed']
+        },
+        {
+            name: 'Attestation ID Mismatch',
+            body: {
+                attestationId: 2,
+                proof: proof,
+                publicSignals: proofData.publicSignals,
+                userContextData: validUserContext
+            },
+            expectedStatus: 500,
+            expectedKeywords: ['Attestation ID', 'does not match']
         }
     ];
 }
 
 // Main execution
 async function main() {
-    console.log(' Self SDK API Comparison Test\n');
+    console.log('Self SDK API Comparison Test\n');
 
     const testCases = createTestCases();
     let passed = 0, failed = 0;
 
     for (const testCase of testCases) {
-        const success = await runTest(testCase.name, testCase.body, testCase.expectedStatus);
+        const success = await runTest(testCase.name, testCase.body, testCase.expectedStatus, testCase.expectedKeywords);
         success ? passed++ : failed++;
     }
 
-    console.log(`\n Results: ${passed} passed, ${failed} failed`);
-    console.log(failed === 0 ? '🎉 All tests passed!' : ' Some tests failed');
+    console.log(`\nResults: ${passed} passed, ${failed} failed`);
+    console.log(failed === 0 ? 'All tests passed!' : 'Some tests failed');
 
     process.exit(failed > 0 ? 1 : 0);
 }
