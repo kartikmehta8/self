@@ -1,9 +1,9 @@
-import { genAndInitMockPassportData, generateCircuitInputsRegister, getCircuitNameFromPassportData } from "@selfxyz/common";
-import { getProofGeneratedUpdate, handshakeAndGetUuid, runGenerateVcAndDiscloseRawProof } from "./ts-api/utils/helper.js";
-import { REGISTER_URL } from "./ts-api/utils/constant.js";
+import { genAndInitMockPassportData, generateCircuitInputsRegister, getCircuitNameFromPassportData, PassportData } from "@selfxyz/common";
+import { getProofGeneratedUpdate, handshakeAndGetUuid, runGenerateVcAndDiscloseRawProof } from "./ts-api/utils/helper.ts";
+import { REGISTER_URL } from "./ts-api/utils/constant.ts";
 import axios from "axios";
 
-async function registerMockPassport(secret) {
+async function registerMockPassport(secret: string): Promise<PassportData> {
 
   const passportData = genAndInitMockPassportData(
     "sha1",
@@ -44,16 +44,16 @@ async function registerMockPassport(secret) {
   console.log(
     "\x1b[34m%s\x1b[0m",
     "witness generation duration:",
-    (new Date(registerData.witness_generated_at) -
-      new Date(registerData.created_at)) /
+    (new Date(registerData.witness_generated_at).getTime() -
+      new Date(registerData.created_at).getTime()) /
       1000,
     " seconds"
   );
   console.log(
     "\x1b[34m%s\x1b[0m",
     "proof   generation duration:",
-    (new Date(registerData.proof_generated_at) -
-      new Date(registerData.witness_generated_at)) /
+    (new Date(registerData.proof_generated_at).getTime() -
+      new Date(registerData.witness_generated_at).getTime()) /
       1000,
     " seconds"
   );
@@ -61,7 +61,7 @@ async function registerMockPassport(secret) {
 }
 
 
-async function discloseProof(secret, attestationId, passportData, scope){
+async function discloseProof(secret: string, attestationId: string, passportData: PassportData, scope: string) {
 
  return await runGenerateVcAndDiscloseRawProof(
     secret,

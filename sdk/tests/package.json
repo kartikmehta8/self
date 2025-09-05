@@ -1,0 +1,20 @@
+{
+  "name": "@selfxyz/tests",
+  "version": "1.0.0",
+  "description": "Test utilities for Self SDK",
+  "type": "module",
+  "scripts": {
+    "test": "tsx unified-api-test.ts"
+  },
+  "dependencies": {
+    "@selfxyz/common": "workspace:^",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22 <23"
+  }
+}

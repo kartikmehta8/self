@@ -3,7 +3,9 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { hashEndpointWithScope } from "@selfxyz/common/utils/scope";
-import { registerMockPassport, discloseProof } from './utils.js';
+import { registerMockPassport, discloseProof } from './utils.ts';
+import { PassportData } from "@selfxyz/common";
+import { PublicSignals } from "snarkjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,12 +14,35 @@ const TS_API_URL = "http://localhost:3000";
 const GO_API_URL = "http://localhost:8080";
 const VERIFY_ENDPOINT = "/api/verify";
 
+// Types for test data
+interface ProofData {
+    proof: {
+        a: string[];
+        b: string[][];
+        c: string[];
+    };
+    publicSignals: PublicSignals;
+}
+
+interface APIResponse {
+    status: number;
+    data: any;
+    success: boolean;
+}
+
+interface TestCase {
+    name: string;
+    body: any;
+    expectedStatus: number;
+    expectedKeywords: string[];
+}
+
 // Global test data
-let globalProofData = null;
-let globalPassportData = null;
+let globalProofData: ProofData | null = null;
+let globalPassportData: PassportData | null = null;
 
 // Simple API call function
-async function callAPI(url, requestBody) {
+async function callAPI(url: string, requestBody: any): Promise<APIResponse> {
     try {
         const response = await fetch(`${url}${VERIFY_ENDPOINT}`, {
             method: 'POST',
@@ -37,14 +62,14 @@ async function callAPI(url, requestBody) {
             data: parsedData,
             success: true
         };
-    } catch (error) {
+    } catch (error: any) {
         return { status: 0, data: { error: error.message }, success: false };
     }
 }
 
 // Compare two API responses
-function compareAPIs(testName, tsResponse, goResponse, expectedStatus = 200, expectedKeywords = []) {
-    const issues = [];
+function compareAPIs(testName: string, tsResponse: APIResponse, goResponse: APIResponse, expectedStatus: number = 200, expectedKeywords: string[] = []): { passed: boolean; issues: string[] } {
+    const issues: string[] = [];
 
     // Check connectivity
     if (!tsResponse.success) issues.push(`TS API unreachable: ${tsResponse.data.error}`);
@@ -117,7 +142,7 @@ async function setupTestData() {
     console.log(' Test data setup complete');
 }
 
-function createTestCases() {
+function createTestCases(): TestCase[] {
     if (!globalProofData) {
         throw new Error('Test data not initialized. Call setupTestData() first.');
     }
@@ -178,7 +203,7 @@ function createTestCases() {
 }
 
 // Run a single test
-async function runTest(testName, requestBody, expectedStatus = 200, expectedKeywords = []) {
+async function runTest(testName: string, requestBody: any, expectedStatus: number = 200, expectedKeywords: string[] = []): Promise<boolean> {
     console.log(`\n ${testName}`);
 
     const [tsResponse, goResponse] = await Promise.all([
@@ -217,7 +242,7 @@ async function main() {
     process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch(error => {
+main().catch((error: any) => {
     console.error(` error: ${error}`);
     process.exit(1);
 });
