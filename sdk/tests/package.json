@@ -4,13 +4,17 @@
   "description": "Test utilities for Self SDK",
   "type": "module",
   "scripts": {
-    "test": "tsx unified-api-test.ts"
+    "test": "mocha --import=tsx unified-api.test.ts"
   },
   "dependencies": {
     "@selfxyz/common": "workspace:^",
     "axios": "^1.7.7"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "chai": "^5.1.1",
+    "mocha": "^10.4.0",
     "tsx": "^4.7.0",
     "typescript": "^5.9.2"
   },

@@ -8,8 +8,6 @@
     "build": "tsc",
     "dev": "tsx watch server.ts",
     "start": "node dist/server.js",
-    "test-endpoint": "node ./test-verify-endpoint.js",
-    "gen-mock-proof": "tsx genMockPassportProof.ts",
     "docker:run": "docker run -p 3000:3000 selfxyz-ts-api:latest",
     "docker:compose": "docker-compose up --build",
     "clean": "rm -rf dist"
