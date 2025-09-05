@@ -375,25 +375,11 @@ export const getProofGeneratedUpdate = async (
   witness_generated_at: string;
   proof_generated_at: string;
 }> => {
-  console.log(`[getProofGeneratedUpdate] Initializing socket connection for UUID: ${uuid.substring(0, 8)}...`);
 
   const socket2 = io(WSS_URL, { transports: ["websocket"] });
 
   socket2.on("connect", () => {
-    console.log(`[getProofGeneratedUpdate] Socket connected successfully. Subscribing to UUID: ${uuid.substring(0, 8)}...`);
     socket2.emit("subscribe", uuid);
-  });
-
-  socket2.on("disconnect", (reason: string) => {
-    console.log(`[getProofGeneratedUpdate] Socket disconnected. Reason: ${reason}`);
-  });
-
-  socket2.on("error", (err: Error) => {
-    console.error(`[getProofGeneratedUpdate] Socket.IO error:`, err);
-  });
-
-  socket2.on("connect_error", (err: Error) => {
-    console.error(`[getProofGeneratedUpdate] Socket connection error:`, err);
   });
 
   return new Promise((resolve, reject) => {
