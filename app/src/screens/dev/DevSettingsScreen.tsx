@@ -126,32 +126,32 @@ const items = [
   'DevSettings',
   'DevFeatureFlags',
   'DevHapticFeedback',
+  'DevPrivateKey',
   'Splash',
   'Launch',
-  'PassportOnboarding',
-  'PassportCamera',
-  'PassportNFCScan',
-  'PassportDataInfo',
-  'LoadingScreen',
+  'DocumentOnboarding',
+  'DocumentCamera',
+  'DocumentNFCScan',
+  'DocumentDataInfo',
+  'Loading',
   'AccountVerifiedSuccess',
-  'ConfirmBelongingScreen',
+  'ConfirmBelonging',
   'CreateMock',
   'Home',
   'Disclaimer',
   'QRCodeViewFinder',
-  'ProveScreen',
-  'ProofRequestStatusScreen',
+  'Prove',
+  'ProofRequestStatus',
   'Settings',
   'AccountRecovery',
   'SaveRecoveryPhrase',
   'RecoverWithPhrase',
   'ShowRecoveryPhrase',
   'CloudBackupSettings',
-  'UnsupportedPassport',
-  'PassportCameraTrouble',
-  'PassportNFCTrouble',
+  'UnsupportedDocument',
+  'DocumentCameraTrouble',
+  'DocumentNFCTrouble',
 ] satisfies (keyof RootStackParamList)[];
-
 const ScreenSelector = ({}) => {
   const navigation = useNavigation();
   const [open, setOpen] = useState(false);
@@ -304,7 +304,7 @@ const DevSettingsScreen: React.FC<DevSettingsScreenProps> = ({}) => {
             {
               label: 'Scan new ID Document',
               onPress: () => {
-                navigation.navigate('PassportOnboarding');
+                navigation.navigate('DocumentOnboarding');
               },
             },
           ].map(({ label, onPress }) => (
@@ -339,7 +339,32 @@ const DevSettingsScreen: React.FC<DevSettingsScreenProps> = ({}) => {
           title="Debug Shortcuts"
           description="Jump directly to any screen for testing"
         >
-          <ScreenSelector />
+          <YStack gap="$2">
+            <Button
+              style={{ backgroundColor: 'white' }}
+              borderColor={slate200}
+              borderRadius="$2"
+              height="$5"
+              padding={0}
+              onPress={() => {
+                navigation.navigate('DevPrivateKey');
+              }}
+            >
+              <XStack
+                width="100%"
+                justifyContent="space-between"
+                paddingVertical="$3"
+                paddingLeft="$4"
+                paddingRight="$1.5"
+              >
+                <Text fontSize="$5" color={slate500} fontFamily={dinot}>
+                  View Private Key
+                </Text>
+                <ChevronRight color={slate500} strokeWidth={2.5} />
+              </XStack>
+            </Button>
+            <ScreenSelector />
+          </YStack>
         </ParameterSection>
 
         <ParameterSection
@@ -349,16 +374,6 @@ const DevSettingsScreen: React.FC<DevSettingsScreenProps> = ({}) => {
           darkMode={true}
         >
           {[
-            // Only show private key button in development
-            ...(__DEV__
-              ? [
-                  {
-                    label: 'Display your private key',
-                    onPress: () => navigation.navigate('DevPrivateKey'),
-                    dangerTheme: false,
-                  },
-                ]
-              : []),
             {
               label: 'Delete your private key',
               onPress: handleClearSecretsPress,
