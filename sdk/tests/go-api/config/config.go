@@ -2,6 +2,9 @@ package config
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"strconv"
 	"sync"
 	"time"
 
@@ -44,11 +47,24 @@ func NewInMemoryConfigStore() *InMemoryConfigStore {
 	}
 }
 
-
 // GetActionId implements the ConfigStore interface
-//TODO: Implement this
 func (store *InMemoryConfigStore) GetActionId(ctx context.Context, userIdentifier string, userDefinedData string) (string, error) {
-	return "1", nil
+	dataToHash := userDefinedData
+	if dataToHash == "" {
+		dataToHash = ""
+	}
+
+	hasher := sha256.New()
+	hasher.Write([]byte(dataToHash))
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	truncatedHash := hash[:5]
+	hashInt, err := strconv.ParseInt(truncatedHash, 16, 64)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.FormatInt(hashInt, 10), nil
 }
 
 // SetConfig implements the ConfigStore interface
@@ -75,7 +91,6 @@ func (store *InMemoryConfigStore) GetConfig(ctx context.Context, id string) (sel
 	// Return empty config if not found (SDK will handle this)
 	return self.VerificationConfig{}, nil
 }
-
 
 // Close cleans up resources (no-op for in-memory store)
 func (store *InMemoryConfigStore) Close() error {

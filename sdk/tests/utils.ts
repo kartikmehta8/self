@@ -80,15 +80,15 @@ async function registerMockPassport(secret: string): Promise<PassportData> {
 
 
 async function discloseProof(secret: string, attestationId: string, passportData: PassportData, scope: string) {
+    const userDefinedData = "hello from the playground";
 
- return await runGenerateVcAndDiscloseRawProof(
-    secret,
-    attestationId,
-    passportData,
-    scope,
-    "",
+    return await runGenerateVcAndDiscloseRawProof(
+        secret,
+        attestationId,
+        passportData,
+        scope,
+        userDefinedData,
     );
-
 }
 
 // API testing utilities
@@ -178,7 +178,6 @@ export async function setupTestData(): Promise<void> {
         publicSignals: rawProofData.publicSignals
     };
 
-    console.log(' Test data setup complete');
 }
 
 export function getTestData() {
@@ -188,8 +187,10 @@ export function getTestData() {
 
     const proof = globalProofData.proof;
     const publicSignals = globalProofData.publicSignals;
-    const validUserContext = "000000000000000000000000000000000000000000000000000000000000a4ec00000000000000000000000094ba0db8a9db66979905784a9d6b2d286e55bd27";
-    const invalidUserContext = "000000000000000000000000000000000000000000000000000000000000a4ec00000000000000000000000094ba0db8a9db66979905784a9d6b2d286e55bd28";
+    // Format: destChainId(32 bytes) + userIdentifier(32 bytes) + userDefinedData
+    // userDefinedData: "hello from the playground" = 68656c6c6f2066726f6d2074686520706c617967726f756e64
+    const validUserContext = "000000000000000000000000000000000000000000000000000000000000a4ec00000000000000000000000094ba0db8a9db66979905784a9d6b2d286e55bd2768656c6c6f2066726f6d2074686520706c617967726f756e64";
+    const invalidUserContext = "000000000000000000000000000000000000000000000000000000000000a4ec00000000000000000000000094ba0db8a9db66979905784a9d6b2d286e55bd2868656c6c6f2066726f6d2074686520706c617967726f756e64";
 
     return { proof, publicSignals, validUserContext, invalidUserContext };
 }

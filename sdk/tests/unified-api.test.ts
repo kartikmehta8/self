@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import { callAPI, compareAPIs, setupTestData, getTestData, APIResponse } from './utils.ts';
+import { callAPI, compareAPIs, setupTestData, getTestData } from './utils.ts';
 
 const TS_API_URL = "http://localhost:3000";
 const GO_API_URL = "http://localhost:8080";
@@ -46,7 +46,7 @@ describe('Self SDK API Comparison Tests', function () {
                 publicSignals: publicSignals,
                 userContextData: invalidUserContext
             };
-            await runTest(body, 500, ['context hash']);
+            await runTest(body, 500, ['context hash does not match', 'circuit']);
         });
 
         it('should reject invalid scope', async function () {
@@ -79,7 +79,7 @@ describe('Self SDK API Comparison Tests', function () {
                 publicSignals: publicSignals,
                 userContextData: validUserContext
             };
-            await runTest(body, 500, ['Attestation ID', 'does not match']);
+            await runTest(body, 500, ['Attestation ID', 'does not match', 'circuit']);
         });
     });
 });

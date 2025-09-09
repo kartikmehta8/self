@@ -164,7 +164,27 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		Ofac:              true,
 	}
 
-	_, err = configStore.SetConfig(ctx, "1", verificationConfig)
+	
+	var userDefinedData string
+	if len(userContextDataStr) > 128 {
+		userDefinedData = userContextDataStr[128:]
+	} else {
+		userDefinedData = ""
+	}
+
+	configId, err := configStore.GetActionId(ctx, "", userDefinedData)
+	if err != nil {
+		log.Printf("Failed to get action ID: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(VerifyResponse{
+			Status:  "error",
+			Result:  false,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	_, err = configStore.SetConfig(ctx, configId, verificationConfig)
 	if err != nil {
 		log.Printf("Failed to set verification config: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -14,7 +14,13 @@ const configStore = new Map<string, string>();
 
 export class KVConfigStore implements IConfigStorage {
   async getActionId(userIdentifier: string, data: string): Promise<string> {
-    return "1";
+    const { createHash } = await import('crypto');
+
+    const dataToHash = data || '';
+    const hash = createHash('sha256').update(dataToHash).digest('hex');
+
+    const truncatedHash = parseInt(hash.slice(0, 5), 16).toString();
+    return truncatedHash;
   }
 
   async setConfig(id: string, config: VerificationConfig): Promise<boolean> {
@@ -50,6 +56,9 @@ export const verifyHandler = async (
     }
 
     const configStoreInstance = new KVConfigStore();
+    const userDefinedData = userContextData.slice(128);
+    console.log('userDefinedData', userDefinedData);
+    const configId = await configStoreInstance.getActionId("", userDefinedData);
 
     const verificationConfig: VerificationConfig = {
       minimumAge: 18,
@@ -57,7 +66,7 @@ export const verifyHandler = async (
       ofac: true,
     }
 
-    await configStoreInstance.setConfig("1", verificationConfig);
+    await configStoreInstance.setConfig(configId, verificationConfig);
 
     const selfBackendVerifier = new SelfBackendVerifier(
       "self-playground",

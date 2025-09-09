@@ -305,7 +305,6 @@ export class SelfBackendVerifier {
         publicSignals
       );
     } catch (error) {
-      console.log("is valid error", error);
       isValid = false;
     }
 
