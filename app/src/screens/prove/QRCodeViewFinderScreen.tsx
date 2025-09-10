@@ -29,6 +29,7 @@ import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { useSelfAppStore } from '@/stores/selfAppStore';
 import { black, slate800, white } from '@/utils/colors';
 import { parseAndValidateUrlParams } from '@/utils/deeplinks';
+import { scanQRCodeFromPhotoLibrary, isQRScannerPhotoLibraryAvailable } from '@/utils/qrScanner';
 
 const QRCodeViewFinderScreen: React.FC = () => {
   const { trackEvent } = useSelfClient();
@@ -113,6 +114,36 @@ const QRCodeViewFinderScreen: React.FC = () => {
     [doneScanningQR, navigation, navigateToProve, trackEvent],
   );
 
+  const onPhotoLibraryPress = useCallback(async () => {
+    if (doneScanningQR) {
+      return;
+    }
+
+    try {
+      trackEvent(ProofEvents.QR_SCAN_REQUESTED, {
+        from: 'photo_library',
+      });
+
+      const qrCodeData = await scanQRCodeFromPhotoLibrary();
+      await onQRData(null, qrCodeData);
+    } catch (error) {
+      trackEvent(ProofEvents.QR_SCAN_FAILED, {
+        reason: 'photo_library_error',
+        error: error instanceof Error ? error.message : error?.toString() || 'Unknown error',
+      });
+
+      console.error('Photo library QR scan error:', error);
+
+      // Don't navigate to trouble screen for user cancellation
+      if (error instanceof Error && error.message.includes('cancelled')) {
+        // User cancelled, just continue
+        return;
+      }
+
+      navigation.navigate('QRCodeTrouble');
+    }
+  }, [doneScanningQR, trackEvent, onQRData, navigation]);
+
   const shouldRenderCamera = !connectionModalVisible && !doneScanningQR;
 
   return (
@@ -148,18 +179,23 @@ const QRCodeViewFinderScreen: React.FC = () => {
                   </Description>
                   <Additional style={styles.description}>
                     Look for a QR code from a Self partner and position it in
-                    the camera frame above.
+                    the camera frame above{isQRScannerPhotoLibraryAvailable() ? ', or choose a photo from your gallery' : ''}.
                   </Additional>
                 </View>
               </XStack>
             </YStack>
 
-            <SecondaryButton
-              trackEvent={ProofEvents.QR_SCAN_CANCELLED}
-              onPress={onCancelPress}
-            >
-              Cancel
-            </SecondaryButton>
+            <XStack gap="$3" alignSelf="stretch">
+              {isQRScannerPhotoLibraryAvailable() && (
+                <SecondaryButton
+                  flex={1}
+                  trackEvent={ProofEvents.QR_SCAN_REQUESTED}
+                  onPress={onPhotoLibraryPress}
+                >
+                  Choose Photo
+                </SecondaryButton>
+              )}
+            </XStack>
           </YStack>
         </ExpandableBottomLayout.BottomSection>
       </ExpandableBottomLayout.Layout>

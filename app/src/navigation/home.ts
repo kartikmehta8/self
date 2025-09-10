@@ -5,11 +5,13 @@
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
 import { HomeNavBar, IdDetailsNavBar } from '@/components/NavBar';
+import { AadhaarNavBar } from '@/components/NavBar/AadhaarNavBar';
 import DisclaimerScreen from '@/screens/home/DisclaimerScreen';
 import HomeScreen from '@/screens/home/HomeScreen';
 import IdDetailsScreen from '@/screens/home/IdDetailsScreen';
 import ProofHistoryDetailScreen from '@/screens/home/ProofHistoryDetailScreen';
 import ProofHistoryScreen from '@/screens/home/ProofHistoryScreen';
+import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
 
 const homeScreens = {
   Disclaimer: {
@@ -47,6 +49,14 @@ const homeScreens = {
       header: IdDetailsNavBar, // Use custom header
       headerBackVisible: false, // Hide default back button
     },
+  },
+  AadhaarUpload: {
+    screen: AadhaarUploadScreen,
+    options: {
+      title: 'AADHAAR REGISTRATION',
+      header: AadhaarNavBar,
+      headerBackVisible: false,
+    } as NativeStackNavigationOptions,
   },
 };
 

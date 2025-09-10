@@ -24,6 +24,7 @@ import { advercase, dinot } from '@/utils/fonts';
 const LaunchScreen: React.FC = () => {
   useConnectionModal();
   const onStartPress = useHapticNavigation('DocumentOnboarding');
+  const onAadhaarPress = useHapticNavigation('AadhaarUpload');
   const createMock = useHapticNavigation('CreateMock');
   const { bottom } = useSafeAreaInsets();
 
@@ -87,6 +88,16 @@ const LaunchScreen: React.FC = () => {
           >
             I have a Passport or Biometric ID
           </AbstractButton>
+          <AbstractButton
+            trackEvent={AppEvents.GET_STARTED}
+            onPress={onAadhaarPress}
+            bgColor={white}
+            color={black}
+            testID="launch-get-started-button"
+          >
+            I have an Aadhaar Card
+          </AbstractButton>
+
         </YStack>
 
         <Caption style={styles.notice}>
