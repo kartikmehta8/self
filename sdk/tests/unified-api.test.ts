@@ -154,6 +154,104 @@ describe('Self SDK API Comparison Tests', function () {
             await runTest(body, 500, ['OFAC check is not allowed', 'Passport number', 'Name and DOB', 'Name and YOB']);
         });
 
+        it('should reject ConfigID not found', async function () {
+            const { proof, publicSignals } = getTestData();
+            let userContextData = validUserContext;
+            userContextData = userContextData.slice(0, -1) + "7";
+            const body = {
+                attestationId: 1,
+                proof: proof,
+                publicSignals: publicSignals,
+                userContextData: userContextData
+            };
+            await runTest(body, 500, ['Config Id not found']);
+        });
+        it('should reject Config not found', async function () {
+            const { proof, publicSignals } = getTestData();
+            let userContextData = validUserContext;
+            userContextData = userContextData.slice(0, -1) + "5";
+            const body = {
+                attestationId: 1,
+                proof: proof,
+                publicSignals: publicSignals,
+                userContextData: userContextData
+            };
+            await runTest(body, 500, ['Config not found']);
+        });
+
+        it('should reject future timestamp', async function () {
+            const { proof, publicSignals } = getTestData();
+
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
+
+            const year = futureDate.getFullYear().toString();
+            const month = (futureDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = futureDate.getDate().toString().padStart(2, '0');
+
+            const yy = year.slice(-2);
+            const mm = month;
+            const dd = day;
+
+            const modifiedPublicSignals = publicSignals.map((signal, index) => {
+                switch (index) {
+                    case 10: return yy[0];
+                    case 11: return yy[1];
+                    case 12: return mm[0];
+                    case 13: return mm[1];
+                    case 14: return dd[0];
+                    case 15: return dd[1];
+                    default: return signal;
+                }
+            });
+
+            const body = {
+                attestationId: 1,
+                proof: proof,
+                publicSignals: modifiedPublicSignals,
+                userContextData: validUserContext
+            };
+
+            await runTest(body, 500, ['Circuit timestamp is in the future']);
+        });
+
+        it('should reject old timestamp', async function () {
+            const { proof, publicSignals } = getTestData();
+
+            const pastDate = new Date();
+            pastDate.setDate(pastDate.getDate() - 3);
+
+            const year = pastDate.getFullYear().toString();
+            const month = (pastDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = pastDate.getDate().toString().padStart(2, '0');
+
+            const yy = year.slice(-2);
+            const mm = month;
+            const dd = day;
+
+            const modifiedPublicSignals = publicSignals.map((signal, index) => {
+                switch (index) {
+                    case 10: return yy[0];
+                    case 11: return yy[1];
+                    case 12: return mm[0];
+                    case 13: return mm[1];
+                    case 14: return dd[0];
+                    case 15: return dd[1];
+                    default: return signal;
+                }
+            });
+
+            const body = {
+                attestationId: 1,
+                proof: proof,
+                publicSignals: modifiedPublicSignals,
+                userContextData: validUserContext
+            };
+
+            await runTest(body, 500, ['Circuit timestamp is too old']);
+        });
+
+
 
     });
 });

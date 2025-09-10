@@ -12,15 +12,16 @@ import {
 // In-memory storage for testing purposes (replaces Redis/Upstash)
 const configStore = new Map<string, string>();
 
+
 export class KVConfigStore implements IConfigStorage {
   async getActionId(userIdentifier: string, data: string): Promise<string> {
-    const { createHash } = await import('crypto');
-
-    const dataToHash = data || '';
-    const hash = createHash('sha256').update(dataToHash).digest('hex');
-
-    const truncatedHash = parseInt(hash.slice(0, 5), 16).toString();
-    return truncatedHash;
+    if(data === "68656c6c6f2066726f6d2074686520706c617967726f756e64") {
+      return "1";
+    }
+    else if(data === "68656c6c6f2066726f6d2074686520706c617967726f756e65") {
+      return "2";
+    }
+      return "";
   }
 
   async setConfig(id: string, config: VerificationConfig): Promise<boolean> {
@@ -36,6 +37,15 @@ export class KVConfigStore implements IConfigStorage {
     return JSON.parse(configStr) as VerificationConfig;
   }
 }
+
+const configStoreInstance = new KVConfigStore();
+configStoreInstance.setConfig("1", {
+  minimumAge: 18,
+  excludedCountries: ["PAK", "IRN"],
+  ofac: false,
+});
+
+
 
 export const verifyHandler = async (
   req: Request,
@@ -54,18 +64,6 @@ export const verifyHandler = async (
           "Proof, publicSignals, attestationId and userContextData are required",
       });
     }
-
-    const configStoreInstance = new KVConfigStore();
-    const userDefinedData = userContextData.slice(128);
-    const configId = await configStoreInstance.getActionId("", userDefinedData);
-
-    const verificationConfig: VerificationConfig = {
-      minimumAge: 18,
-      excludedCountries: ["PAK", "IRN"],
-      ofac: false,
-    }
-
-    await configStoreInstance.setConfig(configId, verificationConfig);
 
     const selfBackendVerifier = new SelfBackendVerifier(
       "self-playground",

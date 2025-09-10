@@ -29,6 +29,25 @@ type VerifyResponse struct {
 	VerificationOptions interface{} `json:"verificationOptions,omitempty"`
 }
 
+// Global config store instance - similar to TypeScript version
+var configStoreInstance *config.InMemoryConfigStore
+
+func init() {
+	var err error
+	configStoreInstance, err = config.NewKVConfigStoreFromEnv()
+	if err != nil {
+		log.Printf("Failed to initialize config store: %v", err)
+		return
+	}
+
+	ctx := context.Background()
+	_, _ = configStoreInstance.SetConfig(ctx, "1", self.VerificationConfig{
+		MinimumAge:        18,
+		ExcludedCountries: []common.Country3LetterCode{common.PAK, common.IRN},
+		Ofac:              false,
+	})
+}
+
 // VerifyHandler handles the verification endpoint
 func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 	// Enable CORS
@@ -141,10 +160,10 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Initialize config store
-	configStore, err := config.NewKVConfigStoreFromEnv()
-	if err != nil {
-		log.Printf("Failed to initialize config store: %v", err)
+	ctx := context.Background()
+	// Check if global config store is available
+	if configStoreInstance == nil {
+		log.Printf("Config store not initialized")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(VerifyResponse{
 			Status:  "error",
@@ -153,39 +172,11 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	defer configStore.Close()
-
-	ctx := context.Background()
 
 	// Set verification config like TypeScript version
-	verificationConfig := self.VerificationConfig{
-		MinimumAge:        18,
-		ExcludedCountries: []common.Country3LetterCode{common.PAK, common.IRN},
-		Ofac:              false,
-	}
-
-	var userDefinedData string
-	if len(userContextDataStr) > 128 {
-		userDefinedData = userContextDataStr[128:]
-	} else {
-		userDefinedData = ""
-	}
-
-	configId, err := configStore.GetActionId(ctx, "", userDefinedData)
+	verificationConfig, err := configStoreInstance.GetConfig(ctx, "1")
 	if err != nil {
-		log.Printf("Failed to get action ID: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(VerifyResponse{
-			Status:  "error",
-			Result:  false,
-			Message: "Internal server error",
-		})
-		return
-	}
-
-	_, err = configStore.SetConfig(ctx, configId, verificationConfig)
-	if err != nil {
-		log.Printf("Failed to set verification config: %v", err)
+		log.Printf("Failed to get verification config: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(VerifyResponse{
 			Status:  "error",
@@ -209,7 +200,7 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		verifyEndpoint,
 		true, // Use testnet for testing
 		allowedIds,
-		configStore,
+		configStoreInstance,
 		self.UserIDTypeUUID, // Use UUID format for user IDs
 	)
 	if err != nil {
