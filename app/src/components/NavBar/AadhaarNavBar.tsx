@@ -77,11 +77,30 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
       </NavBar.Container>
 
       {/* Progress Bar - now part of the navbar */}
-      <YStack paddingHorizontal={20} paddingBottom={15} backgroundColor={slate100}>
+      <YStack
+        paddingHorizontal={20}
+        paddingBottom={15}
+        backgroundColor={slate100}
+      >
         <XStack gap={8}>
-          <YStack flex={1} height={4} backgroundColor="#00D4FF" borderRadius={2} />
-          <YStack flex={1} height={4} backgroundColor={slate300} borderRadius={2} />
-          <YStack flex={1} height={4} backgroundColor={slate300} borderRadius={2} />
+          <YStack
+            flex={1}
+            height={4}
+            backgroundColor="#00D4FF"
+            borderRadius={2}
+          />
+          <YStack
+            flex={1}
+            height={4}
+            backgroundColor={slate300}
+            borderRadius={2}
+          />
+          <YStack
+            flex={1}
+            height={4}
+            backgroundColor={slate300}
+            borderRadius={2}
+          />
         </XStack>
       </YStack>
     </YStack>

@@ -29,7 +29,10 @@ import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { useSelfAppStore } from '@/stores/selfAppStore';
 import { black, slate800, white } from '@/utils/colors';
 import { parseAndValidateUrlParams } from '@/utils/deeplinks';
-import { scanQRCodeFromPhotoLibrary, isQRScannerPhotoLibraryAvailable } from '@/utils/qrScanner';
+import {
+  isQRScannerPhotoLibraryAvailable,
+  scanQRCodeFromPhotoLibrary,
+} from '@/utils/qrScanner';
 
 const QRCodeViewFinderScreen: React.FC = () => {
   const { trackEvent } = useSelfClient();
@@ -129,7 +132,10 @@ const QRCodeViewFinderScreen: React.FC = () => {
     } catch (error) {
       trackEvent(ProofEvents.QR_SCAN_FAILED, {
         reason: 'photo_library_error',
-        error: error instanceof Error ? error.message : error?.toString() || 'Unknown error',
+        error:
+          error instanceof Error
+            ? error.message
+            : error?.toString() || 'Unknown error',
       });
 
       console.error('Photo library QR scan error:', error);
@@ -179,7 +185,11 @@ const QRCodeViewFinderScreen: React.FC = () => {
                   </Description>
                   <Additional style={styles.description}>
                     Look for a QR code from a Self partner and position it in
-                    the camera frame above{isQRScannerPhotoLibraryAvailable() ? ', or choose a photo from your gallery' : ''}.
+                    the camera frame above
+                    {isQRScannerPhotoLibraryAvailable()
+                      ? ', or choose a photo from your gallery'
+                      : ''}
+                    .
                   </Additional>
                 </View>
               </XStack>

@@ -6,12 +6,12 @@ import type { NativeStackNavigationOptions } from '@react-navigation/native-stac
 
 import { HomeNavBar, IdDetailsNavBar } from '@/components/NavBar';
 import { AadhaarNavBar } from '@/components/NavBar/AadhaarNavBar';
+import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
 import DisclaimerScreen from '@/screens/home/DisclaimerScreen';
 import HomeScreen from '@/screens/home/HomeScreen';
 import IdDetailsScreen from '@/screens/home/IdDetailsScreen';
 import ProofHistoryDetailScreen from '@/screens/home/ProofHistoryDetailScreen';
 import ProofHistoryScreen from '@/screens/home/ProofHistoryScreen';
-import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
 
 const homeScreens = {
   Disclaimer: {

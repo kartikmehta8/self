@@ -21,29 +21,7 @@ if (Platform.OS === 'ios') {
   QRScanner = null;
 }
 
-/**
- * Scans QR code using device camera
- * @returns Promise that resolves with the QR code content
- */
-export const scanQRCodeWithCamera = async (): Promise<string> => {
-  if (!QRScanner?.scanQRCode) {
-    throw new Error('QR Scanner not available on this platform');
-  }
-
-  return await QRScanner.scanQRCode();
-};
-
-/**
- * Scans QR code from photo library
- * @returns Promise that resolves with the QR code content
- */
-export const scanQRCodeFromPhotoLibrary = async (): Promise<string> => {
-  if (!QRScanner?.scanQRCodeFromPhotoLibrary) {
-    throw new Error('QR Scanner photo library not available on this platform');
-  }
-
-  return await QRScanner.scanQRCodeFromPhotoLibrary();
-};
+export { QRScanner };
 
 /**
  * Check if QR scanner camera is available
@@ -59,5 +37,26 @@ export const isQRScannerPhotoLibraryAvailable = (): boolean => {
   return QRScanner?.scanQRCodeFromPhotoLibrary != null;
 };
 
-export { QRScanner };
+/**
+ * Scans QR code from photo library
+ * @returns Promise that resolves with the QR code content
+ */
+export const scanQRCodeFromPhotoLibrary = async (): Promise<string> => {
+  if (!QRScanner?.scanQRCodeFromPhotoLibrary) {
+    throw new Error('QR Scanner photo library not available on this platform');
+  }
 
+  return await QRScanner.scanQRCodeFromPhotoLibrary();
+};
+
+/**
+ * Scans QR code using device camera
+ * @returns Promise that resolves with the QR code content
+ */
+export const scanQRCodeWithCamera = async (): Promise<string> => {
+  if (!QRScanner?.scanQRCode) {
+    throw new Error('QR Scanner not available on this platform');
+  }
+
+  return await QRScanner.scanQRCode();
+};

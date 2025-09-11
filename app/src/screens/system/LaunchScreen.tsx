@@ -97,7 +97,6 @@ const LaunchScreen: React.FC = () => {
           >
             I have an Aadhaar Card
           </AbstractButton>
-
         </YStack>
 
         <Caption style={styles.notice}>
