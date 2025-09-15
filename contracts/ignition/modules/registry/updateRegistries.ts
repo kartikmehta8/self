@@ -28,12 +28,7 @@ const registries = {
   },
 }
 
-export function handleRegistryDeployment(m: IgnitionModuleBuilder, registry: string, registryData: any) {
-  const chainId = hre.network.config.chainId;
-
-  const deployedAddressesPath = path.join(__dirname, `../../deployments/chain-${chainId}/deployed_addresses.json`);
-  const deployedAddresses = JSON.parse(readFileSync(deployedAddressesPath, "utf8"));
-
+export function handleRegistryDeployment(m: IgnitionModuleBuilder, registry: string, registryData: any, deployedAddresses: any) {
   const registryAddress = deployedAddresses["DeployRegistryModule#" + registry];
   const registryContract = m.contractAt(registry, registryAddress);
 
@@ -66,9 +61,13 @@ export function handleRegistryDeployment(m: IgnitionModuleBuilder, registry: str
 export default buildModule("UpdateRegistries", (m) => {
   const deployments: Record<string, any> = {};
 
+  const chainId = hre.network.config.chainId;
+  const deployedAddressesPath = path.join(__dirname, `../../deployments/chain-${chainId}/deployed_addresses.json`);
+  const deployedAddresses = JSON.parse(readFileSync(deployedAddressesPath, "utf8"));
+
   for (const registry of Object.keys(registries)) {
     const registryData = registries[registry as keyof typeof registries];
-    const registryContract = handleRegistryDeployment(m, registry, registryData);
+    const registryContract = handleRegistryDeployment(m, registry, registryData, deployedAddresses);
     deployments[registry] = registryContract;
   }
 
