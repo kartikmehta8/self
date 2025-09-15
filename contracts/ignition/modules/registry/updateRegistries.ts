@@ -24,7 +24,7 @@ const registries = {
     nameAndDobOfac: "0x0000000000000000000000000000000000000000000000000000000000000000",
     nameAndYobOfac: "0x0000000000000000000000000000000000000000000000000000000000000000",
     hub: "0x0000000000000000000000000000000000000000",
-    pubkeyCommitments: [] as Array<{commitment: string, expiryTimestamp: string}>,
+    pubkeyCommitments: [] as string[],
   },
 }
 
@@ -54,8 +54,7 @@ export function handleRegistryDeployment(m: IgnitionModuleBuilder, registry: str
     if (registryData.pubkeyCommitments && registryData.pubkeyCommitments.length > 0) {
       for (const pubkeyCommitment of registryData.pubkeyCommitments) {
         m.call(registryContract, "registerUidaiPubkeyCommitment", [
-          pubkeyCommitment.commitment,
-          pubkeyCommitment.expiryTimestamp
+          pubkeyCommitment,
         ]);
       }
     }

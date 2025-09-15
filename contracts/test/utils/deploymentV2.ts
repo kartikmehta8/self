@@ -283,7 +283,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   const csca_root = getCscaTreeRoot(serialized_csca_tree);
   await registryContract.updateCscaRoot(csca_root, { from: owner });
   await registryIdContract.updateCscaRoot(csca_root, { from: owner });
-  await registryAadhaarContract.registerUidaiPubkeyCommitment(aadhaarPubkeyCommitment, aadhaarExpiryTimestamp, {
+  await registryAadhaarContract.registerUidaiPubkeyCommitment(aadhaarPubkeyCommitment, {
     from: owner,
   });
 
