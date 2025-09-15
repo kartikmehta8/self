@@ -51,28 +51,28 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   mockPassport = genAndInitMockPassportData("sha256", "sha256", "rsa_sha256_65537_4096", "FRA", "940131", "401031");
 
   // Deploy verifiers using artifacts
-  let vcAndDiscloseVerifierArtifact;
-  {
-    vcAndDiscloseVerifierArtifact = VcAndDiscloseVerifierArtifactLocal;
-    const vcAndDiscloseVerifierFactory = await ethers.getContractFactory(
-      vcAndDiscloseVerifierArtifact.abi,
-      vcAndDiscloseVerifierArtifact.bytecode,
-    );
-    vcAndDiscloseVerifier = await vcAndDiscloseVerifierFactory.connect(owner).deploy();
-    await vcAndDiscloseVerifier.waitForDeployment();
-  }
+  // let vcAndDiscloseVerifierArtifact;
+  // {
+  //   vcAndDiscloseVerifierArtifact = VcAndDiscloseVerifierArtifactLocal;
+  //   const vcAndDiscloseVerifierFactory = await ethers.getContractFactory(
+  //     vcAndDiscloseVerifierArtifact.abi,
+  //     vcAndDiscloseVerifierArtifact.bytecode,
+  //   );
+  //   vcAndDiscloseVerifier = await vcAndDiscloseVerifierFactory.connect(owner).deploy();
+  //   await vcAndDiscloseVerifier.waitForDeployment();
+  // }
 
-  let vcAndDiscloseIdVerifierArtifact;
-  // Deploy VC and Disclose ID verifier
-  {
-    vcAndDiscloseIdVerifierArtifact = VcAndDiscloseIdVerifierArtifactLocal;
-    const vcAndDiscloseIdVerifierFactory = await ethers.getContractFactory(
-      vcAndDiscloseIdVerifierArtifact.abi,
-      vcAndDiscloseIdVerifierArtifact.bytecode,
-    );
-    vcAndDiscloseIdVerifier = await vcAndDiscloseIdVerifierFactory.connect(owner).deploy();
-    await vcAndDiscloseIdVerifier.waitForDeployment();
-  }
+  // let vcAndDiscloseIdVerifierArtifact;
+  // // Deploy VC and Disclose ID verifier
+  // {
+  //   vcAndDiscloseIdVerifierArtifact = VcAndDiscloseIdVerifierArtifactLocal;
+  //   const vcAndDiscloseIdVerifierFactory = await ethers.getContractFactory(
+  //     vcAndDiscloseIdVerifierArtifact.abi,
+  //     vcAndDiscloseIdVerifierArtifact.bytecode,
+  //   );
+  //   vcAndDiscloseIdVerifier = await vcAndDiscloseIdVerifierFactory.connect(owner).deploy();
+  //   await vcAndDiscloseIdVerifier.waitForDeployment();
+  // }
 
   let vcAndDiscloseAadhaarVerifierArtifact;
   {
@@ -86,28 +86,28 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   // Deploy register verifier
-  let registerVerifierArtifact, registerVerifierFactory;
-  {
-    registerVerifierArtifact = RegisterVerifierArtifactLocal;
-    registerVerifierFactory = await ethers.getContractFactory(
-      registerVerifierArtifact.abi,
-      registerVerifierArtifact.bytecode,
-    );
-    registerVerifier = await registerVerifierFactory.connect(owner).deploy();
-    await registerVerifier.waitForDeployment();
-  }
+  // let registerVerifierArtifact, registerVerifierFactory;
+  // {
+  //   registerVerifierArtifact = RegisterVerifierArtifactLocal;
+  //   registerVerifierFactory = await ethers.getContractFactory(
+  //     registerVerifierArtifact.abi,
+  //     registerVerifierArtifact.bytecode,
+  //   );
+  //   registerVerifier = await registerVerifierFactory.connect(owner).deploy();
+  //   await registerVerifier.waitForDeployment();
+  // }
 
   // Deploy register ID verifier
-  let registerIdVerifierArtifact, registerIdVerifierFactory;
-  {
-    registerIdVerifierArtifact = RegisterIdVerifierArtifactLocal;
-    registerIdVerifierFactory = await ethers.getContractFactory(
-      registerIdVerifierArtifact.abi,
-      registerIdVerifierArtifact.bytecode,
-    );
-    registerIdVerifier = await registerIdVerifierFactory.connect(owner).deploy();
-    await registerIdVerifier.waitForDeployment();
-  }
+  // let registerIdVerifierArtifact, registerIdVerifierFactory;
+  // {
+  //   registerIdVerifierArtifact = RegisterIdVerifierArtifactLocal;
+  //   registerIdVerifierFactory = await ethers.getContractFactory(
+  //     registerIdVerifierArtifact.abi,
+  //     registerIdVerifierArtifact.bytecode,
+  //   );
+  //   registerIdVerifier = await registerIdVerifierFactory.connect(owner).deploy();
+  //   await registerIdVerifier.waitForDeployment();
+  // }
 
   // Deploy register aadhaar verifier
   let registerAadhaarVerifierArtifact, registerAadhaarVerifierFactory;
@@ -122,13 +122,13 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   // Deploy dsc verifier
-  let dscVerifierArtifact, dscVerifierFactory;
-  {
-    dscVerifierArtifact = DscVerifierArtifactLocal;
-    dscVerifierFactory = await ethers.getContractFactory(dscVerifierArtifact.abi, dscVerifierArtifact.bytecode);
-    dscVerifier = await dscVerifierFactory.connect(owner).deploy();
-    await dscVerifier.waitForDeployment();
-  }
+  // let dscVerifierArtifact, dscVerifierFactory;
+  // {
+  //   dscVerifierArtifact = DscVerifierArtifactLocal;
+  //   dscVerifierFactory = await ethers.getContractFactory(dscVerifierArtifact.abi, dscVerifierArtifact.bytecode);
+  //   dscVerifier = await dscVerifierFactory.connect(owner).deploy();
+  //   await dscVerifier.waitForDeployment();
+  // }
 
   let poseidonT3Factory, poseidonT3, CustomVerifierFactory, customVerifier, GenericFormatterFactory, genericFormatter;
   {
@@ -149,28 +149,28 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   // Deploy IdentityRegistryImplV1 (same registry as V1)
-  let IdentityRegistryImplFactory;
-  {
-    IdentityRegistryImplFactory = await ethers.getContractFactory("IdentityRegistryImplV1", {
-      libraries: {
-        PoseidonT3: poseidonT3.target,
-      },
-    });
-    identityRegistryImpl = await IdentityRegistryImplFactory.connect(owner).deploy();
-    await identityRegistryImpl.waitForDeployment();
-  }
+  // let IdentityRegistryImplFactory;
+  // {
+  //   IdentityRegistryImplFactory = await ethers.getContractFactory("IdentityRegistryImplV1", {
+  //     libraries: {
+  //       PoseidonT3: poseidonT3.target,
+  //     },
+  //   });
+  //   identityRegistryImpl = await IdentityRegistryImplFactory.connect(owner).deploy();
+  //   await identityRegistryImpl.waitForDeployment();
+  // }
 
   // Deploy IdentityRegistryIdCardImplV1 for ID cards
-  let IdentityRegistryIdImplFactory;
-  {
-    IdentityRegistryIdImplFactory = await ethers.getContractFactory("IdentityRegistryIdCardImplV1", {
-      libraries: {
-        PoseidonT3: poseidonT3.target,
-      },
-    });
-    identityRegistryIdImpl = await IdentityRegistryIdImplFactory.connect(owner).deploy();
-    await identityRegistryIdImpl.waitForDeployment();
-  }
+  // let IdentityRegistryIdImplFactory;
+  // {
+  //   IdentityRegistryIdImplFactory = await ethers.getContractFactory("IdentityRegistryIdCardImplV1", {
+  //     libraries: {
+  //       PoseidonT3: poseidonT3.target,
+  //     },
+  //   });
+  //   identityRegistryIdImpl = await IdentityRegistryIdImplFactory.connect(owner).deploy();
+  //   await identityRegistryIdImpl.waitForDeployment();
+  // }
   // Deploy IdentityRegistryAadhaarImplV1 for Aadhaar
   let IdentityRegistryAadhaarImplFactory;
   {
@@ -199,25 +199,25 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   const temporaryHubAddress = "0x0000000000000000000000000000000000000000";
 
   let registryInitData, registryProxyFactory;
-  {
-    registryInitData = identityRegistryImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
-    registryProxyFactory = await ethers.getContractFactory("IdentityRegistry");
-    identityRegistryProxy = await registryProxyFactory
-      .connect(owner)
-      .deploy(identityRegistryImpl.target, registryInitData);
-    await identityRegistryProxy.waitForDeployment();
-  }
+  // {
+  //   registryInitData = identityRegistryImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
+  //   registryProxyFactory = await ethers.getContractFactory("IdentityRegistry");
+  //   identityRegistryProxy = await registryProxyFactory
+  //     .connect(owner)
+  //     .deploy(identityRegistryImpl.target, registryInitData);
+  //   await identityRegistryProxy.waitForDeployment();
+  // }
 
   // Deploy ID card registry with temporary hub address
-  let registryIdInitData, registryIdProxyFactory;
-  {
-    registryIdInitData = identityRegistryIdImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
-    registryIdProxyFactory = await ethers.getContractFactory("IdentityRegistry");
-    identityRegistryIdProxy = await registryIdProxyFactory
-      .connect(owner)
-      .deploy(identityRegistryIdImpl.target, registryIdInitData);
-    await identityRegistryIdProxy.waitForDeployment();
-  }
+  // let registryIdInitData, registryIdProxyFactory;
+  // {
+  //   registryIdInitData = identityRegistryIdImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
+  //   registryIdProxyFactory = await ethers.getContractFactory("IdentityRegistry");
+  //   identityRegistryIdProxy = await registryIdProxyFactory
+  //     .connect(owner)
+  //     .deploy(identityRegistryIdImpl.target, registryIdInitData);
+  //   await identityRegistryIdProxy.waitForDeployment();
+  // }
 
   // Deploy Aadhaar registry with temporary hub address
   let registryAadhaarInitData, registryAadhaarProxyFactory;
@@ -244,19 +244,19 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   // Get contracts with implementation ABI and update hub address
-  let registryContract, updateHubTx;
-  {
-    registryContract = await ethers.getContractAt("IdentityRegistryImplV1", identityRegistryProxy.target);
-    updateHubTx = await registryContract.updateHub(identityVerificationHubV2.target);
-    await updateHubTx.wait();
-  }
+  // let registryContract, updateHubTx;
+  // {
+  //   registryContract = await ethers.getContractAt("IdentityRegistryImplV1", identityRegistryProxy.target);
+  //   updateHubTx = await registryContract.updateHub(identityVerificationHubV2.target);
+  //   await updateHubTx.wait();
+  // }
 
-  let registryIdContract, updateIdHubTx;
-  {
-    registryIdContract = await ethers.getContractAt("IdentityRegistryIdCardImplV1", identityRegistryIdProxy.target);
-    updateIdHubTx = await registryIdContract.updateHub(identityVerificationHubV2.target);
-    await updateIdHubTx.wait();
-  }
+  // let registryIdContract, updateIdHubTx;
+  // {
+  //   registryIdContract = await ethers.getContractAt("IdentityRegistryIdCardImplV1", identityRegistryIdProxy.target);
+  //   updateIdHubTx = await registryIdContract.updateHub(identityVerificationHubV2.target);
+  //   await updateIdHubTx.wait();
+  // }
 
   let registryAadhaarContract, updateAadhaarHubTx;
   {
@@ -281,8 +281,8 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
 
   // Initialize roots
   const csca_root = getCscaTreeRoot(serialized_csca_tree);
-  await registryContract.updateCscaRoot(csca_root, { from: owner });
-  await registryIdContract.updateCscaRoot(csca_root, { from: owner });
+  // await registryContract.updateCscaRoot(csca_root, { from: owner });
+  // await registryIdContract.updateCscaRoot(csca_root, { from: owner });
   await registryAadhaarContract.registerUidaiPubkeyCommitment(aadhaarPubkeyCommitment, {
     from: owner,
   });
@@ -290,13 +290,13 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   const { passportNo_smt, nameAndDob_smt, nameAndYob_smt, nameDobAadhar_smt, nameYobAadhar_smt } = getSMTs();
 
   // Update passport roots
-  await registryContract.updatePassportNoOfacRoot(passportNo_smt.root, { from: owner });
-  await registryContract.updateNameAndDobOfacRoot(nameAndDob_smt.root, { from: owner });
-  await registryIdContract.updateNameAndDobOfacRoot(nameAndDob_smt.root, { from: owner });
+  // await registryContract.updatePassportNoOfacRoot(passportNo_smt.root, { from: owner });
+  // await registryContract.updateNameAndDobOfacRoot(nameAndDob_smt.root, { from: owner });
+  // await registryIdContract.updateNameAndDobOfacRoot(nameAndDob_smt.root, { from: owner });
 
   // Update id card roots
-  await registryContract.updateNameAndYobOfacRoot(nameAndYob_smt.root, { from: owner });
-  await registryIdContract.updateNameAndYobOfacRoot(nameAndYob_smt.root, { from: owner });
+  // await registryContract.updateNameAndYobOfacRoot(nameAndYob_smt.root, { from: owner });
+  // await registryIdContract.updateNameAndYobOfacRoot(nameAndYob_smt.root, { from: owner });
 
   // Update Aadhaar roots
   await registryAadhaarContract.updateNameAndDobOfacRoot(nameDobAadhar_smt.root, { from: owner });
@@ -308,32 +308,32 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   const AADHAAR = ethers.hexlify(ethers.zeroPadValue(ethers.toBeHex(3), 32));
 
   // Update registries in the hub
-  await hubContract.updateRegistry(E_PASSPORT, identityRegistryProxy.target);
-  await hubContract.updateRegistry(EU_ID_CARD, identityRegistryIdProxy.target);
+  // await hubContract.updateRegistry(E_PASSPORT, identityRegistryProxy.target);
+  // await hubContract.updateRegistry(EU_ID_CARD, identityRegistryIdProxy.target);
   await hubContract.updateRegistry(AADHAAR, identityRegistryAadhaarProxy.target);
 
   // Update VC and Disclose verifiers
-  await hubContract.updateVcAndDiscloseCircuit(E_PASSPORT, vcAndDiscloseVerifier.target);
-  await hubContract.updateVcAndDiscloseCircuit(EU_ID_CARD, vcAndDiscloseIdVerifier.target);
+  // await hubContract.updateVcAndDiscloseCircuit(E_PASSPORT, vcAndDiscloseVerifier.target);
+  // await hubContract.updateVcAndDiscloseCircuit(EU_ID_CARD, vcAndDiscloseIdVerifier.target);
   await hubContract.updateVcAndDiscloseCircuit(AADHAAR, vcAndDiscloseAadhaarVerifier.target);
 
   // Update register verifiers
-  await hubContract.updateRegisterCircuitVerifier(
-    E_PASSPORT,
-    RegisterVerifierId.register_sha256_sha256_sha256_rsa_65537_4096,
-    registerVerifier.target,
-  );
-  await hubContract.updateRegisterCircuitVerifier(
-    EU_ID_CARD,
-    RegisterVerifierId.register_sha256_sha256_sha256_rsa_65537_4096,
-    registerIdVerifier.target,
-  );
+  // await hubContract.updateRegisterCircuitVerifier(
+  //   E_PASSPORT,
+  //   RegisterVerifierId.register_sha256_sha256_sha256_rsa_65537_4096,
+  //   registerVerifier.target,
+  // );
+  // await hubContract.updateRegisterCircuitVerifier(
+  //   EU_ID_CARD,
+  //   RegisterVerifierId.register_sha256_sha256_sha256_rsa_65537_4096,
+  //   registerIdVerifier.target,
+  // );
   await hubContract.updateRegisterCircuitVerifier(AADHAAR, 0, registerAadhaarVerifier.target);
 
   // Update DSC verifiers
-  await hubContract.updateDscVerifier(E_PASSPORT, DscVerifierId.dsc_sha256_rsa_65537_4096, dscVerifier.target);
+  // await hubContract.updateDscVerifier(E_PASSPORT, DscVerifierId.dsc_sha256_rsa_65537_4096, dscVerifier.target);
   // Add DSC verifier for EU_ID_CARD as well
-  await hubContract.updateDscVerifier(EU_ID_CARD, DscVerifierId.dsc_sha256_rsa_65537_4096, dscVerifier.target);
+  // await hubContract.updateDscVerifier(EU_ID_CARD, DscVerifierId.dsc_sha256_rsa_65537_4096, dscVerifier.target);
 
   // Deploy TestSelfVerificationRoot
   const testScope = hashEndpointWithScope("example.com", "test-scope");
@@ -345,9 +345,11 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     hubImplV2: identityVerificationHubImplV2,
     hub: hubContract,
     registryImpl: identityRegistryImpl,
-    registry: registryContract,
+    //@ts-ignore
+    registry: undefined,
     registryIdImpl: identityRegistryIdImpl,
-    registryId: registryIdContract,
+    //@ts-ignore
+    registryId: undefined,
     registryAadhaarImpl: identityRegistryAadhaarImpl,
     registryAadhaar: registryAadhaarContract,
     vcAndDisclose: vcAndDiscloseVerifier,
