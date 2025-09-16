@@ -80,11 +80,8 @@ export function handleRegistryDeployment(m: IgnitionModuleBuilder, registryModul
       m.call(registryContract, "updateNameAndYobOfacRoot", [registryData.nameAndYobOfac]);
     }
 
-    console.log("Registry data", registryData);
     if (registryData.pubkeyCommitments && registryData.pubkeyCommitments.length > 0) {
-      console.log("Registering pubkey commitments", registryData.pubkeyCommitments);
       for (const pubkeyCommitment of registryData.pubkeyCommitments) {
-        console.log("Registering pubkey commitment", pubkeyCommitment);
         m.call(registryContract, "registerUidaiPubkeyCommitment", [
           pubkeyCommitment,
         ], {id: ids()});
@@ -108,8 +105,6 @@ export default buildModule("UpdateAllRegistries", (m) => {
     deployments[registry] = registryContract;
   }
 
-  console.log(deployments);
-  console.log(Object.keys(deployments));
 
   return deployments;
 });
