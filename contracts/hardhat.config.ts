@@ -18,13 +18,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
-      metadata: {
-        bytecodeHash: "ipfs",
-      },
     },
-  },
-  sourcify: {
-    enabled: true,
   },
   contractSizer: {
     runOnCompile: true,

@@ -1,6 +1,4 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import fs from "fs";
-import path from "path";
 
 // All circuit names as a union type
 export type CircuitName =
@@ -200,12 +198,3 @@ export default buildModule("DeployAllVerifiers", (m) => {
 
   return deployments;
 });
-
-// verifiers
-// registry
-// registry -> ofac roots, csca roots (passports, biometric IDs) (from alfajores testnet)
-// registry -> ofac roots, pubkey commitments (aadhaar)
-// hub, libraries
-// hub -> registry
-// hub -> verifiers
-// registry -> hub
