@@ -19,9 +19,12 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
       metadata: {
-        bytecodeHash: "none",
+        bytecodeHash: "ipfs",
       },
     },
+  },
+  sourcify: {
+    enabled: true,
   },
   contractSizer: {
     runOnCompile: true,
@@ -94,7 +97,7 @@ const config: HardhatUserConfig = {
         chainId: 11142220,
         urls: {
           apiURL: "https://celo-sepolia.blockscout.com/api",
-          browserURL: "https://celo-sepolia.blockscout.com/",
+          browserURL: "https://celo-sepolia.blockscout.com",
         },
       },
     ],
