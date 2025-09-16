@@ -142,6 +142,25 @@ class QrCodeDetectorProcessor {
     fun stop() {
     }
 
+    fun detectQrCodeInBitmap(
+        image: Bitmap,
+        listener: Listener
+    ): Boolean {
+        val start = System.currentTimeMillis()
+        executor.execute {
+            val result = detectInImage(image)
+            val timeRequired = System.currentTimeMillis() - start
+            println(result)
+            if (result != null) {
+                listener.onSuccess(result.text!!, null, timeRequired, null)
+            }
+            else {
+                listener.onCompletedFrame(timeRequired)
+            }
+        }
+        return true
+    }
+
 
     interface Listener {
         fun onSuccess(results: String, frameMetadata: FrameMetadata?, timeRequired: Long, bitmap: Bitmap?)
