@@ -38,6 +38,14 @@ const getCircuitType = (circuitName: CircuitName): { attestationId: string; type
   throw new Error(`Unknown circuit type: ${circuitName}`);
 };
 
+const ids = (() => {
+  let id = 0;
+  return () => {
+    id++;
+    return "a" + id.toString();
+  };
+})();
+
 export function updateHubVerifiers(m: IgnitionModuleBuilder, hubAddress: string, deployedAddresses: any) {
   const hubContract = m.contractAt("IdentityVerificationHubImplV2", hubAddress);
 
@@ -110,7 +118,7 @@ export function updateHubVerifiers(m: IgnitionModuleBuilder, hubAddress: string,
     const { attestationId, typeId, circuitType } = getCircuitType(circuitName as CircuitName);
 
     if (circuitType === 'vc_and_disclose') {
-      m.call(hubContract, "updateVcAndDiscloseCircuit", [attestationId, verifierAddress]);
+      m.call(hubContract, "updateVcAndDiscloseCircuit", [attestationId, verifierAddress], {id: ids()});
     }
   }
 

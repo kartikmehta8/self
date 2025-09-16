@@ -9,7 +9,7 @@ export default buildModule("DeployAadhaarRegistryModule", (m) => {
 
   console.log("🏗️  Deploying AadhaarRegistryImplV1 implementation...");
   // Deploy IdentityRegistryImplV1
-  const aadhaarRegistryImpl = m.contract("AadhaarRegistryImplV1", [], {
+  const aadhaarRegistryImpl = m.contract("IdentityRegistryAadhaarImplV1", [], {
     libraries: { PoseidonT3: poseidonT3 },
   });
 
