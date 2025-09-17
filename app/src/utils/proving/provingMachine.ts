@@ -550,7 +550,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
 
           const pcr0Mapping = await checkPCR0Mapping(imageHash);
 
-          if ((!__DEV__ && !pcr0Mapping)) {
+          if (!__DEV__ && !pcr0Mapping) {
             console.error('PCR0 mapping not found');
             actor!.send({ type: 'CONNECT_ERROR' });
             return;
