@@ -44,7 +44,12 @@ class SelfOCRViewManager(
         args: ReadableArray?
     ) {
         super.receiveCommand(root, commandId, args)
-        val reactNativeViewId = requireNotNull(args).getInt(0)
+
+        val reactNativeViewId = args?.getInt(0)
+        if (reactNativeViewId == null) {
+            android.util.Log.w("SelfOCRViewManager", "receiveCommand called with null or empty args for command: $commandId")
+            return
+        }
 
         when (commandId) {
             "create" -> {
@@ -66,7 +71,12 @@ class SelfOCRViewManager(
         args: ReadableArray?
     ) {
         super.receiveCommand(root, commandId, args)
-        val reactNativeViewId = requireNotNull(args).getInt(0)
+
+        val reactNativeViewId = args?.getInt(0)
+        if (reactNativeViewId == null) {
+            android.util.Log.w("SelfOCRViewManager", "receiveCommand called with null or empty args for command: $commandId")
+            return
+        }
 
         when (commandId) {
             COMMAND_CREATE -> {
@@ -100,6 +110,10 @@ class SelfOCRViewManager(
     private fun createFragment(root: FrameLayout, reactNativeViewId: Int) {
         this.reactNativeViewId = reactNativeViewId
         val parentView = root.findViewById<ViewGroup>(reactNativeViewId)
+        if (parentView == null) {
+            android.util.Log.e("SelfOCRViewManager", "Parent view not found for ID: $reactNativeViewId")
+            return
+        }
         setupLayout(parentView)
 
         val activity = reactContext.currentActivity as? FragmentActivity

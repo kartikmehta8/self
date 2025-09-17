@@ -63,7 +63,17 @@ ReactContextBaseJavaModule(reactContext), QrCodeScannerFragment.QRCodeScannerCal
                 activity.supportFragmentManager
                     .beginTransaction()
                     .replace(containerId, fragment)
-                    .commitNow()
+                    // .commitNow()
+                    .let { transaction ->
+                        if (activity.supportFragmentManager.isStateSaved) {
+                            // State is saved, use safe commit
+                            transaction.commitAllowingStateLoss()
+                            android.util.Log.w("SelfQRScannerModule", "Fragment committed with state loss due to saved state")
+                        } else {
+                            // State is not saved, safe to use immediate commit
+                            transaction.commitNow()
+                        }
+                    }
 
             } catch (e: Exception) {
                 android.util.Log.e("SelfQRScannerModule", "Error in startScanning", e)

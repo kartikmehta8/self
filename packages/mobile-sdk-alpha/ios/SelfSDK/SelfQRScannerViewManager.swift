@@ -38,12 +38,17 @@ class SelfQRScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate {
 
   override init(frame: CGRect) {
     super.init(frame: frame)
-    initializeScanner()
   }
 
   required init?(coder: NSCoder) {
     super.init(coder: coder)
-    initializeScanner()
+  }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window != nil && captureSession == nil {
+      initializeScanner()
+    }
   }
 
   func initializeScanner() {
@@ -89,7 +94,13 @@ class SelfQRScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate {
     {
       // Send the scanned QR code data to JS
       onQRData?(["data": stringValue])
-      captureSession?.stopRunning()
+      // captureSession?.stopRunning()
+      if let session = captureSession {
+        DispatchQueue.global(qos: .background).async {
+          session.stopRunning()
+        }
+      }
+
     }
   }
 

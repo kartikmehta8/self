@@ -27,12 +27,16 @@ ReactContextBaseJavaModule(reactContext), CameraMLKitFragment.CameraMLKitCallbac
 
     @ReactMethod
     fun startScanning(promise: Promise) {
-        scanPromise = promise
         val activity = reactApplicationContext.currentActivity as? FragmentActivity
+        if (currentFragment != null || currentContainer != null || scanPromise != null) {
+            promise.reject("E_SCAN_IN_PROGRESS", "Scanning already in progress")
+            return
+        }
         if (activity == null) {
             promise.reject("E_NO_ACTIVITY", "No FragmentActivity found")
             return
         }
+        scanPromise = promise
 
 
         activity.runOnUiThread {
@@ -70,6 +74,7 @@ ReactContextBaseJavaModule(reactContext), CameraMLKitFragment.CameraMLKitCallbac
             } catch (e: Exception) {
                 android.util.Log.e("SelfMRZScannerModule", "Error in startScanning", e)
                 promise.reject("E_SCANNING_ERROR", e.message, e)
+                cleanup()
             }
         }
     }
@@ -94,24 +99,26 @@ ReactContextBaseJavaModule(reactContext), CameraMLKitFragment.CameraMLKitCallbac
 
     private fun cleanup() {
         val activity = reactApplicationContext.currentActivity as? FragmentActivity
-        if (activity != null && currentFragment != null && currentContainer != null) {
+        val fragment = currentFragment
+        val container = currentContainer
+        currentFragment = null
+        currentContainer = null
+        scanPromise = null
+
+        if (activity != null && fragment != null && container != null) {
             activity.runOnUiThread {
                 try {
                     activity.supportFragmentManager
                         .beginTransaction()
-                        .remove(currentFragment!!)
-                        .commitNow()
+                        .remove(fragment)
+                        .commitAllowingStateLoss()
 
-                    val parent = currentContainer!!.parent as? ViewGroup
-                    parent?.removeView(currentContainer)
+                    (container.parent as? ViewGroup)?.removeView(container)
 
                     android.util.Log.d("SelfMRZScannerModule", "Cleaned up fragment and container")
                 } catch (e: Exception) {
                     android.util.Log.e("SelfMRZScannerModule", "Error during cleanup", e)
                 }
-
-                currentFragment = null
-                currentContainer = null
             }
         }
     }
