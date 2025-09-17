@@ -7,6 +7,8 @@ import type { NativeStackNavigationOptions } from '@react-navigation/native-stac
 import { HomeNavBar, IdDetailsNavBar } from '@/components/NavBar';
 import { AadhaarNavBar } from '@/components/NavBar/AadhaarNavBar';
 import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
+import AadhaarUploadedSuccessScreen from '@/screens/document/aadhaar/AadhaarUploadedSuccessScreen';
+import AadhaarUploadErrorScreen from '@/screens/document/aadhaar/AadhaarUploadErrorScreen';
 import DisclaimerScreen from '@/screens/home/DisclaimerScreen';
 import HomeScreen from '@/screens/home/HomeScreen';
 import IdDetailsScreen from '@/screens/home/IdDetailsScreen';
@@ -52,6 +54,22 @@ const homeScreens = {
   },
   AadhaarUpload: {
     screen: AadhaarUploadScreen,
+    options: {
+      title: 'AADHAAR REGISTRATION',
+      header: AadhaarNavBar,
+      headerBackVisible: false,
+    } as NativeStackNavigationOptions,
+  },
+  AadhaarUploadSuccess: {
+    screen: AadhaarUploadedSuccessScreen,
+    options: {
+      title: 'AADHAAR REGISTRATION',
+      header: AadhaarNavBar,
+      headerBackVisible: false,
+    } as NativeStackNavigationOptions,
+  },
+  AadhaarUploadError: {
+    screen: AadhaarUploadErrorScreen,
     options: {
       title: 'AADHAAR REGISTRATION',
       header: AadhaarNavBar,

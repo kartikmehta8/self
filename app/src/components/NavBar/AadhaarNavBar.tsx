@@ -11,10 +11,15 @@ import { ChevronLeft, HelpCircle } from '@tamagui/lucide-icons';
 import { NavBar } from '@/components/NavBar/BaseNavBar';
 import { black, slate100, slate200, slate300, white } from '@/utils/colors';
 import { extraYPadding } from '@/utils/constants';
+import { dinot } from '@/utils/fonts';
 import { buttonTap } from '@/utils/haptic';
 
 export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
   const insets = useSafeAreaInsets();
+
+  const currentRouteName = props.route.name;
+  const isFirstStep = currentRouteName === 'AadhaarUpload';
+  const isSecondStep = currentRouteName === 'AadhaarUploadSuccess' || currentRouteName === 'AadhaarUploadError';
 
   const handleClose = () => {
     buttonTap();
@@ -53,7 +58,7 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
           }
         />
 
-        <NavBar.Title fontSize={16} color={black} fontWeight="600">
+        <NavBar.Title fontSize={16} color={black} fontWeight="600" fontFamily={dinot}>
           AADHAAR REGISTRATION
         </NavBar.Title>
 
@@ -76,7 +81,7 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
         />
       </NavBar.Container>
 
-      {/* Progress Bar - now part of the navbar */}
+      {/* Progress Bar - dynamic based on current step */}
       <YStack
         paddingHorizontal={20}
         paddingBottom={15}
@@ -86,19 +91,13 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
           <YStack
             flex={1}
             height={4}
-            backgroundColor="#00D4FF"
+            backgroundColor={isFirstStep ? "#00D4FF" : slate300}
             borderRadius={2}
           />
           <YStack
             flex={1}
             height={4}
-            backgroundColor={slate300}
-            borderRadius={2}
-          />
-          <YStack
-            flex={1}
-            height={4}
-            backgroundColor={slate300}
+            backgroundColor={isSecondStep ? "#00D4FF" : slate300}
             borderRadius={2}
           />
         </XStack>
