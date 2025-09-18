@@ -414,9 +414,7 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
 
           if (responseData && typeof responseData === 'object' && 'status' in responseData) {
             if (responseData.status !== 'success' || !responseData.data) {
-              throw new Error(
-                `Failed to fetch tree from ${url}: ${responseData.message || 'Invalid response format'}`
-              );
+              throw new Error(`Failed to fetch tree from ${url}: ${responseData.message || 'Invalid response format'}`);
             }
             return responseData.data;
           }
@@ -424,10 +422,7 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
           return responseData;
         };
 
-        const [nameDobData, nameYobData] = await Promise.all([
-          fetchTree(nameDobUrl),
-          fetchTree(nameYobUrl),
-        ]);
+        const [nameDobData, nameYobData] = await Promise.all([fetchTree(nameDobUrl), fetchTree(nameYobUrl)]);
 
         set({
           aadhaar: {

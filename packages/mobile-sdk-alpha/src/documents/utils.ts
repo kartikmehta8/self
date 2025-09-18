@@ -3,13 +3,14 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import {
+  AadhaarData,
   brutforceSignatureAlgorithmDsc,
+  isMRZDocument,
   parseCertificateSimple,
   PublicKeyDetailsECDSA,
   PublicKeyDetailsRSA,
 } from '@selfxyz/common';
 import { calculateContentHash, inferDocumentCategory } from '@selfxyz/common/utils';
-import { AadhaarData, PassportData, isMRZDocument } from '@selfxyz/common';
 import { DocumentMetadata, IDDocument } from '@selfxyz/common/utils/types';
 
 import { SelfClient } from '../types/public';
@@ -123,11 +124,10 @@ export async function markCurrentDocumentAsRegistered(selfClient: SelfClient): P
   }
 }
 
-export async function reStorePassportDataWithRightCSCA(
-  selfClient: SelfClient,
-  passportData: PassportData,
-  csca: string,
-) {
+export async function reStorePassportDataWithRightCSCA(selfClient: SelfClient, passportData: IDDocument, csca: string) {
+  if (passportData.documentCategory === 'aadhaar') {
+    return;
+  }
   const cscaInCurrentPassporData = passportData.passportMetadata?.csca;
   if (!(csca === cscaInCurrentPassporData)) {
     const cscaParsed = parseCertificateSimple(csca);

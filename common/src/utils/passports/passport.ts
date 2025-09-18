@@ -31,7 +31,7 @@ import { findStartIndex, findStartIndexEC } from '../csca.js';
 import { hash, packBytesAndPoseidon } from '../hash.js';
 import { sha384_512Pad, shaPad } from '../shaPad.js';
 import { getLeafDscTree } from '../trees.js';
-import type { DocumentCategory, PassportData, SignatureAlgorithm } from '../types.js';
+import type { DocumentCategory, IDDocument, PassportData, SignatureAlgorithm } from '../types.js';
 import { AadhaarData,isAadhaarDocument, isMRZDocument } from '../types.js';
 import { formatMrz } from './format.js';
 import { parsePassportData } from './passport_parsing/parsePassportData.js';
@@ -190,11 +190,11 @@ function getPassportSignature(passportData: PassportData, n: number, k: number):
   }
 }
 
-export function generateNullifier(passportData: PassportData) {
+export function generateNullifier(passportData: IDDocument) {
 
-  // if (isAadhaarDocument(passportData)) {
-  //   return nullifierHash(passportData.extractedFields);
-  // }
+  if (isAadhaarDocument(passportData)) {
+    return nullifierHash(passportData.extractedFields);
+  }
 
   const signedAttr_shaBytes = hash(
     passportData.passportMetadata.signedAttrHashFunction,

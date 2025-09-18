@@ -53,8 +53,8 @@ const defaultIdDocInput: IdDocInput = {
   birthDate: '900101',
   expiryDate: '300101',
   passportNumber: '123456789',
-  lastName: 'DOE',
-  firstName: 'JOHN',
+  lastName: undefined,
+  firstName: undefined,
   sex: 'M',
   // Aadhaar defaults
   pincode: '110051',
@@ -93,26 +93,42 @@ avCtlYniKHPvSCA/gS2h4fk=
 `;
 
 // TODO: Move it to correct place.
-const AADHAAR_MOCK_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv/9mI6uE6RJtbeRZuDDP
-/vDIRj3fb0wGaaNOC+x2BW3uGHRZl2QS1x+imy62yt7oTLqvXZqLSYg7cVo3IeX+
-Yh8Kiy1CrEhyZeDK9nhWY++00y5MUxFGBCEqUZvSUiB2EYO5HBT20fgqxLgHvbN/
-6iwwA/OYKgwoqLI+mwqLzC2sh0GIJajdqW2DafGSBWlY9YHZKEIPMAiuTg948uQi
-Z7yYqzbolq73US2ePKNNS+2/9gf4rgVraAbTmgkz1mbrQSHCgeqDVCgW2M8BuNDc
-VqULQHmOjVtAgv2qalBGVTy3WIo47CxgVKIR07SwlwfwtSgzYdLDU3zFPG5HLS6r
-1wIDAQAB
------END PUBLIC KEY-----
+const AADHAAR_MOCK_PUBLIC_KEY_PEM = `-----BEGIN CERTIFICATE-----
+MIIDjzCCAnegAwIBAgIUZA6u4qBxEjW4dxmbLaLkWnHIybowDQYJKoZIhvcNAQEL
+BQAwVzELMAkGA1UEBhMCVVMxDjAMBgNVBAgMBVN0YXRlMQ0wCwYDVQQHDARDaXR5
+MRUwEwYDVQQKDAxPcmdhbml6YXRpb24xEjAQBgNVBAMMCWxvY2FsaG9zdDAeFw0y
+NTA5MTgxMDE2NTlaFw0yNjA5MTgxMDE2NTlaMFcxCzAJBgNVBAYTAlVTMQ4wDAYD
+VQQIDAVTdGF0ZTENMAsGA1UEBwwEQ2l0eTEVMBMGA1UECgwMT3JnYW5pemF0aW9u
+MRIwEAYDVQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+AoIBAQC//2Yjq4TpEm1t5Fm4MM/+8MhGPd9vTAZpo04L7HYFbe4YdFmXZBLXH6Kb
+LrbK3uhMuq9dmotJiDtxWjch5f5iHwqLLUKsSHJl4Mr2eFZj77TTLkxTEUYEISpR
+m9JSIHYRg7kcFPbR+CrEuAe9s3/qLDAD85gqDCiosj6bCovMLayHQYglqN2pbYNp
+8ZIFaVj1gdkoQg8wCK5OD3jy5CJnvJirNuiWrvdRLZ48o01L7b/2B/iuBWtoBtOa
+CTPWZutBIcKB6oNUKBbYzwG40NxWpQtAeY6NW0CC/apqUEZVPLdYijjsLGBUohHT
+tLCXB/C1KDNh0sNTfMU8bkctLqvXAgMBAAGjUzBRMB0GA1UdDgQWBBTGyVMLFNL2
+PRJwtA8vekrtJVu2BTAfBgNVHSMEGDAWgBTGyVMLFNL2PRJwtA8vekrtJVu2BTAP
+BgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCwcKlyaZw3jxDNtU6j
+V8g9tUr77z0LyTrVe0GujxFaa4EKKKqG/lzf6wNDaHGOgyEwhPsi/ui8VU6Y8KTS
+SxorUta+2zNHu8jziz1rxYTfgPWvK54B3Q3q4ycRLmYfR0CVvH2+TvTAqfEEvpEh
+8tY9mpNzjYsLzlwPszkWU+WpLJjH0VPhVIiFC65EaxuArZrap8IpuK/bSa4Beqbb
+7rMo/KmDfhFpVMQcOrvyQJmurtmjo12Esb0EjwZp634nDVRC9gFXEh5YuWBg3IaI
+cTCvHQ+MAXTzZMOfc2dWZYdk1PaO6xLTw0YfGAtl6r3x4Csd0i5iwpDo1JXjSpZE
+mESQ
+-----END CERTIFICATE-----
 `;
 
 // Generate mock Aadhaar document
 function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
   const name = input.firstName
     ? `${input.firstName} ${input.lastName || ''}`.trim()
-    : 'Sumit Kumar';
+    : generateRandomName();
+
   const gender = input.sex === 'F' ? 'F' : 'M';
   const pincode = input.pincode ?? '110051';
   const state = input.state ?? 'Delhi';
-  const dateOfBirth = input.birthDate ?? '010190';
+  const dateOfBirth = input.birthDate ?? '01-01-1990';
+  console.log('genMockAadhaarDoc', input);
+  console.log('dateOfBirth', dateOfBirth);
 
   // Generate Aadhaar QR data using processQRData
   const qrData = processQRData(
@@ -135,6 +151,8 @@ function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
   );
   const signature = Array.from(signatureBytes);
 
+  console.log('qrData.extractedFields', qrData.extractedFields);
+
   return {
     documentType: input.idType as DocumentType,
     documentCategory: 'aadhaar',
@@ -151,14 +169,18 @@ export function genMockIdDoc(
   userInput: Partial<IdDocInput> = {},
   mockDSC?: { dsc: string; privateKeyPem: string }
 ): PassportData | AadhaarData {
+
+  if (userInput.idType === 'mock_aadhaar') {
+    return genMockAadhaarDoc(userInput as IdDocInput);
+  }
+
   const mergedInput: IdDocInput = {
     ...defaultIdDocInput,
     ...userInput,
   };
 
-  if (mergedInput.idType === 'mock_aadhaar') {
-    return genMockAadhaarDoc(mergedInput);
-  }
+  mergedInput.lastName = mergedInput.lastName ?? 'DOE';
+  mergedInput.firstName = mergedInput.firstName ?? 'JOHN';
 
   let privateKeyPem: string, dsc: string;
   if (mockDSC) {
@@ -218,6 +240,19 @@ export async function generateMockDSC(
     throw new Error('Invalid DSC response format from server');
   }
   return { privateKeyPem: data.data.privateKeyPem, dsc: data.data.dsc };
+}
+
+function generateRandomName(): string {
+  // Generate random letter combinations for first and last name
+  const generateRandomLetters = (length: number): string => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return Array.from({ length }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+  };
+
+  const firstName = generateRandomLetters(4 + Math.floor(Math.random() * 4)); // 4-7 letters
+  const lastName = generateRandomLetters(5 + Math.floor(Math.random() * 5)); // 5-9 letters
+
+  return `${firstName} ${lastName}`;
 }
 
 function generateRandomBytes(length: number): number[] {
