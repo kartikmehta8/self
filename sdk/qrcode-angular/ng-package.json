@@ -1,0 +1,19 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/qrcode-angular",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "allowedNonPeerDependencies": [
+    "angularx-qrcode",
+    "ethers",
+    "js-sha1",
+    "js-sha256",
+    "js-sha512",
+    "lottie-web",
+    "node-forge",
+    "poseidon-lite",
+    "socket.io-client",
+    "uuid"
+  ]
+}
