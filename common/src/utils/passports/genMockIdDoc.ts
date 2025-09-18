@@ -143,6 +143,7 @@ function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
 
   // Convert QR data to string format
   const qrDataString = convertByteArrayToBigInt(qrData.qrDataBytes).toString();
+  console.log('qrDataString', qrDataString);
 
   // Extract signature from the decoded data
   const signatureBytes = qrData.decodedData.slice(

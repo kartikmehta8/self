@@ -3,26 +3,23 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import React, { useCallback, useState } from 'react';
-import { Linking, Platform } from 'react-native';
-import { Button, Image, Text, XStack, YStack } from 'tamagui';
+import { Linking } from 'react-native';
+import { Image, XStack, YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { extractQRDataFields } from '@selfxyz/common/src/utils/aadhaar/utils';
+import type { AadhaarData } from '@selfxyz/common/utils/types';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { BodyText } from '@/components/typography/BodyText';
-import { Title } from '@/components/typography/Title';
 import { useModal } from '@/hooks/useModal';
 import AadhaarImage from '@/images/512w.png';
-import ScanIcon from '@/images/icons/qr_scan.svg';
 import { useSafeAreaInsets } from '@/mocks/react-native-safe-area-context';
 import {
-  black,
-  slate50,
   slate100,
   slate200,
-  slate300,
   slate400,
   slate500,
   white,
@@ -32,6 +29,7 @@ import {
   isQRScannerPhotoLibraryAvailable,
   scanQRCodeFromPhotoLibrary,
 } from '@/utils/qrScanner';
+import { storePassportData } from '@/providers/passportDataProvider';
 
 const AadhaarUploadScreen: React.FC = () => {
   const { bottom } = useSafeAreaInsets();
@@ -59,22 +57,56 @@ const AadhaarUploadScreen: React.FC = () => {
   const processAadhaarQRCode = useCallback(
     async (qrCodeData: string) => {
       try {
-        // TODO: Add actual Aadhaar QR code processing logic here
         console.log('Processing Aadhaar QR code:', qrCodeData);
 
-        // Simulate QR code validation - replace with actual validation logic
-        const isValidQRCode = qrCodeData && qrCodeData.length > 10; // Basic validation
-
-        if (isValidQRCode) {
-          trackEvent(ProofEvents.QR_SCAN_SUCCESS, {
-            scan_type: 'aadhaar_upload',
-          });
-
-          // Navigate to success screen
-          navigation.navigate('AadhaarUploadSuccess');
-        } else {
-          throw new Error('Invalid QR code format');
+        if (!qrCodeData || typeof qrCodeData !== 'string' || qrCodeData.length < 100) {
+          throw new Error('Invalid QR code format - too short or not a string');
         }
+
+        if (!/^\d+$/.test(qrCodeData)) {
+          throw new Error('Invalid QR code format - not a numeric string');
+        }
+
+        console.log('Parsing Aadhaar QR data...');
+        if (qrCodeData.length < 100) {
+          throw new Error('QR code too short - likely not a valid Aadhaar QR code');
+        }
+
+        let extractedFields;
+        try {
+          extractedFields = extractQRDataFields(qrCodeData);
+          console.log('Extracted Aadhaar fields:', extractedFields);
+        } catch (error) {
+          console.error('Error extracting fields:', error);
+          throw new Error('Failed to parse Aadhaar QR code - invalid format');
+        }
+
+        if (!extractedFields.name || !extractedFields.dob || !extractedFields.gender) {
+          throw new Error('Invalid Aadhaar QR code - missing required fields');
+        }
+
+        const aadhaarData: AadhaarData = {
+          documentType: 'aadhaar',
+          documentCategory: 'aadhaar',
+          mock: false,
+          qrData: qrCodeData,
+          extractedFields: extractedFields,
+          signature: [],
+          publicKey: '',
+          photoHash: '',
+        };
+
+        console.log('Storing Aadhaar data to keychain...');
+
+        await storePassportData(aadhaarData);
+
+        console.log('Aadhaar data stored successfully');
+
+        trackEvent(ProofEvents.QR_SCAN_SUCCESS, {
+          scan_type: 'aadhaar_upload',
+        });
+
+        navigation.navigate('AadhaarUploadSuccess');
       } catch (error) {
         console.error('Error processing Aadhaar QR code:', error);
         trackEvent(ProofEvents.QR_SCAN_FAILED, {
@@ -82,7 +114,6 @@ const AadhaarUploadScreen: React.FC = () => {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
 
-        // Navigate to error screen
         navigation.navigate('AadhaarUploadError');
       }
     },

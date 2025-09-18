@@ -59,7 +59,7 @@ export function convertByteArrayToBigInt(byteArray: Uint8Array | number[]): bigi
 }
 
 // Helper function to compute packed commitment
-function computePackedCommitment(extractedFields: ReturnType<typeof extractQRDataFields>): bigint {
+export function computePackedCommitment(extractedFields: ReturnType<typeof extractQRDataFields>): bigint {
   const packedCommitmentArgs = [
     3,
     ...stringToAsciiArray(extractedFields.pincode),
@@ -71,7 +71,7 @@ function computePackedCommitment(extractedFields: ReturnType<typeof extractQRDat
 }
 
 // Helper function to compute final commitment
-function computeCommitment(
+export function computeCommitment(
   secret: bigint,
   qrHash: bigint,
   nullifier: bigint,
@@ -107,7 +107,7 @@ export function nullifierHash(extractedFields: ReturnType<typeof extractQRDataFi
   return BigInt(packBytesAndPoseidon(personalInfoHashArgs));
 }
 
-function processQRDataSimple(qrData: string) {
+export function processQRDataSimple(qrData: string) {
   const qrDataBytes = convertBigIntToByteArray(BigInt(qrData));
   const decodedData = decompressByteArray(qrDataBytes);
   const signedData = decodedData.slice(0, decodedData.length - 256);

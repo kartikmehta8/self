@@ -19,6 +19,7 @@ import {
 
 import { SvgXml } from '@/components/homeScreen/SvgXmlWrapper';
 import EPassport from '@/images/icons/epassport.svg';
+import AadhaarIcon from '@/images/icons/aadhaar.svg';
 import LogoGray from '@/images/logo_gray.svg';
 import {
   black,
@@ -29,6 +30,7 @@ import {
   white,
 } from '@/utils/colors';
 import { dinot, plexMono } from '@/utils/fonts';
+
 
 // Import the logo SVG as a string
 const logoSvg = `<svg width="47" height="46" viewBox="0 0 47 46" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -117,10 +119,17 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
         {/* Header Section */}
         <XStack>
           <XStack alignItems="center">
-            <EPassport
-              width={fontSize.large * 3}
-              height={fontSize.large * 3 * 0.617}
-            />
+            {idDocument.documentCategory === 'aadhaar' ? (
+              <AadhaarIcon
+                width={fontSize.large * 3}
+                height={fontSize.large * 3 * 0.617}
+              />
+            ) : (
+              <EPassport
+                width={fontSize.large * 3}
+                height={fontSize.large * 3 * 0.617}
+              />
+            )}
             <YStack marginLeft={imageSize.width - fontSize.large * 3}>
               <Text
                 fontWeight="bold"
@@ -249,34 +258,68 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
                 </YStack>
               </XStack>
               <XStack flex={1} gap={padding * 0.3}>
-                <YStack flex={1}>
-                  <IdAttribute
-                    name="SURNAME"
-                    value={getNameAndSurname(
-                      getDocumentAttributes(idDocument).nameSlice,
-                    ).surname.join(' ')}
-                    maskValue="XXXXXXXX"
-                    hidden={hidden}
-                  />
-                </YStack>
-                <YStack flex={1}>
-                  <IdAttribute
-                    name="NAME"
-                    value={getNameAndSurname(
-                      getDocumentAttributes(idDocument).nameSlice,
-                    ).names.join(' ')}
-                    maskValue="XXXXX"
-                    hidden={hidden}
-                  />
-                </YStack>
-                <YStack flex={1}>
-                  <IdAttribute
-                    name="SEX"
-                    value={getDocumentAttributes(idDocument).sexSlice}
-                    maskValue="X"
-                    hidden={hidden}
-                  />
-                </YStack>
+                {idDocument.documentCategory === 'aadhaar' ? (
+                  // Aadhaar: Combined name field spanning two columns
+                  <>
+                    <YStack flex={2}>
+                      <IdAttribute
+                        name="NAME"
+                        value={(() => {
+                          const nameData = getNameAndSurname(
+                            getDocumentAttributes(idDocument).nameSlice,
+                          );
+                          const fullName = [
+                            ...nameData.surname,
+                            ...nameData.names,
+                          ].join(' ');
+                          return fullName;
+                        })()}
+                        maskValue="XXXXXXXXXXXXX"
+                        hidden={hidden}
+                      />
+                    </YStack>
+                    <YStack flex={1}>
+                      <IdAttribute
+                        name="SEX"
+                        value={getDocumentAttributes(idDocument).sexSlice}
+                        maskValue="X"
+                        hidden={hidden}
+                      />
+                    </YStack>
+                  </>
+                ) : (
+                  // Other documents: Separate surname and name fields
+                  <>
+                    <YStack flex={1}>
+                      <IdAttribute
+                        name="SURNAME"
+                        value={getNameAndSurname(
+                          getDocumentAttributes(idDocument).nameSlice,
+                        ).surname.join(' ')}
+                        maskValue="XXXXXXXX"
+                        hidden={hidden}
+                      />
+                    </YStack>
+                    <YStack flex={1}>
+                      <IdAttribute
+                        name="NAME"
+                        value={getNameAndSurname(
+                          getDocumentAttributes(idDocument).nameSlice,
+                        ).names.join(' ')}
+                        maskValue="XXXXX"
+                        hidden={hidden}
+                      />
+                    </YStack>
+                    <YStack flex={1}>
+                      <IdAttribute
+                        name="SEX"
+                        value={getDocumentAttributes(idDocument).sexSlice}
+                        maskValue="X"
+                        hidden={hidden}
+                      />
+                    </YStack>
+                  </>
+                )}
               </XStack>
               <XStack flex={1} gap={padding * 0.3}>
                 <YStack flex={1}>
@@ -403,7 +446,7 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
           </XStack>
         )}
 
-        {/* Footer Section for Aadhaar - QR Data preview */}
+        {/* Footer Section - Empty placeholder for Aadhaar (no MRZ) */}
         {selected && isAadhaarDocument(idDocument) && (
           <XStack
             alignItems="center"
@@ -411,26 +454,27 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
             borderRadius={borderRadius / 3}
             paddingHorizontal={padding / 2}
             paddingVertical={padding / 4}
+            minHeight={fontSize.xsmall * 2.5} // Maintain consistent height
           >
             {/* Fixed-width spacer to align content with the attributes block */}
             <XStack width={contentLeftOffset} alignItems="center">
               <LogoGray width={fontSize.large} height={fontSize.large} />
             </XStack>
 
-            <YStack marginLeft={-padding / 2}>
+            <YStack marginLeft={-padding / 2} justifyContent="center">
               <Text
                 fontSize={fontSize.xsmall}
                 letterSpacing={fontSize.xsmall * 0.1}
                 fontFamily={plexMono}
                 color={slate400}
+                opacity={0.5}
               >
-                {hidden
-                  ? 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-                  : `QR Data: ${idDocument.qrData?.slice(0, 48) || 'N/A'}...`}
+                {/* Empty placeholder - no MRZ for Aadhaar */}
               </Text>
             </YStack>
           </XStack>
         )}
+
       </YStack>
     </YStack>
   );

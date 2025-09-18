@@ -69,12 +69,11 @@ const AadhaarUploadedSuccessScreen: React.FC = () => {
       >
         <PrimaryButton
           onPress={() => {
-            // TODO: Navigate to RFID scanning screen
-            console.log('Continue to RFID scanning');
+            console.log('Continue to Aadhaar registration');
             navigation.navigate('ConfirmBelonging', {});
           }}
         >
-          Continue
+          Continue to Registration
         </PrimaryButton>
       </YStack>
     </YStack>

@@ -79,7 +79,12 @@ export async function generateMockDocument({
       idDocInput.birthDate = '07-10-1954';
     }
 
-    return genMockIdDoc(idDocInput);
+    const result = genMockIdDoc(idDocInput);
+    if ('qrData' in result) {
+      console.log('Generated Aadhaar qrData:', result.qrData);
+      console.log('Generated Aadhaar extractedFields:', result.extractedFields);
+    }
+    return result;
   }
 
   let dobForGeneration: string;

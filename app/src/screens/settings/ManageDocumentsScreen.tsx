@@ -114,6 +114,10 @@ const PassportDataSelector = () => {
         return 'ID Card';
       case 'mock_id_card':
         return 'Mock ID Card';
+      case 'aadhaar':
+        return 'Aadhaar';
+      case 'mock_aadhaar':
+        return 'Mock Aadhaar';
       default:
         return documentType;
     }
