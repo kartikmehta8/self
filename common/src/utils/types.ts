@@ -3,7 +3,7 @@ import type { CertificateData } from './certificate_parsing/dataStructure.js';
 import type { PassportMetadata } from './passports/passport_parsing/parsePassportData.js';
 
 // Base interface for common fields
-interface BasePassportData {
+interface BaseIDData {
   documentType: DocumentType;
   documentCategory: DocumentCategory;
   mock: boolean;
@@ -12,7 +12,7 @@ interface BasePassportData {
 }
 
 // Aadhaar document data
-export interface AadhaarDocumentData extends BasePassportData {
+export interface AadhaarData extends BaseIDData {
   documentCategory: 'aadhaar';
   qrData: string;
   extractedFields: ExtractedQRData; // All parsed Aadhaar fields
@@ -54,7 +54,7 @@ export type DocumentType =
   | 'mock_aadhaar';
 
 // Define the signature algorithm in "algorithm_hashfunction_domainPapameter_keyLength"
-export interface MRZPassportData extends BasePassportData {
+export interface PassportData extends BaseIDData {
   documentCategory: 'passport' | 'id_card';
   mrz: string;
   dg1Hash?: number[];
@@ -67,13 +67,13 @@ export interface MRZPassportData extends BasePassportData {
   passportMetadata?: PassportMetadata;
 }
 
+export type IDDocument = AadhaarData | PassportData;
+
 export type OfacTree = {
   passportNoAndNationality: any;
   nameAndDob: any;
   nameAndYob: any;
 };
-// export type PassportData = AadhaarDocumentData | MRZPassportData;
-export type PassportData = MRZPassportData;
 
 
 export type Proof = {
@@ -160,11 +160,11 @@ export function castCSCAProof(proof: any): Proof {
   };
 }
 
-export function isAadhaarDocument(passportData: PassportData | AadhaarDocumentData): passportData is AadhaarDocumentData {
+export function isAadhaarDocument(passportData: PassportData | AadhaarData): passportData is AadhaarData {
   return passportData.documentCategory === 'aadhaar';
 }
 
-export function isMRZDocument(passportData: PassportData | AadhaarDocumentData): passportData is MRZPassportData {
+export function isMRZDocument(passportData: PassportData | AadhaarData): passportData is PassportData {
   return (
     passportData.documentCategory === 'passport' || passportData.documentCategory === 'id_card'
   );

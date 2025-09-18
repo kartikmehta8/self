@@ -32,11 +32,11 @@ import { hash, packBytesAndPoseidon } from '../hash.js';
 import { sha384_512Pad, shaPad } from '../shaPad.js';
 import { getLeafDscTree } from '../trees.js';
 import type { DocumentCategory, PassportData, SignatureAlgorithm } from '../types.js';
-import { AadhaarDocumentData,isAadhaarDocument, isMRZDocument } from '../types.js';
+import { AadhaarData,isAadhaarDocument, isMRZDocument } from '../types.js';
 import { formatMrz } from './format.js';
 import { parsePassportData } from './passport_parsing/parsePassportData.js';
 
-export function calculateContentHash(passportData: PassportData | AadhaarDocumentData): string {
+export function calculateContentHash(passportData: PassportData | AadhaarData): string {
   if (isMRZDocument(passportData) && passportData.eContent) {
     // eContent is likely a buffer or array, convert to string properly
     const eContentStr =

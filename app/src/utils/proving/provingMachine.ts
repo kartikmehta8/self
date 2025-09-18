@@ -335,7 +335,7 @@ interface ProvingState {
   socketConnection: Socket | null;
   uuid: string | null;
   userConfirmed: boolean;
-  passportData: PassportData | null;
+  passportData: IDDocument | null;
   secret: string | null;
   circuitType: provingMachineCircuitType | null;
   error_code: string | null;
@@ -959,34 +959,49 @@ export const useProvingStore = create<ProvingState>((set, get) => {
       selfClient.trackEvent(ProofEvents.FETCH_DATA_STARTED);
       const startTime = Date.now();
       const context = createProofContext('startFetchingData');
+
+      // passport and id card
       logProofEvent('info', 'Fetching DSC data started', context);
       try {
         const { passportData, env } = get();
         if (!passportData) {
           throw new Error('PassportData is not available');
         }
-        if (!passportData?.dsc_parsed) {
-          logProofEvent('error', 'Missing parsed DSC', context, {
-            failure: 'PROOF_FAILED_DATA_FETCH',
-            duration_ms: Date.now() - startTime,
-          });
-          console.error('Missing parsed DSC in passport data');
-          selfClient.trackEvent(ProofEvents.FETCH_DATA_FAILED, {
-            message: 'Missing parsed DSC in passport data',
-          });
-          actor!.send({ type: 'FETCH_ERROR' });
-          return;
-        }
         const document: DocumentCategory = passportData.documentCategory;
-        logProofEvent('info', 'Protocol store fetch', context, {
-          step: 'protocol_store_fetch',
-          document,
-        });
-        await useProtocolStore
-          .getState()
-          [
-            document
-          ].fetch_all(env!, (passportData as PassportData).dsc_parsed!.authorityKeyIdentifier);
+        console.log('document', document);
+        switch (passportData.documentCategory) {
+          case 'passport':
+          case 'id_card':
+            if (!passportData?.dsc_parsed) {
+              logProofEvent('error', 'Missing parsed DSC', context, {
+                failure: 'PROOF_FAILED_DATA_FETCH',
+                duration_ms: Date.now() - startTime,
+              });
+              console.error('Missing parsed DSC in passport data');
+              selfClient.trackEvent(ProofEvents.FETCH_DATA_FAILED, {
+                message: 'Missing parsed DSC in passport data',
+              });
+              actor!.send({ type: 'FETCH_ERROR' });
+              return;
+            }
+            logProofEvent('info', 'Protocol store fetch', context, {
+              step: 'protocol_store_fetch',
+              document,
+            });
+            await useProtocolStore
+              .getState()
+              [
+                document
+              ].fetch_all(env!, (passportData as PassportData).dsc_parsed!.authorityKeyIdentifier);
+            break;
+          case 'aadhaar':
+            logProofEvent('info', 'Protocol store fetch', context, {
+              step: 'protocol_store_fetch',
+              document,
+            });
+            await useProtocolStore.getState()[document].fetch_all(env!);
+            break;
+        }
         logProofEvent('info', 'Data fetch succeeded', context, {
           duration_ms: Date.now() - startTime,
         });

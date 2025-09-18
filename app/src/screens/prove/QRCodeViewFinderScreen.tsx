@@ -112,7 +112,6 @@ const QRCodeViewFinderScreen: React.FC = () => {
     [doneScanningQR, navigation, navigateToProve, trackEvent],
   );
 
-
   const shouldRenderCamera = !connectionModalVisible && !doneScanningQR;
 
   return (
@@ -153,7 +152,6 @@ const QRCodeViewFinderScreen: React.FC = () => {
                 </View>
               </XStack>
             </YStack>
-
           </YStack>
         </ExpandableBottomLayout.BottomSection>
       </ExpandableBottomLayout.Layout>

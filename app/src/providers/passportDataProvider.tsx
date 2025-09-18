@@ -56,7 +56,7 @@ import {
   parseCertificateSimple,
 } from '@selfxyz/common/utils';
 import type {
-  AadhaarDocumentData,
+  AadhaarData,
   DocumentCatalog,
   DocumentMetadata,
   PassportData,
@@ -744,7 +744,7 @@ export async function setSelectedDocument(documentId: string): Promise<void> {
 
 async function storeDocumentDirectlyToKeychain(
   contentHash: string,
-  passportData: PassportData | AadhaarDocumentData,
+  passportData: PassportData | AadhaarData,
 ): Promise<void> {
   await Keychain.setGenericPassword(contentHash, JSON.stringify(passportData), {
     service: `document-${contentHash}`,
@@ -752,7 +752,7 @@ async function storeDocumentDirectlyToKeychain(
 }
 
 export async function storeDocumentWithDeduplication(
-  passportData: PassportData | AadhaarDocumentData,
+  passportData: PassportData | AadhaarData,
 ): Promise<string> {
   const contentHash = calculateContentHash(passportData);
   const catalog = await loadDocumentCatalogDirectlyFromKeychain();
@@ -798,7 +798,7 @@ export async function storeDocumentWithDeduplication(
 }
 
 export async function storePassportData(
-  passportData: PassportData | AadhaarDocumentData,
+  passportData: PassportData | AadhaarData,
 ) {
   await storeDocumentWithDeduplication(passportData);
 }

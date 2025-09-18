@@ -17,7 +17,7 @@ import type {
 import { parseCertificateSimple } from '../certificate_parsing/parseCertificateSimple.js';
 import { getHashLen, hash } from '../hash.js';
 import type {
-  AadhaarDocumentData,
+  AadhaarData,
   DocumentType,
   PassportData,
   SignatureAlgorithm,
@@ -105,7 +105,7 @@ VqULQHmOjVtAgv2qalBGVTy3WIo47CxgVKIR07SwlwfwtSgzYdLDU3zFPG5HLS6r
 `;
 
 // Generate mock Aadhaar document
-function genMockAadhaarDoc(input: IdDocInput): AadhaarDocumentData {
+function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
   const name = input.firstName
     ? `${input.firstName} ${input.lastName || ''}`.trim()
     : 'Sumit Kumar';
@@ -150,7 +150,7 @@ function genMockAadhaarDoc(input: IdDocInput): AadhaarDocumentData {
 export function genMockIdDoc(
   userInput: Partial<IdDocInput> = {},
   mockDSC?: { dsc: string; privateKeyPem: string }
-): PassportData | AadhaarDocumentData {
+): PassportData | AadhaarData {
   const mergedInput: IdDocInput = {
     ...defaultIdDocInput,
     ...userInput,

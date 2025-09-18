@@ -19,7 +19,9 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
 
   const currentRouteName = props.route.name;
   const isFirstStep = currentRouteName === 'AadhaarUpload';
-  const isSecondStep = currentRouteName === 'AadhaarUploadSuccess' || currentRouteName === 'AadhaarUploadError';
+  const isSecondStep =
+    currentRouteName === 'AadhaarUploadSuccess' ||
+    currentRouteName === 'AadhaarUploadError';
 
   const handleClose = () => {
     buttonTap();
@@ -58,7 +60,12 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
           }
         />
 
-        <NavBar.Title fontSize={16} color={black} fontWeight="600" fontFamily={dinot}>
+        <NavBar.Title
+          fontSize={16}
+          color={black}
+          fontWeight="600"
+          fontFamily={dinot}
+        >
           AADHAAR REGISTRATION
         </NavBar.Title>
 
@@ -91,13 +98,13 @@ export const AadhaarNavBar = (props: NativeStackHeaderProps) => {
           <YStack
             flex={1}
             height={4}
-            backgroundColor={isFirstStep ? "#00D4FF" : slate300}
+            backgroundColor={isFirstStep ? '#00D4FF' : slate300}
             borderRadius={2}
           />
           <YStack
             flex={1}
             height={4}
-            backgroundColor={isSecondStep ? "#00D4FF" : slate300}
+            backgroundColor={isSecondStep ? '#00D4FF' : slate300}
             borderRadius={2}
           />
         </XStack>

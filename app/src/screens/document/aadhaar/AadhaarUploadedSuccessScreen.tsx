@@ -51,7 +51,12 @@ const AadhaarUploadedSuccessScreen: React.FC = () => {
         <BodyText fontSize={19} textAlign="center" color={black}>
           QR code upload successful
         </BodyText>
-        <BodyText marginTop={6} fontSize={17} textAlign="center" color={slate500}>
+        <BodyText
+          marginTop={6}
+          fontSize={17}
+          textAlign="center"
+          color={slate500}
+        >
           You are ready to register your Aadhaar card with Self.
         </BodyText>
       </YStack>
@@ -66,7 +71,7 @@ const AadhaarUploadedSuccessScreen: React.FC = () => {
           onPress={() => {
             // TODO: Navigate to RFID scanning screen
             console.log('Continue to RFID scanning');
-            navigation.navigate('ConfirmBelonging',{});
+            navigation.navigate('ConfirmBelonging', {});
           }}
         >
           Continue

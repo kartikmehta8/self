@@ -1,6 +1,6 @@
 // Type exports from constants
 export type {
-  AadhaarDocumentData,
+  AadhaarData,
   CertificateData,
   DocumentCategory,
   IdDocInput,

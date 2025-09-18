@@ -1,6 +1,7 @@
 import { poseidon2 } from 'poseidon-lite';
 
 import {
+  AADHAAR_ATTESTATION_ID,
   attributeToPosition,
   attributeToPosition_ID,
   DEFAULT_MAJORITY,
@@ -8,6 +9,7 @@ import {
   PASSPORT_ATTESTATION_ID,
 } from '../../constants/constants.js';
 import type { DocumentCategory, PassportData } from '../../types/index.js';
+import type { AadhaarData } from '../types.js';
 import type { SelfApp, SelfAppDisclosureConfig } from '../../utils/appType.js';
 import {
   calculateUserIdentifierHash,
@@ -157,4 +159,77 @@ function getSelectorDg1IdCard(disclosures: SelfAppDisclosureConfig) {
     }
   });
   return selector_dg1;
+}
+
+export function generateTEEInputsAadhaarRegister(
+  secret: string,
+  aadhaarData: AadhaarData,
+  publicKeys: string[],
+  env: 'prod' | 'stg'
+) {
+  const { prepareAadhaarRegisterData } = require('../aadhaar/mockData.js');
+  const inputs = prepareAadhaarRegisterData(aadhaarData.qrData, secret, publicKeys);
+  const circuitName = 'register_aadhaar';
+  const endpointType = env === 'stg' ? 'staging_celo' : 'celo';
+  const endpoint = 'https://self.xyz';
+  return { inputs, circuitName, endpointType, endpoint };
+}
+
+export function generateTEEInputsAadhaarDisclose(
+  secret: string,
+  aadhaarData: AadhaarData,
+  selfApp: SelfApp,
+  getTree: <T extends 'ofac' | 'commitment'>(
+    doc: DocumentCategory,
+    tree: T
+  ) => T extends 'ofac' ? OfacTree : any
+) {
+  const { prepareAadhaarDiscloseData } = require('../aadhaar/mockData.js');
+  const { scope, disclosures, endpoint, userId, userDefinedData, chainID } = selfApp;
+  const userIdentifierHash = calculateUserIdentifierHash(chainID, userId, userDefinedData);
+  const scope_hash = hashEndpointWithScope(endpoint, scope);
+
+  const ofac_trees = getTree('aadhaar', 'ofac');
+  if (!ofac_trees) {
+    throw new Error('OFAC trees not loaded');
+  }
+
+  if (!ofac_trees.nameAndDob || !ofac_trees.nameAndYob) {
+    throw new Error('Invalid OFAC tree structure: missing required fields');
+  }
+
+  const nameAndDobSMT = new SMT(poseidon2, true);
+  const nameAndYobSMT = new SMT(poseidon2, true);
+  nameAndDobSMT.import(ofac_trees.nameAndDob);
+  nameAndYobSMT.import(ofac_trees.nameAndYob);
+
+  const serialized_tree = getTree('aadhaar', 'commitment');
+  const tree = LeanIMT.import((a, b) => poseidon2([a, b]), serialized_tree);
+
+  const inputs = prepareAadhaarDiscloseData(
+    aadhaarData.qrData,
+    tree,
+    nameAndDobSMT,
+    nameAndYobSMT,
+    scope_hash,
+    secret,
+    userIdentifierHash.toString(),
+    {
+      dateOfBirth: disclosures.date_of_birth,
+      name: disclosures.name,
+      gender: disclosures.gender,
+      idNumber: disclosures.passport_number,
+      issuingState: disclosures.issuing_state,
+      minimumAge: disclosures.minimumAge,
+      forbiddenCountriesListPacked: disclosures.excludedCountries,
+      ofac: disclosures.ofac,
+    }
+  );
+
+  return {
+    inputs,
+    circuitName: 'vc_and_disclose_aadhaar',
+    endpointType: selfApp.endpointType,
+    endpoint: selfApp.endpoint,
+  };
 }

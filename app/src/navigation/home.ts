@@ -6,9 +6,9 @@ import type { NativeStackNavigationOptions } from '@react-navigation/native-stac
 
 import { HomeNavBar, IdDetailsNavBar } from '@/components/NavBar';
 import { AadhaarNavBar } from '@/components/NavBar/AadhaarNavBar';
-import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
 import AadhaarUploadedSuccessScreen from '@/screens/document/aadhaar/AadhaarUploadedSuccessScreen';
 import AadhaarUploadErrorScreen from '@/screens/document/aadhaar/AadhaarUploadErrorScreen';
+import AadhaarUploadScreen from '@/screens/document/aadhaar/AadhaarUploadScreen';
 import DisclaimerScreen from '@/screens/home/DisclaimerScreen';
 import HomeScreen from '@/screens/home/HomeScreen';
 import IdDetailsScreen from '@/screens/home/IdDetailsScreen';

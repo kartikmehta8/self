@@ -1,4 +1,4 @@
-export type { AadhaarDocumentData, DocumentCategory, PassportData } from './types.js';
+export type { AadhaarData, DocumentCategory, PassportData } from './types.js';
 export type {
   CertificateData,
   PublicKeyDetailsECDSA,
@@ -58,6 +58,10 @@ export {
   generateCircuitInputsRegisterForTests,
   generateCircuitInputsVCandDisclose,
 } from './circuits/generateInputs.js';
+export {
+  generateTEEInputsAadhaarDisclose,
+  generateTEEInputsAadhaarRegister,
+} from './circuits/registerInputs.js';
 export { getCircuitNameFromPassportData } from './circuits/circuitsName.js';
 export { getSKIPEM } from './csca.js';
 export { initElliptic } from './certificate_parsing/elliptic.js';

@@ -12,13 +12,7 @@ import { BodyText } from '@/components/typography/BodyText';
 import { Title } from '@/components/typography/Title';
 import WarningIcon from '@/images/warning.svg';
 import { useSafeAreaInsets } from '@/mocks/react-native-safe-area-context';
-import {
-  black,
-  slate100,
-  slate200,
-  slate500,
-  white,
-} from '@/utils/colors';
+import { black, slate100, slate200, slate500, white } from '@/utils/colors';
 import { extraYPadding } from '@/utils/constants';
 
 const AadhaarUploadErrorScreen: React.FC = () => {
@@ -49,7 +43,12 @@ const AadhaarUploadErrorScreen: React.FC = () => {
         <BodyText fontSize={19} textAlign="center" color={black}>
           There was a problem reading the code
         </BodyText>
-        <BodyText marginTop={6} fontSize={17} textAlign="center" color={slate500}>
+        <BodyText
+          marginTop={6}
+          fontSize={17}
+          textAlign="center"
+          color={slate500}
+        >
           Make sure the QR code is clear and try again
         </BodyText>
       </YStack>
@@ -72,12 +71,7 @@ const AadhaarUploadErrorScreen: React.FC = () => {
             </PrimaryButton>
           </YStack>
           <YStack flex={1}>
-            <SecondaryButton
-              onPress={() => {
-              }}
-            >
-              Need Help?
-            </SecondaryButton>
+            <SecondaryButton onPress={() => {}}>Need Help?</SecondaryButton>
           </YStack>
         </XStack>
       </YStack>

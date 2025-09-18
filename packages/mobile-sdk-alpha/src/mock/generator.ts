@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
-import type { IdDocInput } from '@selfxyz/common/utils';
+import type { IdDocInput, PassportData } from '@selfxyz/common/utils';
 import { getSKIPEM } from '@selfxyz/common/utils/csca';
 import { generateMockDSC, genMockIdDoc, initPassportDataParsing } from '@selfxyz/common/utils/passports';
-import { MRZPassportData } from '@selfxyz/common/utils/types';
 
 export interface GenerateMockDocumentOptions {
   age: number;
@@ -102,7 +101,7 @@ export async function generateMockDocument({
     rawMockData = genMockIdDoc(idDocInput);
   }
   const skiPem = await getSKIPEM('staging');
-  return initPassportDataParsing(rawMockData as MRZPassportData, skiPem);
+  return initPassportDataParsing(rawMockData as PassportData, skiPem);
 }
 
 export const signatureAlgorithmToStrictSignatureAlgorithm = {
