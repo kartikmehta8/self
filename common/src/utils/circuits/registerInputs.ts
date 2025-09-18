@@ -152,13 +152,17 @@ function getSelectorDg1IdCard(disclosures: SelfAppDisclosureConfig) {
 
 export function generateTEEInputsDiscloseStateless(
   secret: string,
-  passportData: PassportData,
+  passportData: IDDocument,
   selfApp: SelfApp,
   getTree: <T extends 'ofac' | 'commitment'>(
     doc: DocumentCategory,
     tree: T
   ) => T extends 'ofac' ? OfacTree : any
 ) {
+  if (passportData.documentCategory === 'aadhaar') {
+    const { inputs, circuitName, endpointType, endpoint } = generateTEEInputsAadhaarDisclose(secret, passportData, selfApp, getTree);
+    return { inputs, circuitName, endpointType, endpoint };
+  }
   const { scope, disclosures, endpoint, userId, userDefinedData, chainID } = selfApp;
   const userIdentifierHash = calculateUserIdentifierHash(chainID, userId, userDefinedData);
   const scope_hash = hashEndpointWithScope(endpoint, scope);
