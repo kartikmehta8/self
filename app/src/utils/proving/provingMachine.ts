@@ -41,6 +41,7 @@ import {
   getPayload,
   getWSDbRelayerUrl,
 } from '@selfxyz/common/utils/proving';
+import type { IDDocument } from '@selfxyz/common/utils/types';
 import type { SelfClient } from '@selfxyz/mobile-sdk-alpha';
 import {
   clearPassportData,
@@ -72,10 +73,20 @@ const getMappingKey = (
   documentCategory: DocumentCategory,
 ): string => {
   if (circuitType === 'disclose') {
-    return documentCategory === 'passport' ? 'DISCLOSE' : 'DISCLOSE_ID';
+    if (documentCategory === 'passport') return 'DISCLOSE';
+    if (documentCategory === 'id_card') return 'DISCLOSE_ID';
+    if (documentCategory === 'aadhaar') return 'DISCLOSE_AADHAAR';
+    throw new Error(
+      `Unsupported document category for disclose: ${documentCategory}`,
+    );
   }
   if (circuitType === 'register') {
-    return documentCategory === 'passport' ? 'REGISTER' : 'REGISTER_ID';
+    if (documentCategory === 'passport') return 'REGISTER';
+    if (documentCategory === 'id_card') return 'REGISTER_ID';
+    if (documentCategory === 'aadhaar') return 'REGISTER_AADHAAR';
+    throw new Error(
+      `Unsupported document category for register: ${documentCategory}`,
+    );
   }
   // circuitType === 'dsc'
   return documentCategory === 'passport' ? 'DSC' : 'DSC_ID';
@@ -95,10 +106,10 @@ const resolveWebSocketUrl = (
 };
 
 // Helper functions for _generatePayload refactoring
-const _generateCircuitInputs = (
+const _generateCircuitInputs = async (
   circuitType: 'disclose' | 'register' | 'dsc',
   secret: string | undefined | null,
-  passportData: PassportData,
+  passportData: IDDocument,
   env: 'prod' | 'stg',
 ) => {
   const document: DocumentCategory = passportData.documentCategory;
@@ -114,17 +125,19 @@ const _generateCircuitInputs = (
   switch (circuitType) {
     case 'register':
       ({ inputs, circuitName, endpointType, endpoint } =
-        generateTEEInputsRegister(
+        await generateTEEInputsRegister(
           secret as string,
           passportData,
-          protocolStore[document].dsc_tree,
+          document === 'aadhaar'
+            ? protocolStore[document].public_keys
+            : protocolStore[document].dsc_tree,
           env,
         ));
       circuitTypeWithDocumentExtension = `${circuitType}${document === 'passport' ? '' : '_id'}`;
       break;
     case 'dsc':
       ({ inputs, circuitName, endpointType, endpoint } = generateTEEInputsDSC(
-        passportData,
+        passportData as PassportData,
         protocolStore[document].csca_tree as string[][],
         env,
       ));
@@ -154,7 +167,10 @@ const _generateCircuitInputs = (
             }
           },
         ));
-      circuitTypeWithDocumentExtension = `disclose`;
+      circuitTypeWithDocumentExtension = getCircuitTypeWithDocumentExtension(
+        circuitType,
+        document,
+      );
       break;
     default:
       throw new Error('Invalid circuit type:' + circuitType);
@@ -1099,8 +1115,10 @@ export const useProvingStore = create<ProvingState>((set, get) => {
               secret as string,
               {
                 getCommitmentTree,
-                getAltCSCA: docType =>
-                  useProtocolStore.getState()[docType].alternative_csca,
+                getAltCSCA: (docType: DocumentCategory) =>
+                  docType === 'aadhaar'
+                    ? useProtocolStore.getState().aadhaar.public_keys
+                    : useProtocolStore.getState()[docType].alternative_csca,
               },
             );
           logProofEvent(
@@ -1150,16 +1168,18 @@ export const useProvingStore = create<ProvingState>((set, get) => {
             return;
           }
           const document: DocumentCategory = passportData.documentCategory;
-          const isDscRegistered = await checkIfPassportDscIsInTree(
-            passportData,
-            useProtocolStore.getState()[document].dsc_tree,
-          );
-          logProofEvent('info', 'DSC tree check', context, {
-            dsc_registered: isDscRegistered,
-          });
-          if (isDscRegistered) {
-            selfClient.trackEvent(ProofEvents.DSC_IN_TREE);
-            set({ circuitType: 'register' });
+          if (document === 'passport' || document === 'id_card') {
+            const isDscRegistered = await checkIfPassportDscIsInTree(
+              passportData,
+              useProtocolStore.getState()[document].dsc_tree,
+            );
+            logProofEvent('info', 'DSC tree check', context, {
+              dsc_registered: isDscRegistered,
+            });
+            if (isDscRegistered) {
+              selfClient.trackEvent(ProofEvents.DSC_IN_TREE);
+              set({ circuitType: 'register' });
+            }
           }
           logProofEvent('info', 'Validation succeeded', context, {
             duration_ms: Date.now() - startTime,
@@ -1448,7 +1468,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
           endpointType,
           endpoint,
           circuitTypeWithDocumentExtension,
-        } = _generateCircuitInputs(
+        } = await _generateCircuitInputs(
           circuitType as 'disclose' | 'register' | 'dsc',
           secret,
           passportData,

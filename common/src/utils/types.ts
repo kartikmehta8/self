@@ -24,6 +24,7 @@ export interface AadhaarData extends BaseIDData {
 export type DeployedCircuits = {
   REGISTER: string[];
   REGISTER_ID: string[];
+  REGISTER_AADHAAR: string[];
   DSC: string[];
   DSC_ID: string[];
 };
@@ -53,6 +54,16 @@ export type DocumentType =
   | 'mock_id_card'
   | 'mock_aadhaar';
 
+
+export type IDDocument = AadhaarData | PassportData;
+
+
+export type OfacTree = {
+  passportNoAndNationality: any;
+  nameAndDob: any;
+  nameAndYob: any;
+};
+
 // Define the signature algorithm in "algorithm_hashfunction_domainPapameter_keyLength"
 export interface PassportData extends BaseIDData {
   documentCategory: 'passport' | 'id_card';
@@ -66,14 +77,6 @@ export interface PassportData extends BaseIDData {
   encryptedDigest: number[];
   passportMetadata?: PassportMetadata;
 }
-
-export type IDDocument = AadhaarData | PassportData;
-
-export type OfacTree = {
-  passportNoAndNationality: any;
-  nameAndDob: any;
-  nameAndYob: any;
-};
 
 
 export type Proof = {
