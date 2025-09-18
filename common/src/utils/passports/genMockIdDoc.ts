@@ -53,8 +53,8 @@ const defaultIdDocInput: IdDocInput = {
   birthDate: '900101',
   expiryDate: '300101',
   passportNumber: '123456789',
-  lastName: 'DOE',
-  firstName: 'JOHN',
+  lastName: undefined,
+  firstName: undefined,
   sex: 'M',
   // Aadhaar defaults
   pincode: '110051',
@@ -119,13 +119,20 @@ mESQ
 
 // Generate mock Aadhaar document
 function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
-  const name = input.firstName
+  console.log('input', input.firstName, input.lastName);
+  let name = input.firstName
     ? `${input.firstName} ${input.lastName || ''}`.trim()
-    : 'Sumit Kumar';
+    : generateRandomName();
+    console.log('name', name);
+
+  name = name.trim().padEnd(62, '\0');
+  console.log('name-padded', name);
   const gender = input.sex === 'F' ? 'F' : 'M';
   const pincode = input.pincode ?? '110051';
   const state = input.state ?? 'Delhi';
-  const dateOfBirth = input.birthDate ?? '010190';
+  const dateOfBirth = input.birthDate ?? '01-01-1990';
+
+  console.log('name', name, 'gender', gender, 'pincode', pincode, 'state', state, 'dateOfBirth', dateOfBirth);
 
   // Generate Aadhaar QR data using processQRData
   const qrData = processQRData(
@@ -147,6 +154,8 @@ function genMockAadhaarDoc(input: IdDocInput): AadhaarData {
     qrData.decodedData.length
   );
   const signature = Array.from(signatureBytes);
+
+  console.log('qrData.extractedFields', qrData.extractedFields);
 
   return {
     documentType: input.idType as DocumentType,
@@ -172,6 +181,9 @@ export function genMockIdDoc(
   if (mergedInput.idType === 'mock_aadhaar') {
     return genMockAadhaarDoc(mergedInput);
   }
+
+  mergedInput.lastName = mergedInput.lastName ?? 'DOE';
+  mergedInput.firstName = mergedInput.firstName ?? 'JOHN';
 
   let privateKeyPem: string, dsc: string;
   if (mockDSC) {
@@ -231,6 +243,19 @@ export async function generateMockDSC(
     throw new Error('Invalid DSC response format from server');
   }
   return { privateKeyPem: data.data.privateKeyPem, dsc: data.data.dsc };
+}
+
+function generateRandomName(): string {
+  // Generate random letter combinations for first and last name
+  const generateRandomLetters = (length: number): string => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return Array.from({ length }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+  };
+
+  const firstName = generateRandomLetters(4 + Math.floor(Math.random() * 4)); // 4-7 letters
+  const lastName = generateRandomLetters(5 + Math.floor(Math.random() * 5)); // 5-9 letters
+
+  return `${firstName} ${lastName}`;
 }
 
 function generateRandomBytes(length: number): number[] {
