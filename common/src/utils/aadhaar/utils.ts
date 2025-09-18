@@ -94,6 +94,7 @@ export const createCustomV2TestData = ({
   photo,
   name,
   timestamp,
+  aadhaarLast4Digits,
 }: {
   signedData: Uint8Array;
   dob?: string;
@@ -103,6 +104,7 @@ export const createCustomV2TestData = ({
   photo?: boolean;
   name?: string;
   timestamp?: string;
+  aadhaarLast4Digits?: string;
 }) => {
   const allDataParsed: number[][] = [];
   const delimiterIndices: number[] = [];
@@ -122,6 +124,18 @@ export const createCustomV2TestData = ({
       break;
     }
   }
+
+  console.log('createCustomV2TestData', {
+    signedData,
+    dob,
+    pincode,
+    gender,
+    state,
+    photo,
+    name,
+    timestamp,
+    aadhaarLast4Digits,
+  });
 
   // Set new timestamp to the time of the signature
   const newDateString = returnNewDateString(timestamp);
@@ -173,6 +187,14 @@ export const createCustomV2TestData = ({
       delimiterIndices[IdFields.State - 1] + 1,
       delimiterIndices[IdFields.State - 1] + allDataParsed[IdFields.State].length
     );
+  }
+
+  if (!aadhaarLast4Digits) {
+
+    for (let i = 2; i < 6; i++) {
+      modifiedSignedData[i] = Math.floor(Math.random() * 10) + 48;
+    }
+
   }
 
   if (name) {
