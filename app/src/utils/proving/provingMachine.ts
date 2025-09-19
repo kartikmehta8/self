@@ -153,7 +153,9 @@ const _generateCircuitInputs = async (
             const docStore =
               doc === 'passport'
                 ? protocolStore.passport
-                : protocolStore.id_card;
+                : doc === 'aadhaar'
+                  ? protocolStore.aadhaar
+                  : protocolStore.id_card;
             switch (tree) {
               case 'ofac':
                 return docStore.ofac_trees;
@@ -167,10 +169,7 @@ const _generateCircuitInputs = async (
             }
           },
         ));
-      circuitTypeWithDocumentExtension = getCircuitTypeWithDocumentExtension(
-        circuitType,
-        document,
-      );
+      circuitTypeWithDocumentExtension = `disclose`;
       break;
     default:
       throw new Error('Invalid circuit type:' + circuitType);
@@ -1218,7 +1217,10 @@ export const useProvingStore = create<ProvingState>((set, get) => {
 
       let circuitName;
       if (circuitType === 'disclose') {
-        circuitName = 'disclose';
+        circuitName =
+          passportData.documentCategory === 'aadhaar'
+            ? 'disclose_aadhaar'
+            : 'disclose';
       } else {
         circuitName = getCircuitNameFromPassportData(
           passportData,
@@ -1231,6 +1233,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
         passportData as PassportData,
         circuitName,
       );
+
       logProofEvent('info', 'Circuit resolution', baseContext, {
         circuit_name: circuitName,
         ws_url: wsRpcUrl,

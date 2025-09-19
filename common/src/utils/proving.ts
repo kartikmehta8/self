@@ -68,7 +68,7 @@ export function getPayload(
 ) {
   if (circuitType === 'disclose') {
     const type = circuitName === 'vc_and_disclose' ? 'disclose' :
-    circuitName === 'disclose_aadhaar' ? 'disclose_aadhaar' :
+    circuitName === 'vc_and_disclose_aadhaar' ? 'disclose_aadhaar' :
     'disclose_id';
     const payload: TEEPayloadDisclose = {
       type,
