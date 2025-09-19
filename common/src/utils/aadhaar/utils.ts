@@ -297,30 +297,27 @@ export function extractQRDataFields(qrData: string | Uint8Array): ExtractedQRDat
   const phoneData = extractFieldData(signedData, delimiterIndices, FIELD_POSITIONS.PHONE_NO);
   const phoneNoLast4Digits = asciiArrayToString(phoneData.slice(phoneData.length - 4));
 
-  // Extract timestamp (from position after first delimiter)
-  // Timestamp format: YYYYMMDDHHMM (similar to circom implementation)
-  const timestampStartIndex = delimiterIndices[0] + 1;
   const timestampYear = asciiArrayToString([
-    signedData[timestampStartIndex + 8],
-    signedData[timestampStartIndex + 9],
-    signedData[timestampStartIndex + 10],
-    signedData[timestampStartIndex + 11],
+    signedData[9],
+    signedData[10],
+    signedData[11],
+    signedData[12],
   ]);
   const timestampMonth = asciiArrayToString([
-    signedData[timestampStartIndex + 12],
-    signedData[timestampStartIndex + 13],
+    signedData[13],
+    signedData[14],
   ]);
   const timestampDay = asciiArrayToString([
-    signedData[timestampStartIndex + 14],
-    signedData[timestampStartIndex + 15],
+    signedData[15],
+    signedData[16],
   ]);
   const timestampHour = asciiArrayToString([
-    signedData[timestampStartIndex + 16],
-    signedData[timestampStartIndex + 17],
+    signedData[17],
+    signedData[18],
   ]);
   const timestampMinute = asciiArrayToString([
-    signedData[timestampStartIndex + 18],
-    signedData[timestampStartIndex + 19],
+    signedData[19],
+    signedData[20],
   ]);
 
   const timestamp = `${timestampYear}-${timestampMonth}-${timestampDay} ${timestampHour}:${timestampMinute}`;
