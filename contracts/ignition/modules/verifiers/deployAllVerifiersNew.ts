@@ -181,6 +181,7 @@ export const circuitIds: Record<CircuitName, [boolean, number]> = {
 
 export default buildModule("DeployAllVerifiers", (m) => {
   const deployments: Record<string, any> = {};
+  let lastDeployedContract: any = null;
 
   for (const circuit of Object.keys(circuitIds) as CircuitName[]) {
     const [shouldDeploy] = circuitIds[circuit];
@@ -193,8 +194,12 @@ export default buildModule("DeployAllVerifiers", (m) => {
     const name = `Verifier_${circuit}`;
     console.log(`Deploying ${name}...`);
 
-    deployments[name] = m.contract(name);
+    // Create dependency on the last deployed contract to ensure sequential deployment
+    const deployOptions = lastDeployedContract ? { after: [lastDeployedContract] } : {};
+    deployments[name] = m.contract(name, [], deployOptions);
+    lastDeployedContract = deployments[name];
   }
 
+  console.log(`Deployments will execute sequentially to prevent nonce conflicts`);
   return deployments;
 });

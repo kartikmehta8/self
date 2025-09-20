@@ -19,6 +19,10 @@ ignition/parameters.json
 ignition/deployments/chain-11142220/*
 !ignition/deployments/chain-11142220/deployed_addresses.json
 
+# For chain-42220, keep only essential files
+ignition/deployments/chain-42220/*
+!ignition/deployments/chain-42220/deployed_addresses.json
+
 # For important environments, keep only essential files
 ignition/deployments/{prod,staging}/*
 !ignition/deployments/{prod,staging}/deployed_addresses.json

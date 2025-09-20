@@ -12,8 +12,8 @@ const AttestationId = {
 
 // Map registry deployment modules to their attestation IDs
 const registryToAttestationId: Record<string, string> = {
-  "DeployRegistryModule#IdentityRegistry": AttestationId.E_PASSPORT,
-  "DeployIdCardRegistryModule#IdentityRegistry": AttestationId.EU_ID_CARD,
+  // "DeployRegistryModule#IdentityRegistry": AttestationId.E_PASSPORT,
+  // "DeployIdCardRegistryModule#IdentityRegistry": AttestationId.EU_ID_CARD,
   "DeployAadhaarRegistryModule#IdentityRegistry": AttestationId.AADHAAR,
 };
 
@@ -58,9 +58,6 @@ export default buildModule("UpdateHubRegistries", (m) => {
   if (!hubAddress) {
     throw new Error("Hub address not found in deployed addresses");
   }
-
-  console.log("Available deployed addresses:");
-  console.log(Object.keys(deployedAddresses));
 
   const hubContract = updateHubRegistries(m, hubAddress, deployedAddresses);
 

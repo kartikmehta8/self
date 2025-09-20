@@ -94,5 +94,8 @@
   "DeployAadhaarRegistryModule#IdentityRegistry": "0x9cbB71468f93672DBF50f511c038eAF9fAB04732",
   "DeployHubV2#CustomVerifier": "0x3C154D1Bb35589e82B13892dE5283ADAfaDC473f",
   "DeployHubV2#IdentityVerificationHubImplV2": "0xC49b7FD44Cb4bE0482AEa3335Eb2CeFb1b81B0C9",
-  "DeployHubV2#IdentityVerificationHub": "0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74"
+  "DeployHubV2#IdentityVerificationHub": "0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74",
+  "DeployNewHubAndUpgradee#IdentityVerificationHubV2": "0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74",
+  "DeployNewHubAndUpgradee#CustomVerifier": "0xa3140DbC877A0Ac5CD8d0Eb9DB9930d62bF28c2c",
+  "DeployNewHubAndUpgradee#IdentityVerificationHubImplV2": "0x0B948eB7C2994948453c77370B4b8d8CBf439bc3"
 }
