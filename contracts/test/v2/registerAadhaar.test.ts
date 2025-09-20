@@ -149,8 +149,6 @@ describe("Aadhaar Registration test", function () {
     });
 
     it("should not fail if timestamp is within 20 minutes", async () => {
-    await deployedActors.hub.setAadhaarRegistrationWindow(20);
-
       // Fix the AADHAAR_REGISTRATION_WINDOW that was incorrectly set to 0
       await deployedActors.hub.setAadhaarRegistrationWindow(20);
 
