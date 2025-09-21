@@ -15,7 +15,6 @@ export * from './lib/services/websocket.service';
 // Utils
 export * from './lib/utils/utils';
 export * from './lib/utils/styles';
-export { initWebSocket } from './lib/utils/websocket';
 export type { WebAppInfo } from './lib/utils/websocket';
 
 // Providers

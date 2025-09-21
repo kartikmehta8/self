@@ -37,8 +37,8 @@ export interface SelfQRcodeProps {
 })
 export class SelfQRcodeComponent implements OnInit, OnDestroy {
   @Input() selfApp!: SelfApp;
-  @Input() onSuccess!: () => void;
-  @Input() onError!: (data: { error_code?: string; reason?: string }) => void;
+  @Input() successFn!: () => void;
+  @Input() errorFn!: (data: { error_code?: string; reason?: string }) => void;
   @Input() type: 'websocket' | 'deeplink' = 'websocket';
   @Input() websocketUrl: string = WS_DB_RELAYER;
   @Input() size: number = 300;
@@ -71,6 +71,7 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
     // Generate session ID
     const newSessionId = uuidv4();
     this.sessionId.set(newSessionId);
+    console.log('[SelfQRcode] sessionId', newSessionId);
 
     // Initialize WebSocket connection
     this.initializeWebSocket();
@@ -86,6 +87,7 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
 
   private initializeWebSocket(): void {
     const sessionId = this.sessionId();
+    console.log('[SelfQRcode] sessionId', sessionId);
     if (!sessionId) return;
 
     console.log('[SelfQRcode] Initializing new WebSocket connection');
@@ -101,20 +103,13 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
       this.websocketUrl,
       selfAppWithSession,
       this.type,
-      this.onSuccess,
-      this.onError
+      this.innerOnSuccess,
+      this.innerOnError
     );
 
     // Subscribe to proof step updates
     this.webSocketService.proofStep$.subscribe((step: number) => {
       this.proofStep.set(step);
-
-      // Trigger animations based on proof step
-      if (step === QRcodeSteps.PROOF_VERIFIED) {
-        // this.playSuccessAnimation();
-      } else if (step === QRcodeSteps.PROOF_GENERATION_FAILED) {
-        // this.playErrorAnimation();
-      }
     });
   }
 
@@ -134,6 +129,18 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
     }
 
     this.qrCodeValue.set(qrValue);
+  }
+
+
+  //inner on success is basically onSuccessFn but reset the proof setp
+  innerOnSuccess(): void {
+    this.proofStep.set(QRcodeSteps.WAITING_FOR_MOBILE);
+    this.successFn();
+  }
+
+  innerOnError(data: { error_code?: string; reason?: string }): void {
+    this.proofStep.set(QRcodeSteps.WAITING_FOR_MOBILE);
+    this.errorFn(data);
   }
 
   resetToWaiting(): void {
