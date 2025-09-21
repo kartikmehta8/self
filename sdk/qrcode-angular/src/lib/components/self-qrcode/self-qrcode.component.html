@@ -1,38 +1,38 @@
-<div [ngStyle]="getContainerStyles()">
-  <!-- LED Status Indicator -->
-  <div [ngStyle]="getLedContainerStyles()">
-    <lib-led [connectionStatus]="proofStep"></lib-led>
+<div class="container">
+  <div class="led-container">
+    <lib-led [connectionStatus]="proofStep()" [size]="8"></lib-led>
   </div>
 
-  <!-- QR Code Container -->
-  <div [ngStyle]="getQrContainerStyles()">
-    <!-- QR Code -->
-    <qrcode
-      *ngIf="showQRCode()"
-      [qrdata]="qrValue"
-      [width]="size"
-      [errorCorrectionLevel]="'M'"
-      [colorDark]="darkMode ? '#ffffff' : '#000000'"
-      [colorLight]="darkMode ? '#000000' : '#ffffff'"
-      [cssClass]="'qr-code'"
-    >
-    </qrcode>
+  <div class="qr-container" [style.width.px]="size" [style.height.px]="size">
+    <!-- Error -->
+    <ng-lottie
+      [hidden]="proofStep() !== QRcodeSteps.PROOF_GENERATION_FAILED"
+      [options]="errorOptions"
+      style="width:200px; height:200px"
+      (complete)="resetToWaiting()">
+    </ng-lottie>
 
-    <!-- Loading Spinner -->
-    <div *ngIf="showSpinner()" class="spinner-container" [ngStyle]="getQrContainerStyles()">
-      <div class="bounce-loader">
-        <div class="bounce1"></div>
-        <div class="bounce2"></div>
-        <div class="bounce3"></div>
-      </div>
-    </div>
+    <!-- Success -->
+    <ng-lottie
+      [hidden]="proofStep() !== QRcodeSteps.PROOF_VERIFIED"
+      [options]="successOptions"
+      style="width:200px; height:200px"
+      (complete)="resetToWaiting()">
+    </ng-lottie>
 
-    <!-- Animation Container -->
+    <!-- Default QR -->
     <div
-      *ngIf="showAnimation()"
-      #animationContainer
-      class="animation-container"
-      [ngStyle]="{ width: '200px', height: '200px' }"
-    ></div>
+      [hidden]="(proofStep() === QRcodeSteps.PROOF_GENERATION_STARTED)
+            || (proofStep() === QRcodeSteps.PROOF_GENERATED)
+            || (proofStep() === QRcodeSteps.PROOF_GENERATION_FAILED)
+            || (proofStep() === QRcodeSteps.PROOF_VERIFIED)">
+      <qrcode
+        [qrdata]="qrCodeValue()"
+        [width]="size"
+        [errorCorrectionLevel]="'M'"
+        [colorDark]="darkMode ? '#ffffff' : '#000000'"
+        [colorLight]="darkMode ? '#000000' : '#ffffff'">
+      </qrcode>
+    </div>
   </div>
 </div>

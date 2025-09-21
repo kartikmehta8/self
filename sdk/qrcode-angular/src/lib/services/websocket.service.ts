@@ -1,7 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import type { SelfApp } from '@selfxyz/common';
+import type { SelfApp } from '../common';
 
 import { initWebSocket } from '../utils/websocket';
 import { QRcodeSteps } from '../utils/utils';

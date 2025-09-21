@@ -24,17 +24,14 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
-    "paths": {
-      "@selfxyz/common": ["../common/src/index.ts"],
-      "@selfxyz/common/*": ["../common/src/*"]
-    }
   },
-  "include": ["src/**/*", "src/lib/animations/animations.d.ts"],
+  "include": ["src/**/*", "src/lib/components/animations/animations.d.ts"],
   "exclude": ["node_modules", "dist"],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "compilationMode": "partial"
   }
 }

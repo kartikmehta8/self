@@ -7,7 +7,6 @@ export * from './lib/qrcode-angular.module';
 
 // Components
 export * from './lib/components/self-qrcode/self-qrcode.component';
-export * from './lib/components/self-qrcode-wrapper/self-qrcode-wrapper.component';
 export * from './lib/components/led/led.component';
 
 // Services
@@ -19,6 +18,14 @@ export * from './lib/utils/styles';
 export { initWebSocket } from './lib/utils/websocket';
 export type { WebAppInfo } from './lib/utils/websocket';
 
+// Providers
+export { provideSelfLottie } from './lib/providers';
+
 // Re-export types from common
-export type { SelfApp } from '@selfxyz/common';
-export { countries } from '@selfxyz/common';
+export {
+  type SelfAppDisclosureConfig,
+  countryCodes,
+  SelfAppBuilder,
+  type Country3LetterCode,
+  type SelfApp,
+} from './lib/common';
