@@ -90,8 +90,6 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
     console.log('[SelfQRcode] sessionId', sessionId);
     if (!sessionId) return;
 
-    console.log('[SelfQRcode] Initializing new WebSocket connection');
-
     // Create selfApp with session ID
     const selfAppWithSession = {
       ...this.selfApp,
@@ -103,8 +101,8 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
       this.websocketUrl,
       selfAppWithSession,
       this.type,
-      this.innerOnSuccess,
-      this.innerOnError
+      this.successFn,
+      this.errorFn
     );
 
     // Subscribe to proof step updates
@@ -131,20 +129,7 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy {
     this.qrCodeValue.set(qrValue);
   }
 
-
-  //inner on success is basically onSuccessFn but reset the proof setp
-  innerOnSuccess(): void {
-    this.proofStep.set(QRcodeSteps.WAITING_FOR_MOBILE);
-    this.successFn();
-  }
-
-  innerOnError(data: { error_code?: string; reason?: string }): void {
-    this.proofStep.set(QRcodeSteps.WAITING_FOR_MOBILE);
-    this.errorFn(data);
-  }
-
   resetToWaiting(): void {
-    this.proofStep.set(QRcodeSteps.WAITING_FOR_MOBILE);
     this.webSocketService.resetStep();
   }
 }
