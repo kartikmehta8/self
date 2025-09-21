@@ -29,14 +29,8 @@
       "@selfxyz/common/*": ["../common/src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "src/lib/animations/animations.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+  "include": ["src/**/*", "src/lib/animations/animations.d.ts"],
+  "exclude": ["node_modules", "dist"],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,

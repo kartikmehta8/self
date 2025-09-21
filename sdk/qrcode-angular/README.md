@@ -23,14 +23,11 @@ import { AppComponent } from './app.component';
 
 @NgModule({
   declarations: [AppComponent],
-  imports: [
-    BrowserModule,
-    SelfQRcodeAngularModule
-  ],
+  imports: [BrowserModule, SelfQRcodeAngularModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
 ```
 
 ### 2. Use the Component
@@ -46,22 +43,23 @@ import { v4 as uuidv4 } from 'uuid';
     <div class="verification-container">
       <h1>Verify Your Identity</h1>
       <p>Scan this QR code with the Self app to verify your identity</p>
-      
+
       <lib-self-qrcode
         [selfApp]="selfApp"
         [onSuccess]="onSuccess"
         [onError]="onError"
         [size]="350"
-        [darkMode]="false">
+        [darkMode]="false"
+      >
       </lib-self-qrcode>
-      
+
       <p class="text-sm text-gray-500">User ID: {{ userId.substring(0, 8) }}...</p>
     </div>
-  `
+  `,
 })
 export class VerificationComponent {
   userId = uuidv4();
-  
+
   selfApp: SelfApp = {
     appName: 'My Application',
     scope: 'my-application-scope',
@@ -106,12 +104,9 @@ import { SelfQRcodeComponent } from '@selfxyz/qrcode-angular';
   standalone: true,
   imports: [SelfQRcodeComponent],
   template: `
-    <lib-self-qrcode
-      [selfApp]="selfApp"
-      [onSuccess]="onSuccess"
-      [onError]="onError">
+    <lib-self-qrcode [selfApp]="selfApp" [onSuccess]="onSuccess" [onError]="onError">
     </lib-self-qrcode>
-  `
+  `,
 })
 export class VerificationComponent {
   // ... component logic
@@ -122,28 +117,28 @@ export class VerificationComponent {
 
 The `lib-self-qrcode` component accepts the following inputs:
 
-| Property      | Type                                                    | Required | Default       | Description                                           |
-| ------------- | ------------------------------------------------------- | -------- | ------------- | ----------------------------------------------------- |
-| `selfApp`     | `SelfApp`                                               | Yes      | -             | The SelfApp configuration object                      |
-| `onSuccess`   | `() => void`                                            | Yes      | -             | Callback function executed on successful verification |
-| `onError`     | `(data: { error_code?: string; reason?: string }) => void` | Yes      | -             | Callback function executed on verification error      |
-| `type`        | `'websocket' \| 'deeplink'`                             | No       | `'websocket'` | Connection type for verification                      |
-| `websocketUrl`| `string`                                                | No       | WS_DB_RELAYER | Custom WebSocket URL for verification                 |
-| `size`        | `number`                                                | No       | 300           | QR code size in pixels                                |
-| `darkMode`    | `boolean`                                               | No       | false         | Enable dark mode styling                              |
+| Property       | Type                                                       | Required | Default       | Description                                           |
+| -------------- | ---------------------------------------------------------- | -------- | ------------- | ----------------------------------------------------- |
+| `selfApp`      | `SelfApp`                                                  | Yes      | -             | The SelfApp configuration object                      |
+| `onSuccess`    | `() => void`                                               | Yes      | -             | Callback function executed on successful verification |
+| `onError`      | `(data: { error_code?: string; reason?: string }) => void` | Yes      | -             | Callback function executed on verification error      |
+| `type`         | `'websocket' \| 'deeplink'`                                | No       | `'websocket'` | Connection type for verification                      |
+| `websocketUrl` | `string`                                                   | No       | WS_DB_RELAYER | Custom WebSocket URL for verification                 |
+| `size`         | `number`                                                   | No       | 300           | QR code size in pixels                                |
+| `darkMode`     | `boolean`                                                  | No       | false         | Enable dark mode styling                              |
 
 ## SelfApp Configuration
 
 The `SelfApp` object allows you to configure your application's verification requirements:
 
-| Parameter     | Type     | Required | Description                                    |
-| ------------- | -------- | -------- | ---------------------------------------------- |
-| `appName`     | string   | Yes      | The name of your application                   |
-| `scope`       | string   | Yes      | A unique identifier for your application       |
-| `endpoint`    | string   | Yes      | The endpoint that will verify the proof        |
-| `logoBase64`  | string   | No       | Base64-encoded logo to display in the Self app |
-| `userId`      | string   | Yes      | Unique identifier for the user                 |
-| `disclosures` | object   | No       | Disclosure and verification requirements       |
+| Parameter     | Type   | Required | Description                                    |
+| ------------- | ------ | -------- | ---------------------------------------------- |
+| `appName`     | string | Yes      | The name of your application                   |
+| `scope`       | string | Yes      | A unique identifier for your application       |
+| `endpoint`    | string | Yes      | The endpoint that will verify the proof        |
+| `logoBase64`  | string | No       | Base64-encoded logo to display in the Self app |
+| `userId`      | string | Yes      | Unique identifier for the user                 |
+| `disclosures` | object | No       | Disclosure and verification requirements       |
 
 ### Disclosure Options
 
@@ -188,8 +183,8 @@ The component uses Angular's `ngStyle` for dynamic styling. You can customize th
 ```css
 /* Custom LED colors */
 lib-self-qrcode {
-  --led-green: #31F040;
-  --led-blue: #424AD8;
+  --led-green: #31f040;
+  --led-blue: #424ad8;
   --led-gray: #95a5a6;
 }
 ```
@@ -250,6 +245,7 @@ The QR code component displays the current verification status with an LED indic
 ## Browser Support
 
 This library supports all modern browsers that support:
+
 - ES2022
 - WebSocket API
 - SVG rendering (for QR codes and animations)

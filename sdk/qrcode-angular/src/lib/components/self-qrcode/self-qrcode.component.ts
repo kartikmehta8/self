@@ -9,7 +9,7 @@ import {
   ChangeDetectorRef,
   ViewChild,
   ElementRef,
-  AfterViewInit
+  AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeModule } from 'angularx-qrcode';
@@ -53,7 +53,7 @@ export interface WebAppInfo {
   imports: [CommonModule, QRCodeModule, LedComponent],
   templateUrl: './self-qrcode.component.html',
   styleUrls: ['./self-qrcode.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelfQRcodeComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() selfApp!: SelfApp;
@@ -87,13 +87,11 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     // Subscribe to proof step changes after view init
-    this.webSocketService.proofStep$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((step: number) => {
-        this.proofStep = step;
-        this.handleProofStepChange(step);
-        this.cdr.detectChanges();
-      });
+    this.webSocketService.proofStep$.pipe(takeUntil(this.destroy$)).subscribe((step: number) => {
+      this.proofStep = step;
+      this.handleProofStepChange(step);
+      this.cdr.detectChanges();
+    });
   }
 
   ngOnDestroy(): void {
@@ -163,7 +161,7 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy, AfterViewInit {
         renderer: 'svg',
         loop: false,
         autoplay: true,
-        animationData: animationData.default || animationData
+        animationData: animationData.default || animationData,
       });
 
       this.currentAnimation.addEventListener('complete', () => {
@@ -192,17 +190,23 @@ export class SelfQRcodeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   public showQRCode(): boolean {
-    return this.proofStep === QRcodeSteps.WAITING_FOR_MOBILE ||
-           this.proofStep === QRcodeSteps.MOBILE_CONNECTED;
+    return (
+      this.proofStep === QRcodeSteps.WAITING_FOR_MOBILE ||
+      this.proofStep === QRcodeSteps.MOBILE_CONNECTED
+    );
   }
 
   public showSpinner(): boolean {
-    return this.proofStep === QRcodeSteps.PROOF_GENERATION_STARTED ||
-           this.proofStep === QRcodeSteps.PROOF_GENERATED;
+    return (
+      this.proofStep === QRcodeSteps.PROOF_GENERATION_STARTED ||
+      this.proofStep === QRcodeSteps.PROOF_GENERATED
+    );
   }
 
   public showAnimation(): boolean {
-    return this.proofStep === QRcodeSteps.PROOF_GENERATION_FAILED ||
-           this.proofStep === QRcodeSteps.PROOF_VERIFIED;
+    return (
+      this.proofStep === QRcodeSteps.PROOF_GENERATION_FAILED ||
+      this.proofStep === QRcodeSteps.PROOF_VERIFIED
+    );
   }
 }

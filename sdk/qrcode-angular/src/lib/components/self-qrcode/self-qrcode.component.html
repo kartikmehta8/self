@@ -7,21 +7,19 @@
   <!-- QR Code Container -->
   <div [ngStyle]="getQrContainerStyles()">
     <!-- QR Code -->
-    <qrcode 
+    <qrcode
       *ngIf="showQRCode()"
       [qrdata]="qrValue"
       [width]="size"
       [errorCorrectionLevel]="'M'"
       [colorDark]="darkMode ? '#ffffff' : '#000000'"
       [colorLight]="darkMode ? '#000000' : '#ffffff'"
-      [cssClass]="'qr-code'">
+      [cssClass]="'qr-code'"
+    >
     </qrcode>
 
     <!-- Loading Spinner -->
-    <div 
-      *ngIf="showSpinner()" 
-      class="spinner-container"
-      [ngStyle]="getQrContainerStyles()">
+    <div *ngIf="showSpinner()" class="spinner-container" [ngStyle]="getQrContainerStyles()">
       <div class="bounce-loader">
         <div class="bounce1"></div>
         <div class="bounce2"></div>
@@ -30,11 +28,11 @@
     </div>
 
     <!-- Animation Container -->
-    <div 
+    <div
       *ngIf="showAnimation()"
       #animationContainer
       class="animation-container"
-      [ngStyle]="{ width: '200px', height: '200px' }">
-    </div>
+      [ngStyle]="{ width: '200px', height: '200px' }"
+    ></div>
   </div>
 </div>

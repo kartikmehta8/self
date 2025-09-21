@@ -17,6 +17,7 @@ export * from './lib/services/websocket.service';
 export * from './lib/utils/utils';
 export * from './lib/utils/styles';
 export { initWebSocket } from './lib/utils/websocket';
+export type { WebAppInfo } from './lib/utils/websocket';
 
 // Re-export types from common
 export type { SelfApp } from '@selfxyz/common';

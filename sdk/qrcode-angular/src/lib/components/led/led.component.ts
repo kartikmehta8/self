@@ -8,10 +8,8 @@ import { ledStyles } from '../../utils/styles';
   selector: 'lib-led',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div [ngStyle]="getLedStyles()"></div>
-  `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  template: ` <div [ngStyle]="getLedStyles()"></div> `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LedComponent {
   @Input() size: number = 8;

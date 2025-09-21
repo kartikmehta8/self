@@ -7,7 +7,7 @@ import { initWebSocket } from '../utils/websocket';
 import { QRcodeSteps } from '../utils/utils';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class WebSocketService implements OnDestroy {
   private destroy$ = new Subject<void>();
@@ -27,7 +27,7 @@ export class WebSocketService implements OnDestroy {
     this.cleanup();
 
     console.log('[WebSocketService] Initializing new WebSocket connection');
-    
+
     this.cleanupFunction = initWebSocket(
       websocketUrl,
       selfApp,

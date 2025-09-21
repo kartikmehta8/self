@@ -4,7 +4,7 @@ import {
   OnInit,
   ChangeDetectionStrategy,
   Inject,
-  PLATFORM_ID
+  PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
@@ -25,10 +25,11 @@ import { SelfQRcodeComponent } from '../self-qrcode/self-qrcode.component';
       [type]="type"
       [websocketUrl]="websocketUrl"
       [size]="size"
-      [darkMode]="darkMode">
+      [darkMode]="darkMode"
+    >
     </lib-self-qrcode>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelfQRcodeWrapperComponent implements OnInit {
   @Input() selfApp!: SelfApp;

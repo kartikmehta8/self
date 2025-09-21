@@ -13,15 +13,9 @@ import { WebSocketService } from './services/websocket.service';
     QRCodeModule,
     SelfQRcodeComponent,
     SelfQRcodeWrapperComponent,
-    LedComponent
+    LedComponent,
   ],
-  exports: [
-    SelfQRcodeComponent,
-    SelfQRcodeWrapperComponent,
-    LedComponent
-  ],
-  providers: [
-    WebSocketService
-  ]
+  exports: [SelfQRcodeComponent, SelfQRcodeWrapperComponent, LedComponent],
+  providers: [WebSocketService],
 })
-export class SelfQRcodeAngularModule { }
+export class SelfQRcodeAngularModule {}
