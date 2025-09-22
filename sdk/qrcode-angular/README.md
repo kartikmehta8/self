@@ -1,259 +1,160 @@
 # @selfxyz/qrcode-angular
 
-An Angular component library for generating QR codes for Self passport verification.
+`@selfxyz/qrcode-angular` is an Angular library for generating **verification QR codes** that link to the **Self.xyz app**.
+It allows developers to define **what user data (disclosures)** should be requested during verification (such as nationality, age checks, or OFAC restrictions) and automatically builds a QR code that users can scan with the Self app to complete verification.
 
-## Installation
+With a few lines of code, you can:
+
+* Configure disclosures like *minimum age, excluded countries, OFAC checks, or DG1 passport fields*.
+* Generate a `SelfApp` configuration via `SelfAppBuilder`.
+* Render a QR code that works out-of-the-box with WebSocket or deep link flows.
+* Handle **success** and **error** callbacks when verification is completed.
+
+This library is the **Angular equivalent** of the Self QR code React SDK, making it easy to embed Self-powered verification flows into Angular applications.
+
+# @selfxyz/angular-qrcode
+
+`SelfQRcodeComponent` is an Angular standalone component for rendering **QR codes** that connect users to Self.xyz's flows.
+It manages session creation, WebSocket connections, and real-time proof state updates, while providing visual feedback through LED states.
+
+---
+
+## ✨ Features
+
+* Generates a unique session ID for every instance.
+* Displays a QR code for Self app deep linking or WebSocket flow.
+* Handles **WebSocket lifecycle** (connection, cleanup, proof step updates).
+* Emits **success** and **error callbacks** when verification completes.
+* Supports light/dark mode and configurable QR size.
+* Includes success/error animations with `ngx-lottie`.
+
+---
+
+## 📦 Installation
 
 ```bash
-npm install @selfxyz/qrcode-angular
-# or
-yarn add @selfxyz/qrcode-angular
+npm install @selfxyz/qrcode-angular angularx-qrcode ngx-lottie uuid
 ```
 
-## Basic Usage
+Also ensure you have Angular v15+ with standalone components enabled.
 
-### 1. Import the Module
+---
 
-```typescript
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { SelfQRcodeAngularModule } from '@selfxyz/qrcode-angular';
+## ⚡ Usage
 
-import { AppComponent } from './app.component';
+### Import the Component
 
-@NgModule({
-  declarations: [AppComponent],
-  imports: [BrowserModule, SelfQRcodeAngularModule],
-  providers: [],
-  bootstrap: [AppComponent],
-})
-export class AppModule {}
-```
+Since it’s standalone, you can import it directly into any feature component:
 
-### 2. Use the Component
-
-```typescript
+```ts
 import { Component } from '@angular/core';
-import { SelfApp } from '@selfxyz/qrcode-angular';
-import { v4 as uuidv4 } from 'uuid';
+import { CommonModule } from '@angular/common';
+import { SelfQRcodeComponent, type SelfApp } from '@selfxyz/qrcode-angular';
 
 @Component({
-  selector: 'app-verification',
-  template: `
-    <div class="verification-container">
-      <h1>Verify Your Identity</h1>
-      <p>Scan this QR code with the Self app to verify your identity</p>
-
-      <lib-self-qrcode
-        [selfApp]="selfApp"
-        [onSuccess]="onSuccess"
-        [onError]="onError"
-        [size]="350"
-        [darkMode]="false"
-      >
-      </lib-self-qrcode>
-
-      <p class="text-sm text-gray-500">User ID: {{ userId.substring(0, 8) }}...</p>
-    </div>
-  `,
-})
-export class VerificationComponent {
-  userId = uuidv4();
-
-  selfApp: SelfApp = {
-    appName: 'My Application',
-    scope: 'my-application-scope',
-    endpoint: 'https://myapp.com/api/verify',
-    userId: this.userId,
-    disclosures: {
-      // Request passport information
-      name: true,
-      nationality: true,
-      date_of_birth: true,
-
-      // Set verification rules
-      minimumAge: 18,
-      excludedCountries: ['IRN', 'PRK', 'RUS'],
-      ofac: true,
-    },
-  };
-
-  onSuccess = () => {
-    console.log('Verification successful!');
-    // Handle successful verification
-    // Redirect or update UI
-  };
-
-  onError = (data: { error_code?: string; reason?: string }) => {
-    console.error('Verification failed:', data);
-    // Handle verification error
-  };
-}
-```
-
-## Standalone Component Usage
-
-If you prefer using standalone components:
-
-```typescript
-import { Component } from '@angular/core';
-import { SelfQRcodeComponent } from '@selfxyz/qrcode-angular';
-
-@Component({
-  selector: 'app-verification',
+  selector: 'app-demo',
   standalone: true,
-  imports: [SelfQRcodeComponent],
+  imports: [CommonModule, SelfQRcodeComponent],
   template: `
-    <lib-self-qrcode [selfApp]="selfApp" [onSuccess]="onSuccess" [onError]="onError">
+    <lib-self-qrcode
+      [selfApp]="selfApp"
+      [successFn]="onSuccess"
+      [errorFn]="onError"
+      [darkMode]="false"
+      [size]="300">
     </lib-self-qrcode>
   `,
 })
-export class VerificationComponent {
-  // ... component logic
+export class DemoComponent {
+  selfApp: SelfApp = {
+    appName: 'Demo App',
+    scope: 'demo-scope',
+    endpoint: 'https://your-api.com/verify',
+    endpointType: 'https',
+    logoBase64: 'https://i.imgur.com/Rz8B3s7.png',
+    userId: '0x123...', // a uuid or address
+    disclosures: {
+      nationality: true,
+      minimumAge: 18,
+      ofac: true,
+    },
+    version: 2,
+  };
+
+  onSuccess() {
+    console.log('✅ Verification successful!');
+  }
+
+  onError(err: { error_code?: string; reason?: string }) {
+    console.error('❌ Verification failed', err);
+  }
 }
 ```
 
-## Component Properties
+---
 
-The `lib-self-qrcode` component accepts the following inputs:
+## 🔧 Component API
 
-| Property       | Type                                                       | Required | Default       | Description                                           |
-| -------------- | ---------------------------------------------------------- | -------- | ------------- | ----------------------------------------------------- |
-| `selfApp`      | `SelfApp`                                                  | Yes      | -             | The SelfApp configuration object                      |
-| `onSuccess`    | `() => void`                                               | Yes      | -             | Callback function executed on successful verification |
-| `onError`      | `(data: { error_code?: string; reason?: string }) => void` | Yes      | -             | Callback function executed on verification error      |
-| `type`         | `'websocket' \| 'deeplink'`                                | No       | `'websocket'` | Connection type for verification                      |
-| `websocketUrl` | `string`                                                   | No       | WS_DB_RELAYER | Custom WebSocket URL for verification                 |
-| `size`         | `number`                                                   | No       | 300           | QR code size in pixels                                |
-| `darkMode`     | `boolean`                                                  | No       | false         | Enable dark mode styling                              |
+### Inputs
 
-## SelfApp Configuration
+| Input          | Type                                                       | Default         | Description                                          |
+| -------------- | ---------------------------------------------------------- | --------------- | ---------------------------------------------------- |
+| `selfApp`      | `SelfApp` (required)                                       | —               | The configured Self app instance.                    |
+| `successFn`    | `() => void` (required)                                    | —               | Callback triggered when verification succeeds.       |
+| `errorFn`      | `(data: { error_code?: string; reason?: string }) => void` | —               | Callback triggered when verification fails.          |
+| `type`         | `'websocket' \| 'deeplink'`                                | `'websocket'`   | Determines whether to use WebSocket or deep link QR. |
+| `websocketUrl` | `string`                                                   | `WS_DB_RELAYER` | Custom WebSocket relay URL.                          |
+| `size`         | `number`                                                   | `300`           | Size of the QR code in pixels.                       |
+| `darkMode`     | `boolean`                                                  | `false`         | Toggles light/dark mode for QR code styling.         |
 
-The `SelfApp` object allows you to configure your application's verification requirements:
+---
 
-| Parameter     | Type   | Required | Description                                    |
-| ------------- | ------ | -------- | ---------------------------------------------- |
-| `appName`     | string | Yes      | The name of your application                   |
-| `scope`       | string | Yes      | A unique identifier for your application       |
-| `endpoint`    | string | Yes      | The endpoint that will verify the proof        |
-| `logoBase64`  | string | No       | Base64-encoded logo to display in the Self app |
-| `userId`      | string | Yes      | Unique identifier for the user                 |
-| `disclosures` | object | No       | Disclosure and verification requirements       |
+### `SelfApp`
 
-### Disclosure Options
+| Property           | Type                                                  | Required | Description                                              |
+| ------------------ | ----------------------------------------------------- | -------- | -------------------------------------------------------- |
+| `appName`          | `string`                                              | ✅        | The display name of your app shown in the Self flow.     |
+| `logoBase64`       | `string` (URL or Base64-encoded image)                | ✅        | The app’s logo (shown to the user during verification).  |
+| `endpointType`     | `EndpointType`                                        | ✅        | `staging_https` \| `https` \| `celo` \|  `staging_celo`|
+| `endpoint`         | `string`                                              | ✅        | API endpoint where proof is verified (endpoint url or a contract address)|
+| `deeplinkCallback` | `string`                                              | Optional | Callback URL for deep link flows.                        |
+| `scope`            | `string`                                              | ✅        | Unique identifier for your application           |
+| `userId`           | `string`                                              | ✅        | Unique identifier for the end user (address or a uuid)|
+| `userIdType`       | `UserIdType`                                          | Optional | Type of identifier used (`email`, `phone`, etc.).        |
+| `disclosures`      | [`SelfAppDisclosureConfig`](#selfappdisclosureconfig) | ✅        | Defines which fields are requested during verification.  |
+| `version`          | `number`                                              | ✅        | Schema version (e.g., `2`).                              |
+| `userDefinedData`      | `any`                                                 | Optional | Arbitrary developer-defined metadata.                    |
 
-The `disclosures` object can include the following options:
+---
 
-| Option              | Type     | Description                                  |
-| ------------------- | -------- | -------------------------------------------- |
-| `issuing_state`     | boolean  | Request disclosure of passport issuing state |
-| `name`              | boolean  | Request disclosure of the user's name        |
-| `nationality`       | boolean  | Request disclosure of nationality            |
-| `date_of_birth`     | boolean  | Request disclosure of birth date             |
-| `passport_number`   | boolean  | Request disclosure of passport number        |
-| `gender`            | boolean  | Request disclosure of gender                 |
-| `expiry_date`       | boolean  | Request disclosure of passport expiry date   |
-| `minimumAge`        | number   | Verify the user is at least this age         |
-| `excludedCountries` | string[] | Array of country codes to exclude            |
-| `ofac`              | boolean  | Enable OFAC compliance check                 |
+### `SelfAppDisclosureConfig`
 
-## Services
+| Property            | Type                   | Default | Description                                               |
+| ------------------- | ---------------------- | ------- | --------------------------------------------------------- |
+| `issuing_state`     | `boolean`              | `false` | Request the issuing state from the document.              |
+| `name`              | `boolean`              | `false` | Request the full name from the document                   |
+| `passport_number`   | `boolean`              | `false` | Request the document number.                              |
+| `nationality`       | `boolean`              | `false` | Request the user’s nationality.                           |
+| `date_of_birth`     | `boolean`              | `false` | Request the date of birth.                                |
+| `gender`            | `boolean`              | `false` | Request the gender field.                                 |
+| `expiry_date`       | `boolean`              | `false` | Request the passport expiry date.                         |
+| `ofac`**              | `boolean`              | `false` | Check against OFAC sanction lists.                        |
+| `excludedCountries`** | `Country3LetterCode[]` | `[]`    | Exclude users from specific ISO 3166-1 alpha-3 countries. |
+| `minimumAge`**        | `number`               | —       | Require a minimum age (e.g., `18` (upto `99`)).|
 
-### WebSocketService
+>\*\* ⚠️ **Important:** These fields must match your **backend configuration**.
 
-The library includes a `WebSocketService` that manages WebSocket connections:
 
-```typescript
-import { WebSocketService } from '@selfxyz/qrcode-angular';
+---
 
-constructor(private webSocketService: WebSocketService) {}
+## 🎬 Lifecycle
 
-// The service is automatically used by the SelfQRcodeComponent
-// You can also inject it directly if needed for custom implementations
-```
+* On init:
 
-## Styling
+  * Generates a **UUID session ID**.
+  * Establishes a **WebSocket connection**.
+  * Sets the QR code value.
+* On destroy:
 
-The component uses Angular's `ngStyle` for dynamic styling. You can customize the appearance by:
-
-1. **CSS Custom Properties**: Override the default colors and sizes
-2. **Component Styling**: Use Angular's component styling features
-3. **Global Styles**: Apply global CSS classes
-
-```css
-/* Custom LED colors */
-lib-self-qrcode {
-  --led-green: #31f040;
-  --led-blue: #424ad8;
-  --led-gray: #95a5a6;
-}
-```
-
-## Development
-
-### Building the Library
-
-```bash
-npm run build
-```
-
-### Running Tests
-
-```bash
-npm test
-```
-
-### Publishing
-
-```bash
-npm run build
-npm publish
-```
-
-## Integration with Backend
-
-This Angular SDK is designed to work with the `@selfxyz/core` backend SDK. When configuring your QR code, set the verification endpoint to point to your API that uses the backend SDK:
-
-```typescript
-const selfApp: SelfApp = {
-  appName: 'My Application',
-  scope: 'my-application-scope',
-  endpoint: 'https://my-api.com/api/verify', // Your API using @selfxyz/core
-  userId,
-  disclosures: {
-    name: true,
-    nationality: true,
-    date_of_birth: true,
-    passport_number: true,
-    minimumAge: 20,
-    excludedCountries: ['IRN', 'PRK'],
-    ofac: true,
-  },
-};
-```
-
-## Verification Flow
-
-1. Your Angular application displays the QR code to the user
-2. The user scans the QR code with the Self app
-3. The Self app guides the user through the passport verification process
-4. The proof is generated and sent to your verification endpoint
-5. Upon successful verification, the `onSuccess` callback is triggered
-
-The QR code component displays the current verification status with an LED indicator and changes its appearance based on the verification state.
-
-## Browser Support
-
-This library supports all modern browsers that support:
-
-- ES2022
-- WebSocket API
-- SVG rendering (for QR codes and animations)
-
-## License
-
-MIT
-
-## Contributing
-
-Please read the contributing guidelines in the main repository.
+  * Cleans up the WebSocket connection.
+---

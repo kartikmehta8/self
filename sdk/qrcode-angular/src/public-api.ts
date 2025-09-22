@@ -2,9 +2,6 @@
  * Public API Surface of @selfxyz/qrcode-angular
  */
 
-// Main module
-export * from './lib/qrcode-angular.module';
-
 // Components
 export * from './lib/components/self-qrcode/self-qrcode.component';
 export * from './lib/components/led/led.component';
