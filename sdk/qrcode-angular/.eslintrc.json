@@ -1,18 +1,15 @@
 {
   "root": true,
-  "ignorePatterns": ["projects/**/*"],
+  "ignorePatterns": ["projects/**/*", "dist/**/*"],
   "overrides": [
     {
       "files": ["*.ts"],
-      "extends": [
-        "eslint:recommended",
-        "@typescript-eslint/recommended",
-        "@typescript-eslint/recommended-requiring-type-checking"
-      ],
+      "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "project": ["tsconfig.json"],
         "createDefaultProgram": true
       },
+      "plugins": ["@typescript-eslint"],
       "rules": {
         "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
         "@typescript-eslint/explicit-function-return-type": "off",
