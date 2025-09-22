@@ -19,6 +19,7 @@ import {
   hashEndpointWithScope,
 } from '../../utils/index.js';
 import type { AadhaarData, IDDocument, OfacTree } from '../../utils/types.js';
+import { prepareAadhaarDiscloseData, prepareAadhaarRegisterData } from '../aadhaar/mockData.js';
 
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { SMT } from '@openpassport/zk-kit-smt';
@@ -34,7 +35,6 @@ export function generateTEEInputsAadhaarDisclose(
     tree: T
   ) => T extends 'ofac' ? OfacTree : any
 ) {
-  const { prepareAadhaarDiscloseData } = require('../aadhaar/mockData.js');
   const { scope, disclosures, endpoint, userId, userDefinedData, chainID } = selfApp;
   const userIdentifierHash = calculateUserIdentifierHash(chainID, userId, userDefinedData);
   const scope_hash = hashEndpointWithScope(endpoint, scope);
@@ -90,7 +90,6 @@ export async function generateTEEInputsAadhaarRegister(
   publicKeys: string[],
   env: 'prod' | 'stg'
 ) {
-  const { prepareAadhaarRegisterData } = require('../aadhaar/mockData.js');
   console.log(
     'publicKeys-aadhaar',
     publicKeys,

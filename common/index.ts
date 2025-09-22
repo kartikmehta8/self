@@ -97,8 +97,6 @@ export {
 
 export { generateTestData, testCustomData } from './src/utils/aadhaar/utils.js';
 
-
-
 export { isAadhaarDocument, isMRZDocument } from './src/utils/index.js';
 
 export {
