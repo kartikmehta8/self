@@ -1,9 +1,9 @@
 import { AttestationId } from 'src/types/types.js';
 
 export const ATTESTATION_ID = {
-  'PASSPORT': 1,
-  'BIOMETRIC_ID_CARD': 2,
-  'AADHAAR': 3,
+  PASSPORT: 1,
+  BIOMETRIC_ID_CARD: 2,
+  AADHAAR: 3,
 } as const;
 
 export const discloseIndices = {
