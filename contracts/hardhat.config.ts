@@ -67,6 +67,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.CELOSCAN_API_KEY as string,
+    // apiKey: {
+    //   "celo-sepolia": process.env.CELOSCAN_API_KEY as string,
+    // },
     customChains: [
       {
         network: "celo",

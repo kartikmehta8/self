@@ -233,7 +233,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * This function is used when upgrading from V1 to V2, hence uses reinitializer(2).
      * The circuit version is set to 2 for V2 hub compatibility.
      */
-    function initialize() external reinitializer(9) {
+    function initialize() external reinitializer(11) {
         __ImplRoot_init();
 
         // Initialize circuit version to 2 for V2 hub
@@ -994,8 +994,9 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
         uint256 currentTimestamp = Formatter.proofDateToUnixTimestamp(dateNum);
         uint256 startOfDay = _getStartOfDayTimestamp();
+        uint256 endOfDay = startOfDay + 1 days - 1;
 
-        if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > startOfDay + 1 days - 1) {
+        if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > endOfDay + 1 days) {
             revert CurrentDateNotInValidRange();
         }
     }
@@ -1012,8 +1013,9 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
         uint256 currentTimestamp = Formatter.proofDateToUnixTimestampNumeric(dateNum);
         uint256 startOfDay = _getStartOfDayTimestamp();
+        uint256 endOfDay = startOfDay + 1 days - 1;
 
-        if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > startOfDay + 1 days - 1) {
+        if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > endOfDay + 1 days) {
             revert CurrentDateNotInValidRange();
         }
     }
