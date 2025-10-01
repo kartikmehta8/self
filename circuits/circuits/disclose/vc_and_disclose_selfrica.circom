@@ -104,7 +104,7 @@ template VC_AND_DISCLOSE(
     }
     id_num[SMILE_ID_PADDED() - 1] <== 160; // 20 * 8 = 160 bits
 
-    // component id_num_hasher = Sha256Bytes(SMILE_ID_PADDED());
+    component id_num_hasher = Sha256Bytes(SMILE_ID_PADDED());
     id_num_hasher.paddedIn <== id_num;
     id_num_hasher.paddedInLength <== SMILE_ID_PADDED();
 

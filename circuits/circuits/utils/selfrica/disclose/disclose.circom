@@ -2,7 +2,7 @@ pragma circom 2.1.9;
 
 include "./ofac/ofac_name_dob_selfrica.circom";
 include "./ofac/ofac_name_yob_selfrica.circom";
-include "./country_not_in_list.circom";
+include "../../aadhaar/disclose/country_not_in_list.circom";
 include "../date/isValid.circom";
 include "../date/isOlderThan.circom";
 include "../constants.circom";
@@ -81,7 +81,7 @@ template DISCLOSE_SELFRICA(
     revealed_data[selfrica_max_length + 3] <== older_than_verified[1] * selector_older_than;
     revealed_data[selfrica_max_length + 4] <== older_than_verified[2] * selector_older_than;
 
-    component country_not_in_list_circuit = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH, country_length);
+    component country_not_in_list_circuit = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);
 
     for (var i = 0; i < country_length; i++) {
         country_not_in_list_circuit.country[i] <== smile_data[country_index + i];
