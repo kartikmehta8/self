@@ -5,21 +5,25 @@ import path from 'path';
 import assert from 'assert';
 import { formatInput } from '@selfxyz/common/utils/circuits/generateInputs';
 import { unpackReveal } from '@selfxyz/common/utils/circuits/formatOutputs';
-import { fileURLToPath } from 'url';
 import { createSelector, extractField } from '@selfxyz/common/utils/aadhaar/constants';
 import { prepareAadhaarDiscloseTestData } from '@selfxyz/common';
 import { SMT } from '@openpassport/zk-kit-smt';
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { poseidon2 } from 'poseidon-lite';
-import nameAndDobAadhaarjson from '../consts/ofac/nameAndDobAadhaarSMT.json' with { type: 'json' };
-import nameAndYobAadhaarjson from '../consts/ofac/nameAndYobAadhaarSMT.json' with { type: 'json' };
-
 import fs from 'fs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// const privateKeyPath = path.join(__dirname, '../../../node_modules/anon-aadhaar-circuits/assets/testPrivateKey.pem');
+const __dirname = path.dirname(__filename);
+
+const nameAndDobAadhaarjson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../consts/ofac/nameAndDobAadhaarSMT.json'), 'utf8')
+);
+const nameAndYobAadhaarjson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../consts/ofac/nameAndYobAadhaarSMT.json'), 'utf8')
+);
+
+// const privateKeyPath = path.join(__dirname, '../../node_modules/anon-aadhaar-circuits/assets/testPrivateKey.pem');
 const privateKeyPem = fs.readFileSync(
-  path.join(__dirname, '../../../node_modules/anon-aadhaar-circuits/assets/testPrivateKey.pem'),
+  path.join(__dirname, '../../node_modules/anon-aadhaar-circuits/assets/testPrivateKey.pem'),
   'utf8'
 );
 
@@ -52,7 +56,7 @@ describe(' VC and Disclose Aadhaar Circuit Tests', function () {
       {
         verbose: true,
         logOutput: true,
-        include: ['../node_modules', '../node_modules/circomlib/circuits'],
+        include: ['node_modules', 'node_modules/circomlib/circuits'],
       }
     );
   });
