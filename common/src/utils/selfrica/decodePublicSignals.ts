@@ -8,8 +8,7 @@ import {
     SELFRICA_PUBLIC_SIGNALS_REVEALED_DATA_PACKED_LENGTH,
     SELFRICA_PUBLIC_SIGNALS_IDENTITY_COMMITMENT,
     SELFRICA_PUBLIC_SIGNALS_NULLIFIER,
-    SELFRICA_PUBLIC_SIGNALS_PUBKEY_X,
-    SELFRICA_PUBLIC_SIGNALS_PUBKEY_Y,
+    SELFRICA_PUBLIC_SIGNALS_PUBKEY,
     SELFRICA_PUBLIC_SIGNALS_SCOPE,
     SELFRICA_PUBLIC_SIGNALS_OFAC_NAME_YOB_SMT_ROOT,
     SELFRICA_PUBLIC_SIGNALS_FORBIDDEN_COUNTRIES_PACKED_LENGTH,
@@ -27,8 +26,7 @@ export const decodePublicSignals = (publicSignals: string[]) => {
 
     const identityCommitment = publicSignals[SELFRICA_PUBLIC_SIGNALS_IDENTITY_COMMITMENT];
     const nullifier = publicSignals[SELFRICA_PUBLIC_SIGNALS_NULLIFIER];
-    const pubkeyX = publicSignals[SELFRICA_PUBLIC_SIGNALS_PUBKEY_X];
-    const pubkeyY = publicSignals[SELFRICA_PUBLIC_SIGNALS_PUBKEY_Y];
+    const pubkey = publicSignals[SELFRICA_PUBLIC_SIGNALS_PUBKEY];
     const scope = publicSignals[SELFRICA_PUBLIC_SIGNALS_SCOPE];
     const ofacNameDobSmtRoot = publicSignals[SELFRICA_PUBLIC_SIGNALS_OFAC_NAME_DOB_SMT_ROOT];
     const ofacNameYobSmtRoot = publicSignals[SELFRICA_PUBLIC_SIGNALS_OFAC_NAME_YOB_SMT_ROOT];
@@ -40,8 +38,7 @@ export const decodePublicSignals = (publicSignals: string[]) => {
         forbiddenCountriesUnpacked,
         identityCommitment,
         nullifier,
-        pubkeyX,
-        pubkeyY,
+        pubkey,
         scope,
         ofacNameDobSmtRoot,
         ofacNameYobSmtRoot,
