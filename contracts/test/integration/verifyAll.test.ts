@@ -460,7 +460,7 @@ describe("VerifyAll", () => {
       const newHubAddress = await deployedActors.user1.getAddress();
       await expect(verifyAll.connect(deployedActors.user1).setHub(newHubAddress)).to.be.revertedWithCustomError(
         verifyAll,
-        "OwnableUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
     });
 
@@ -468,7 +468,7 @@ describe("VerifyAll", () => {
       const newRegistryAddress = await deployedActors.user1.getAddress();
       await expect(
         verifyAll.connect(deployedActors.user1).setRegistry(newRegistryAddress),
-      ).to.be.revertedWithCustomError(verifyAll, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWithCustomError(verifyAll, "AccessControlUnauthorizedAccount");
     });
   });
 

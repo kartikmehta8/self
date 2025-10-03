@@ -372,7 +372,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyOwner {
+    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registries[attestationId] = registryAddress;
         emit RegistryUpdated(attestationId, registryAddress);
@@ -385,7 +385,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function updateVcAndDiscloseCircuit(
         bytes32 attestationId,
         address vcAndDiscloseCircuitVerifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._discloseVerifiers[attestationId] = vcAndDiscloseCircuitVerifierAddress;
         emit VcAndDiscloseCircuitUpdated(attestationId, vcAndDiscloseCircuitVerifierAddress);
@@ -401,7 +401,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registerCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit RegisterCircuitVerifierUpdated(typeId, verifierAddress);
@@ -417,7 +417,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._dscCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit DscCircuitVerifierUpdated(typeId, verifierAddress);
@@ -433,7 +433,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }
@@ -454,7 +454,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }

@@ -403,7 +403,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newHubAddress The new address of the hub.
      */
-    function updateHub(address newHubAddress) external onlyProxy onlyOwner {
+    function updateHub(address newHubAddress) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _hub = newHubAddress;
         emit HubUpdated(newHubAddress);
     }
@@ -413,7 +413,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newPassportNoOfacRoot The new passport number OFAC root value.
      */
-    function updatePassportNoOfacRoot(uint256 newPassportNoOfacRoot) external onlyProxy onlyOwner {
+    function updatePassportNoOfacRoot(uint256 newPassportNoOfacRoot) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _passportNoOfacRoot = newPassportNoOfacRoot;
         emit PassportNoOfacRootUpdated(newPassportNoOfacRoot);
     }
@@ -423,7 +423,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndDobOfacRoot The new name and date of birth OFAC root value.
      */
-    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyOwner {
+    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _nameAndDobOfacRoot = newNameAndDobOfacRoot;
         emit NameAndDobOfacRootUpdated(newNameAndDobOfacRoot);
     }
@@ -433,7 +433,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndYobOfacRoot The new name and year of birth OFAC root value.
      */
-    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyOwner {
+    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _nameAndYobOfacRoot = newNameAndYobOfacRoot;
         emit NameAndYobOfacRootUpdated(newNameAndYobOfacRoot);
     }
@@ -443,7 +443,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newCscaRoot The new CSCA root value.
      */
-    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyOwner {
+    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _cscaRoot = newCscaRoot;
         emit CscaRootUpdated(newCscaRoot);
     }
@@ -459,7 +459,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
         bytes32 attestationId,
         uint256 nullifier,
         uint256 commitment
-    ) external onlyProxy onlyOwner {
+    ) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _nullifiers[attestationId][nullifier] = true;
         uint256 imt_root = _addCommitment(_identityCommitmentIMT, commitment);
         _rootTimestamps[imt_root] = block.timestamp;
@@ -478,7 +478,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
         uint256 oldLeaf,
         uint256 newLeaf,
         uint256[] calldata siblingNodes
-    ) external onlyProxy onlyOwner {
+    ) external onlyProxy onlyRole(CRITICAL_ROLE) {
         uint256 imt_root = _updateCommitment(_identityCommitmentIMT, oldLeaf, newLeaf, siblingNodes);
         _rootTimestamps[imt_root] = block.timestamp;
         emit DevCommitmentUpdated(oldLeaf, newLeaf, imt_root, block.timestamp);
@@ -490,7 +490,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param oldLeaf The identity commitment to remove.
      * @param siblingNodes An array of sibling nodes for Merkle proof generation.
      */
-    function devRemoveCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyOwner {
+    function devRemoveCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyRole(CRITICAL_ROLE) {
         uint256 imt_root = _removeCommitment(_identityCommitmentIMT, oldLeaf, siblingNodes);
         _rootTimestamps[imt_root] = block.timestamp;
         emit DevCommitmentRemoved(oldLeaf, imt_root, block.timestamp);
@@ -501,7 +501,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only by the owner for testing or administration.
      * @param dscCommitment The DSC key commitment to add.
      */
-    function devAddDscKeyCommitment(uint256 dscCommitment) external onlyProxy onlyOwner {
+    function devAddDscKeyCommitment(uint256 dscCommitment) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _isRegisteredDscKeyCommitment[dscCommitment] = true;
         uint256 imt_root = _addCommitment(_dscKeyCommitmentIMT, dscCommitment);
         uint256 index = _dscKeyCommitmentIMT._indexOf(dscCommitment);
@@ -519,7 +519,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
         uint256 oldLeaf,
         uint256 newLeaf,
         uint256[] calldata siblingNodes
-    ) external onlyProxy onlyOwner {
+    ) external onlyProxy onlyRole(CRITICAL_ROLE) {
         uint256 imt_root = _updateCommitment(_dscKeyCommitmentIMT, oldLeaf, newLeaf, siblingNodes);
         emit DevDscKeyCommitmentUpdated(oldLeaf, newLeaf, imt_root);
     }
@@ -530,7 +530,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param oldLeaf The DSC key commitment to remove.
      * @param siblingNodes An array of sibling nodes for Merkle proof generation.
      */
-    function devRemoveDscKeyCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyOwner {
+    function devRemoveDscKeyCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyRole(CRITICAL_ROLE) {
         uint256 imt_root = _removeCommitment(_dscKeyCommitmentIMT, oldLeaf, siblingNodes);
         emit DevDscKeyCommitmentRemoved(oldLeaf, imt_root);
     }
@@ -546,7 +546,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
         bytes32 attestationId,
         uint256 nullifier,
         bool state
-    ) external onlyProxy onlyOwner {
+    ) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _nullifiers[attestationId][nullifier] = state;
         emit DevNullifierStateChanged(attestationId, nullifier, state);
     }
@@ -557,7 +557,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param dscCommitment The DSC key commitment.
      * @param state The new state of the DSC key commitment (true for registered, false for not registered).
      */
-    function devChangeDscKeyCommitmentState(uint256 dscCommitment, bool state) external onlyProxy onlyOwner {
+    function devChangeDscKeyCommitmentState(uint256 dscCommitment, bool state) external onlyProxy onlyRole(CRITICAL_ROLE) {
         _isRegisteredDscKeyCommitment[dscCommitment] = state;
         emit DevDscKeyCommitmentStateChanged(dscCommitment, state);
     }

@@ -1,18 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title PCR0Manager
  * @notice This contract manages a mapping of PCR0 values (provided as a 48-byte value)
  *         to booleans. The PCR0 value (the 48-byte SHA384 output) is hashed
  *         using keccak256 and then stored in the mapping.
- *         Only the owner can add or remove entries.
+ *         Only accounts with CRITICAL_ROLE can add or remove entries.
  */
-contract PCR0Manager is Ownable {
-    // Pass msg.sender directly to Ownable constructor
-    constructor() Ownable(msg.sender) {}
+contract PCR0Manager is AccessControl {
+    /// @notice Critical operations and role management requiring 3/5 multisig consensus
+    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
+
+    /// @notice Standard operations requiring 2/5 multisig consensus
+    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+
+    constructor() {
+        // Grant all roles to deployer initially
+        _grantRole(CRITICAL_ROLE, msg.sender);
+        _grantRole(STANDARD_ROLE, msg.sender);
+
+        // Set role admins - CRITICAL_ROLE is admin of both roles
+        _setRoleAdmin(CRITICAL_ROLE, CRITICAL_ROLE);
+        _setRoleAdmin(STANDARD_ROLE, CRITICAL_ROLE);
+    }
 
     // Mapping from keccak256(pcr0) to its boolean state.
     mapping(bytes32 => bool) public pcr0Mapping;
@@ -30,7 +43,7 @@ contract PCR0Manager is Ownable {
      * @param pcr0 The PCR0 value (must be exactly 48 bytes).
      * @dev Reverts if the PCR0 value is not 48 bytes or if it is already set.
      */
-    function addPCR0(bytes calldata pcr0) external onlyOwner {
+    function addPCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
         require(pcr0.length == 48, "PCR0 must be 48 bytes");
         bytes32 key = keccak256(pcr0);
         require(!pcr0Mapping[key], "PCR0 already set");
@@ -43,7 +56,7 @@ contract PCR0Manager is Ownable {
      * @param pcr0 The PCR0 value (must be exactly 48 bytes).
      * @dev Reverts if the PCR0 value is not 48 bytes or if it is not currently set.
      */
-    function removePCR0(bytes calldata pcr0) external onlyOwner {
+    function removePCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
         require(pcr0.length == 48, "PCR0 must be 48 bytes");
         bytes32 key = keccak256(pcr0);
         require(pcr0Mapping[key], "PCR0 not set");

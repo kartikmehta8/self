@@ -34,8 +34,8 @@ describe("PCR0Manager", function () {
 
     it("should not allow non-owner to add PCR0 value", async function () {
       await expect(pcr0Manager.connect(other).addPCR0(samplePCR0))
-        .to.be.revertedWithCustomError(pcr0Manager, "OwnableUnauthorizedAccount")
-        .withArgs(other.address);
+        .to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount")
+        .withArgs(other.address, await pcr0Manager.CRITICAL_ROLE());
     });
 
     it("should not allow adding PCR0 with invalid size", async function () {
@@ -66,8 +66,8 @@ describe("PCR0Manager", function () {
 
     it("should not allow non-owner to remove PCR0 value", async function () {
       await expect(pcr0Manager.connect(other).removePCR0(samplePCR0))
-        .to.be.revertedWithCustomError(pcr0Manager, "OwnableUnauthorizedAccount")
-        .withArgs(other.address);
+        .to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount")
+        .withArgs(other.address, await pcr0Manager.CRITICAL_ROLE());
     });
 
     it("should not allow removing non-existent PCR0", async function () {

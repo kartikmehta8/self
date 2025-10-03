@@ -406,7 +406,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(address registryAddress) external virtual onlyProxy onlyOwner {
+    function updateRegistry(address registryAddress) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         _registry = registryAddress;
         emit RegistryUpdated(registryAddress);
     }
@@ -417,7 +417,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      */
     function updateVcAndDiscloseCircuit(
         address vcAndDiscloseCircuitVerifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         _vcAndDiscloseCircuitVerifier = vcAndDiscloseCircuitVerifierAddress;
         emit VcAndDiscloseCircuitUpdated(vcAndDiscloseCircuitVerifierAddress);
     }
@@ -430,7 +430,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function updateRegisterCircuitVerifier(
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         _sigTypeToRegisterCircuitVerifiers[typeId] = verifierAddress;
         emit RegisterCircuitVerifierUpdated(typeId, verifierAddress);
     }
@@ -440,7 +440,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      * @param typeId The signature type identifier.
      * @param verifierAddress The new DSC circuit verifier address.
      */
-    function updateDscVerifier(uint256 typeId, address verifierAddress) external virtual onlyProxy onlyOwner {
+    function updateDscVerifier(uint256 typeId, address verifierAddress) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         _sigTypeToDscCircuitVerifiers[typeId] = verifierAddress;
         emit DscCircuitVerifierUpdated(typeId, verifierAddress);
     }
@@ -453,7 +453,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function batchUpdateRegisterCircuitVerifiers(
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         if (typeIds.length != verifierAddresses.length) {
             revert LENGTH_MISMATCH();
         }
@@ -471,7 +471,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function batchUpdateDscCircuitVerifiers(
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         if (typeIds.length != verifierAddresses.length) {
             revert LENGTH_MISMATCH();
         }
