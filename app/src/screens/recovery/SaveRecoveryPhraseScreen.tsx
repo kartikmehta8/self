@@ -4,10 +4,15 @@
 
 import React, { useCallback, useState } from 'react';
 
+import {
+  Caption,
+  Description,
+  Title,
+} from '@selfxyz/mobile-sdk-alpha/typography';
+
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
 import Mnemonic from '@/components/Mnemonic';
-import { Caption, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import useMnemonic from '@/hooks/useMnemonic';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';

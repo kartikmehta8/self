@@ -25,3 +25,5 @@ export const Additional = forwardRef<TamaguiTextElement, TextProps>((props, ref)
     />
   );
 });
+
+Additional.displayName = 'Additional';

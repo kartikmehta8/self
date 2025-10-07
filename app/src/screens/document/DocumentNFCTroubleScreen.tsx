@@ -7,10 +7,11 @@ import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { YStack } from 'tamagui';
 
+import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
+
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
 import type { TipProps } from '@/components/Tips';
 import Tips from '@/components/Tips';
-import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 import { useFeedbackAutoHide } from '@/hooks/useFeedbackAutoHide';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import SimpleScrolledTitleLayout from '@/layouts/SimpleScrolledTitleLayout';

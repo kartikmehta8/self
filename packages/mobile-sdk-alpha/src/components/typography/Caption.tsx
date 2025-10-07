@@ -3,7 +3,7 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import { forwardRef } from 'react';
-import type { TextProps, TamaguiTextElement } from 'tamagui';
+import type { TamaguiTextElement, TextProps } from 'tamagui';
 import { Text } from 'tamagui';
 
 import { slate400 } from '../../constants/colors';
@@ -16,14 +16,8 @@ interface CaptionProps extends TextProps {
 export const Caption = forwardRef<TamaguiTextElement, CaptionProps>(({ size = 'default', ...props }, ref) => {
   const { fonts } = useTypographyTheme();
   const fontSize = size === 'small' ? 14 : size === 'large' ? 16 : 15;
-  
-  return (
-    <Text
-      ref={ref}
-      fontFamily={fonts.body}
-      fontSize={fontSize}
-      color={slate400}
-      {...props}
-    />
-  );
+
+  return <Text ref={ref} fontFamily={fonts.body} fontSize={fontSize} color={slate400} {...props} />;
 });
+
+Caption.displayName = 'Caption';

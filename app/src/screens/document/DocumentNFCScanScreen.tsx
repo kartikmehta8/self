@@ -36,13 +36,13 @@ import {
   useSelfClient,
 } from '@selfxyz/mobile-sdk-alpha';
 import { PassportEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { BodyText, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import passportVerifyAnimation from '@/assets/animations/passport_verify.json';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
 import ButtonsContainer from '@/components/ButtonsContainer';
 import TextsContainer from '@/components/TextsContainer';
-import { BodyText, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import { useFeedbackAutoHide } from '@/hooks/useFeedbackAutoHide';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import NFC_IMAGE from '@/images/nfc.png';

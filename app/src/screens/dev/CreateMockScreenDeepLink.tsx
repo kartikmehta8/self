@@ -14,10 +14,14 @@ import { getCountryISO2 } from '@selfxyz/common/constants/countries';
 import type { IdDocInput } from '@selfxyz/common/utils';
 import { genMockIdDocAndInitDataParsing } from '@selfxyz/common/utils/passports';
 import { MockDataEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  BodyText,
+  Description,
+  Title,
+} from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import ButtonsContainer from '@/components/ButtonsContainer';
-import { BodyText, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import { storePassportData } from '@/providers/passportDataProvider';
 import useUserStore from '@/stores/userStore';
 import { black, borderColor, white } from '@/utils/colors';

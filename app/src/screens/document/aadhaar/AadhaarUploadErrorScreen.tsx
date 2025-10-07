@@ -10,10 +10,10 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { AadhaarEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
 import { getErrorMessages } from '@selfxyz/mobile-sdk-alpha/onboarding/import-aadhaar';
+import { BodyText } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
-import { BodyText } from '@selfxyz/mobile-sdk-alpha/typography';
 import WarningIcon from '@/images/warning.svg';
 import { useSafeAreaInsets } from '@/mocks/react-native-safe-area-context';
 import { black, slate100, slate200, slate500, white } from '@/utils/colors';

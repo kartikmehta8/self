@@ -8,11 +8,11 @@ import { YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
 import { AppEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { Caution, SubHeader } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import warningAnimation from '@/assets/animations/warning.json';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { DelayedLottieView } from '@/components/DelayedLottieView';
-import { Caution, SubHeader } from '@selfxyz/mobile-sdk-alpha/typography';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { useSettingStore } from '@/stores/settingStore';
 import { black, white } from '@/utils/colors';

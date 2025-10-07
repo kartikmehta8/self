@@ -7,9 +7,10 @@ import { styled, View, XStack, YStack } from 'tamagui';
 import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 
+import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
+
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
-import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import ModalClose from '@/images/icons/modal_close.svg';
 import LogoInversed from '@/images/logo_inversed.svg';
 import { white } from '@/utils/colors';

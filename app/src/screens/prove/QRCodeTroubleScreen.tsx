@@ -4,9 +4,10 @@
 
 import React, { useEffect } from 'react';
 
+import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
+
 import type { TipProps } from '@/components/Tips';
 import Tips from '@/components/Tips';
-import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import SimpleScrolledTitleLayout from '@/layouts/SimpleScrolledTitleLayout';
 import { flushAllAnalytics } from '@/utils/analytics';

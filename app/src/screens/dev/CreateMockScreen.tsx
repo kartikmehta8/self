@@ -29,10 +29,10 @@ import {
   useSelfClient,
 } from '@selfxyz/mobile-sdk-alpha';
 import { MockDataEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import ButtonsContainer from '@/components/ButtonsContainer';
-import { Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 import { useMockDataForm } from '@/hooks/useMockDataForm';
 import SelfDevCard from '@/images/card-dev.svg';
 import IdIcon from '@/images/icons/id_icon.svg';

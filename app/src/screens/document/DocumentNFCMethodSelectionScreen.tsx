@@ -8,11 +8,15 @@ import { Input, YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
+import {
+  BodyText,
+  Description,
+  Title,
+} from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
 import ButtonsContainer from '@/components/ButtonsContainer';
-import { BodyText, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { white } from '@/utils/colors';
 

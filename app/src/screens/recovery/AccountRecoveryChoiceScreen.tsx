@@ -9,10 +9,14 @@ import { useNavigation } from '@react-navigation/native';
 import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { BackupEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  Caption,
+  Description,
+  Title,
+} from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
-import { Caption, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import Keyboard from '@/images/icons/keyboard.svg';
 import RestoreAccountSvg from '@/images/icons/restore_account.svg';

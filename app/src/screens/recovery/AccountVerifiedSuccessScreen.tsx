@@ -7,11 +7,11 @@ import { YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
 import { BackupEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import proofSuccessAnimation from '@/assets/animations/proof_success.json';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { DelayedLottieView } from '@/components/DelayedLottieView';
-import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { styles } from '@/screens/prove/ProofRequestStatusScreen';
 import { black, white } from '@/utils/colors';

@@ -8,9 +8,9 @@ import { assign, createMachine } from 'xstate';
 import { useMachine } from '@xstate/react';
 
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { Description } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { HeldPrimaryButton } from '@/components/buttons/PrimaryButtonLongHold';
-import { Description } from '@selfxyz/mobile-sdk-alpha/typography';
 import { black } from '@/utils/colors';
 
 interface HeldPrimaryButtonProveScreenProps {

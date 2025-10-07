@@ -6,8 +6,9 @@ import React from 'react';
 import { YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
-import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
+
+import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { black, white } from '@/utils/colors';
 import { confirmTap } from '@/utils/haptic';

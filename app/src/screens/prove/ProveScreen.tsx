@@ -24,11 +24,11 @@ import type { SelfAppDisclosureConfig } from '@selfxyz/common/utils/appType';
 import { formatEndpoint } from '@selfxyz/common/utils/scope';
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { BodyText, Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import miscAnimation from '@/assets/animations/loading/misc.json';
 import { HeldPrimaryButtonProveScreen } from '@/components/buttons/HeldPrimaryButtonProveScreen';
 import Disclosures from '@/components/Disclosures';
-import { BodyText, Caption } from '@selfxyz/mobile-sdk-alpha/typography';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import {
   setDefaultDocumentTypeIfNeeded,

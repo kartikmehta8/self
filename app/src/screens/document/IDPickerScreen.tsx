@@ -8,10 +8,10 @@ import type { RouteProp } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 
 import { SdkEvents, useSelfClient } from '@selfxyz/mobile-sdk-alpha';
+import { BodyText } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { RoundFlag } from '@/components/flag/RoundFlag';
 import { DocumentFlowNavBar } from '@/components/NavBar/DocumentFlowNavBar';
-import { BodyText } from '@selfxyz/mobile-sdk-alpha/typography';
 import AadhaarLogo from '@/images/icons/aadhaar.svg';
 import EPassportLogoRounded from '@/images/icons/epassport_rounded.svg';
 import PlusIcon from '@/images/icons/plus.svg';

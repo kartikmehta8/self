@@ -13,11 +13,11 @@ import {
   ProofEvents,
 } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
 import { getPreRegistrationDescription } from '@selfxyz/mobile-sdk-alpha/onboarding/confirm-identification';
+import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import successAnimation from '@/assets/animations/loading/success.json';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { DelayedLottieView } from '@/components/DelayedLottieView';
-import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { styles } from '@/screens/prove/ProofRequestStatusScreen';

@@ -12,9 +12,9 @@ import { useNavigation } from '@react-navigation/native';
 import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { BackupEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { Description } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
-import { Description } from '@selfxyz/mobile-sdk-alpha/typography';
 import Paste from '@/images/icons/paste.svg';
 import { useAuth } from '@/providers/authProvider';
 import {

@@ -8,9 +8,9 @@ import {
   hasAnyValidRegisteredDocument,
   useSelfClient,
 } from '@selfxyz/mobile-sdk-alpha';
+import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
-import { Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import analytics from '@/utils/analytics';

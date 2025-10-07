@@ -11,13 +11,17 @@ import { useIsFocused } from '@react-navigation/native';
 
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  BodyText,
+  Description,
+  Title,
+  typography,
+} from '@selfxyz/mobile-sdk-alpha/typography';
 
 import loadingAnimation from '@/assets/animations/loading/misc.json';
 import failAnimation from '@/assets/animations/proof_failed.json';
 import succesAnimation from '@/assets/animations/proof_success.json';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
-import { BodyText, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
-import { typography } from '@/components/typography/styles';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';

@@ -14,11 +14,15 @@ import {
 
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  Additional,
+  Description,
+  Title,
+} from '@selfxyz/mobile-sdk-alpha/typography';
 
 import qrScanAnimation from '@/assets/animations/qr_scan.json';
 import type { QRCodeScannerViewProps } from '@/components/native/QRCodeScanner';
 import { QRCodeScannerView } from '@/components/native/QRCodeScanner';
-import { Additional, Description, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useConnectionModal from '@/hooks/useConnectionModal';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import QRScan from '@/images/icons/qr_code.svg';

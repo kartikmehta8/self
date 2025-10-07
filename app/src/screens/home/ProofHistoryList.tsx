@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { CheckSquare2, Wallet, XCircle } from '@tamagui/lucide-icons';
 
 import { BodyText } from '@selfxyz/mobile-sdk-alpha/typography';
+
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
 import type { ProofHistory } from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';

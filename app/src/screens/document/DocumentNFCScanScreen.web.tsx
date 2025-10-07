@@ -10,11 +10,11 @@ import {
   useSelfClient,
 } from '@selfxyz/mobile-sdk-alpha';
 import { PassportEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import { BodyText, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 
 import { SecondaryButton } from '@/components/buttons/SecondaryButton';
 import ButtonsContainer from '@/components/ButtonsContainer';
 import TextsContainer from '@/components/TextsContainer';
-import { BodyText, Title } from '@selfxyz/mobile-sdk-alpha/typography';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import NFC_IMAGE from '@/images/nfc.png';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
