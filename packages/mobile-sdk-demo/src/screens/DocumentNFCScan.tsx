@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { getSKIPEM, initPassportDataParsing } from '@selfxyz/common';
-import { storePassportData, useSelfClient, type ScanResultNFC } from '@selfxyz/mobile-sdk-alpha';
+import { storePassportData, useSelfClient, type ScanResult } from '@selfxyz/mobile-sdk-alpha';
 
 import ScreenLayout from '../components/ScreenLayout';
 
@@ -22,11 +22,49 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const scanCancelledRef = useRef(false);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAutoStartedRef = useRef(false);
+
+  const handleCancel = useCallback(() => {
+    scanCancelledRef.current = true;
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
+    setIsScanning(false);
+    onBack();
+  }, [onBack]);
 
   const handleStartScan = useCallback(async () => {
     setIsScanning(true);
     setError(null);
     setStatusMessage('Hold your device near the NFC chip...');
+    scanCancelledRef.current = false;
+
+    const scanStartTime = Date.now();
+
+    // Set timeout for scan
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+    }
+
+    scanTimeoutRef.current = setTimeout(() => {
+      scanCancelledRef.current = true;
+      setStatusMessage(null);
+      setError('Scan timed out');
+      Alert.alert('Scan Timed Out', 'Please try again.', [
+        {
+          text: 'Try Again',
+          onPress: () => {
+            setError(null);
+            handleStartScan();
+          },
+        },
+        { text: 'Cancel', onPress: handleCancel, style: 'cancel' },
+      ]);
+      setIsScanning(false);
+    }, 30000); // 30 second timeout
 
     try {
       // Scan the document using the SDK
@@ -37,40 +75,100 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
         dateOfExpiry: mrzData.dateOfExpiry,
       });
 
+      // Check if scan was cancelled
+      if (scanCancelledRef.current) {
+        return;
+      }
+
+      const scanDurationSeconds = ((Date.now() - scanStartTime) / 1000).toFixed(2);
+      console.log('NFC Scan Successful - Duration:', scanDurationSeconds, 'seconds');
+
       setStatusMessage('Processing document data...');
 
       // Parse the passport data
       const skiPem = await getSKIPEM('production');
-      const parsedPassportData = initPassportDataParsing((scanResult as ScanResultNFC).passportData, skiPem);
+      const scanResultNFC = scanResult as Extract<ScanResult, { mode: 'nfc' }>;
+      const parsedPassportData = initPassportDataParsing(scanResultNFC.passportData, skiPem);
+
+      // Check again if scan was cancelled
+      if (scanCancelledRef.current) {
+        return;
+      }
 
       setStatusMessage('Storing document...');
 
       // Store the document
       await storePassportData(selfClient, parsedPassportData);
 
+      // Check again if scan was cancelled
+      if (scanCancelledRef.current) {
+        return;
+      }
+
       setStatusMessage('Success!');
 
       // Navigate to success screen with the document data
       setTimeout(() => {
-        onNavigate('success', { document: parsedPassportData });
+        if (!scanCancelledRef.current) {
+          onNavigate('success', { document: parsedPassportData });
+        }
       }, 500);
     } catch (err) {
+      // Check if scan was cancelled
+      if (scanCancelledRef.current) {
+        return;
+      }
+
       console.error('NFC scan failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to scan NFC chip';
       setError(errorMessage);
       setStatusMessage(null);
 
       Alert.alert('Scan Failed', errorMessage, [
-        { text: 'Try Again', onPress: () => setError(null) },
-        { text: 'Cancel', onPress: onBack, style: 'cancel' },
+        {
+          text: 'Try Again',
+          onPress: () => {
+            setError(null);
+            handleStartScan();
+          },
+        },
+        { text: 'Cancel', onPress: handleCancel, style: 'cancel' },
       ]);
     } finally {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
       setIsScanning(false);
     }
-  }, [selfClient, mrzData, onNavigate, onBack]);
+  }, [selfClient, mrzData, onNavigate, handleCancel]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      scanCancelledRef.current = true;
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Auto-start scan when component mounts
+  useEffect(() => {
+    if (!hasAutoStartedRef.current) {
+      hasAutoStartedRef.current = true;
+      // Small delay to allow UI to settle
+      const timer = setTimeout(() => {
+        handleStartScan();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [handleStartScan]);
 
   return (
-    <ScreenLayout title="NFC Scan" onBack={onBack} contentStyle={styles.screenContent}>
+    <ScreenLayout title="NFC Scan" onBack={handleCancel} contentStyle={styles.screenContent}>
       <View style={styles.contentWrapper}>
         <View style={styles.instructionsContainer}>
           <Text style={styles.instructionsTitle}>Scan NFC Chip</Text>
@@ -89,7 +187,7 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
           </View>
         )}
 
-        {error && (
+        {error && !isScanning && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
@@ -103,19 +201,16 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={handleStartScan}
-            style={[styles.primaryButton, isScanning && styles.disabledButton]}
-            disabled={isScanning}
-          >
-            <Text style={styles.primaryButtonText}>{isScanning ? 'Scanning...' : 'Start Scan'}</Text>
-          </TouchableOpacity>
+          {!isScanning && error && (
+            <TouchableOpacity accessibilityRole="button" onPress={handleStartScan} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={onBack}
-            style={styles.secondaryButton}
+            onPress={handleCancel}
+            style={[styles.secondaryButton, isScanning && styles.disabledButton]}
             disabled={isScanning}
           >
             <Text style={styles.secondaryButtonText}>Cancel</Text>
