@@ -112,27 +112,27 @@ if [[ $1 == "register" ]]; then
     allowed_circuits=("${REGISTER_CIRCUITS[@]}")
     output="output/register"
     mkdir -p $output
-    basepath="./circuits/circuits/register/instances"
+    basepath="./circuits/register/instances"
 elif [[ $1 == "register_id" ]]; then
     allowed_circuits=("${REGISTER_ID_CIRCUITS[@]}")
     output="output/register"
     mkdir -p $output
-    basepath="./circuits/circuits/register_id/instances"
+    basepath="./circuits/register_id/instances"
 elif [[ $1 == "register_aadhaar" ]]; then
     allowed_circuits=("${REGISTER_AADHAAR_CIRCUITS[@]}")
     output="output/register"
     mkdir -p $output
-    basepath="./circuits/circuits/register/instances"
+    basepath="./circuits/register/instances"
 elif [[ $1 == "dsc" ]]; then
     allowed_circuits=("${DSC_CIRCUITS[@]}")
     output="output/dsc"
     mkdir -p $output
-    basepath="./circuits/circuits/dsc/instances"
+    basepath="./circuits/dsc/instances"
 elif [[ $1 == "disclose" ]]; then
     allowed_circuits=("${DISCLOSE_CIRCUITS[@]}")
     output="output/disclose"
     mkdir -p $output
-    basepath="./circuits/circuits/disclose"
+    basepath="./circuits/disclose"
 fi
 
 pids=()
