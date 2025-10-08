@@ -3,10 +3,11 @@ import { generateSMTProof, getNameDobLeafSelfrica, getNameYobLeafSelfrica } from
 import { SelfricaCircuitInput, serializeSmileData, SmileData } from "./types.js";
 import { formatInput } from "../circuits/generateInputs.js";
 import { sha256Pad } from '@zk-email/helpers/dist/sha-utils.js';
-import { SELFRICA_DOB_INDEX, SELFRICA_DOB_LENGTH, SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_LENGTH, SELFRICA_MAX_LENGTH } from "./constants.js";
+import { createSelfricaSelector, SELFRICA_DOB_INDEX, SELFRICA_DOB_LENGTH, SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_LENGTH, SELFRICA_MAX_LENGTH, SelfricaField } from "./constants.js";
 import { generateRSAKeyPair, signRSA, verifyRSA } from "./rsa.js";
-import crypto from "crypto";
+import forge from "node-forge";
 import { splitToWords } from "../bytes.js";
+import { poseidon16, poseidon2 } from "poseidon-lite";
 
 
 export const splitDiscloseSel = (disclose_sel: string[]): string[] => {
@@ -30,6 +31,11 @@ export const splitDiscloseSel = (disclose_sel: string[]): string[] => {
     };
 
     return [bitsToDecimal(disclose_sel_low_bits), bitsToDecimal(disclose_sel_high_bits)];
+};
+
+export const createDiscloseSelFromFields = (fieldsToReveal: SelfricaField[]): string[] => {
+    const [highResult, lowResult] = createSelfricaSelector(fieldsToReveal);
+    return [highResult.toString(), lowResult.toString()];
 };
 
 
@@ -57,7 +63,7 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
     idType: 'NATIONAL ID',
     idNumber: '1234567890',
     issuanceDate: '20200101',
-    expiryDate: '20250101',
+    expiryDate: '20290101',
     fullName: 'John Doe',
     dob: '19900101',
     photoHash: '1234567890',
@@ -95,7 +101,7 @@ export const generateCircuitInputsOfac = (smileData: SmileData, smt: SMT, proofL
     }
 }
 
-export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: boolean) => {
+export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: boolean, fieldsToReveal?: SelfricaField[]) => {
     let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
     const msg = Buffer.from(serializeSmileData(smileData), 'utf8');
     const msgArray = Array.from(msg);
@@ -125,17 +131,17 @@ export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: bo
     const nullifierSigBigInt = BigInt('0x' + id_num_rsaSig.toString('hex'));
 
     // Extract RSA modulus and exponent from PEM formatted public key
-    const publicKeyObject = crypto.createPublicKey(publicKey);
-    const jwk = publicKeyObject.export({ format: 'jwk' });
-    const rsaModulus = BigInt('0x' + Buffer.from(jwk.n as string, 'base64url').toString('hex'));
+    const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
+    const rsaModulus = BigInt('0x' + publicKeyObject.n.toString(16));
 
     // Create disclose_sel array and split it into two decimal numbers
-    const disclose_sel_array = Array(SELFRICA_MAX_LENGTH).fill('1');
-
+    // Use provided fields or default to revealing all fields
+    const fieldsToRevealFinal = fieldsToReveal || [];
+    const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal);
 
     const circuitInput: SelfricaCircuitInput = {
         SmileID_data_padded: formatInput(msgPadded),
-        compressed_disclose_sel: splitDiscloseSel(disclose_sel_array),
+        compressed_disclose_sel: compressed_disclose_sel,
         pubKey: splitToWords(rsaModulus, 121, 17),
         msg_sig: splitToWords(sigBigInt, 121, 17),
         scope: '0',
@@ -147,7 +153,7 @@ export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: bo
         ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
         ofac_name_yob_smt_root: nameYobInputs.smt_root,
         ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
-        selector_ofac: ['0'],
+        selector_ofac: ofac ? ['1'] : ['0'],
         user_identifier: '1234567890',
         current_date: ['2', '0', '2', '4', '0', '1', '0', '1'],
         majority_age_ASCII: ['0', '0', '1'].map((x) => x.charCodeAt(0)),
@@ -157,12 +163,23 @@ export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: bo
     return circuitInput;
 }
 
-export const generateCircuitInputWithRealData = (serializedRealData: string, nameDobSmt: SMT, nameYobSmt: SMT, ofac?: boolean) => {
+export const generateCircuitInputWithRealData = (
+    serializedRealData: string,
+    nameDobSmt: SMT,
+    nameYobSmt: SMT,
+    ofac?: boolean,
+    privateKeyIn?: string,
+    publicKeyIn?: string,
+    fieldsToReveal?: SelfricaField[],
+    scope?: string,
+    userIdentifier?: string,
+    forbiddenCountriesList?: string[]
+) => {
     const msg = Buffer.from(serializedRealData, 'utf8');
     const msgArray = Array.from(msg); // Convert buffer to array of bytes for circuit input
 
     // Generate RSA key pair for real data (or use fixed key for deterministic results)
-    const { publicKey, privateKey } = generateRSAKeyPair();
+    const { publicKey, privateKey } = privateKeyIn && publicKeyIn ? { publicKey: publicKeyIn, privateKey: privateKeyIn } : generateRSAKeyPair();
 
     const fullName = serializedRealData.slice(SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH);
     const dob = serializedRealData.slice(SELFRICA_DOB_INDEX, SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH);
@@ -191,34 +208,53 @@ export const generateCircuitInputWithRealData = (serializedRealData: string, nam
     const nullifierSigBigInt = BigInt('0x' + nullifierRsaSig.toString('hex'));
 
     // Extract RSA modulus and exponent from PEM formatted public key
-    const publicKeyObject = crypto.createPublicKey(publicKey);
-    const jwk = publicKeyObject.export({ format: 'jwk' });
-    const realRsaModulus = BigInt('0x' + Buffer.from(jwk.n as string, 'base64url').toString('hex'));
+    const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
+    const realRsaModulus = BigInt('0x' + publicKeyObject.n.toString(16));
 
     const [msgPadded, _] = sha256Pad(msg, 320);
 
     // Create disclose_sel array and split it into two decimal numbers
-    const disclose_sel_array = Array(SELFRICA_MAX_LENGTH).fill('1');
+    // Use provided fields or default to revealing all fields
+    const fieldsToRevealFinal = fieldsToReveal || [];
+    const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
+
+    //generate the current date
+    const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split("");
+
+    console.log('currentDate', currentDate);
+
     const circuitInput: SelfricaCircuitInput = {
         SmileID_data_padded: formatInput(msgPadded),
-        compressed_disclose_sel: splitDiscloseSel(disclose_sel_array),
+        compressed_disclose_sel: compressed_disclose_sel,
         pubKey: splitToWords(realRsaModulus, 121, 17),
         msg_sig: splitToWords(sigBigInt, 121, 17),
         id_num_sig: splitToWords(nullifierSigBigInt, 121, 17),
-        scope: '0',
-        forbidden_countries_list: [...Array(120)].map((x) => '0'),
+        scope: scope || '0',
+        forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
         ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
         ofac_name_dob_smt_root: nameDobInputs.smt_root,
         ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
         ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
         ofac_name_yob_smt_root: nameYobInputs.smt_root,
         ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
-        selector_ofac: ['0'],
-        user_identifier: '1234567890',
-        current_date: ['2', '0', '2', '4', '0', '1', '0', '1'],
+        selector_ofac: ofac ? ['1'] : ['0'],
+        user_identifier: userIdentifier || '1234567890',
+        current_date: currentDate,
         majority_age_ASCII: ['0', '2', '0'].map((x) => x.charCodeAt(0)),
         selector_older_than: ['1'],
     }
 
     return circuitInput;
+}
+
+export const pubkeyCommitment = (pubkey: forge.pki.rsa.PublicKey) => {
+    const modulusHex = pubkey.n.toString(16);
+    const realRsaModulus = BigInt('0x' + modulusHex);
+
+    const pubkeyParts = splitToWords(realRsaModulus, 121, 17);
+
+    const firstPosiedonPart = poseidon16(pubkeyParts.slice(0, 16));
+    const pubkeyCommitment = poseidon2([firstPosiedonPart, pubkeyParts[16]]);
+
+    return pubkeyCommitment;
 }

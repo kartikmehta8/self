@@ -1,50 +1,45 @@
 
-import crypto from "crypto";
+import forge from "node-forge";
 
 // Generate a new RSA key pair (rsa_sha256_65537_2048)
 function generateRSAKeyPair() {
-  return crypto.generateKeyPairSync("rsa", {
-    modulusLength: 2048, // 2048-bit key
-    publicExponent: 65537, // Standard exponent for RSA-65537
-    publicKeyEncoding: {
-      type: "spki",
-      format: "pem",
-    },
-    privateKeyEncoding: {
-      type: "pkcs8",
-      format: "pem",
-    },
-  });
+  const keypair = forge.pki.rsa.generateKeyPair(2048, 65537);
 
+  return {
+    publicKey: forge.pki.publicKeyToPem(keypair.publicKey),
+    privateKey: forge.pki.privateKeyToPem(keypair.privateKey),
+  };
 }
 
-
 function signRSA(message: Buffer, privateKey: string) {
+  // Convert PEM private key to forge private key
+  const privateKeyObj = forge.pki.privateKeyFromPem(privateKey);
 
-  // Sign the message using RSA-SHA256 with PKCS#1 v1.5 padding (rsa_sha256_65537_2048 - algorithm 1)
-  const signature = crypto.sign("RSA-SHA256", message, {
-    key: privateKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING, // PKCS#1 v1.5 padding, not PSS
-  });
+  // Create MD5 hash of the message (RSA-SHA256 equivalent)
+  const md = forge.md.sha256.create();
+  md.update(message.toString('binary'));
 
-  return signature;
+  // Sign with PKCS#1 v1.5 padding
+  const signature = privateKeyObj.sign(md);
+
+  return Buffer.from(signature, 'binary');
 }
 
 function verifyRSA(message: Buffer, signatureBuffer: Buffer, publicKey: string) {
-  // Create the verifier. The algorithm must match the algorithm of the key.
-  const verify = crypto.createVerify("sha256");
-  verify.update(message);
-  verify.end();
+  try {
+    // Convert PEM public key to forge public key
+    const publicKeyObj = forge.pki.publicKeyFromPem(publicKey);
 
-  // Build the key object with PKCS#1 v1.5 padding
-  const key = {
-    key: publicKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING, // PKCS#1 v1.5 padding to match signing
-  };
+    // Create MD5 hash of the message
+    const md = forge.md.sha256.create();
+    md.update(message.toString('binary'));
 
-  // Verify the signature using the public key
-  const verified = verify.verify(key, signatureBuffer);
-  return verified;
+    // Verify the signature
+    const verified = publicKeyObj.verify(md.digest().bytes(), signatureBuffer.toString('binary'));
+    return verified;
+  } catch (error) {
+    return false;
+  }
 }
 
 export { generateRSAKeyPair, signRSA, verifyRSA};

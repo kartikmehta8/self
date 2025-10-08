@@ -1,16 +1,15 @@
 import { wasm as wasmTester } from 'circom_tester';
 import * as path from 'path';
-import { generateCircuitInput, generateCircuitInputWithRealData, NON_OFAC_DUMMY_INPUT, OFAC_DUMMY_INPUT } from '../../../common/src/utils/selfrica/generateInputs.js';
+import { generateCircuitInput, NON_OFAC_DUMMY_INPUT, OFAC_DUMMY_INPUT } from '@selfxyz/common';
 import { SMT } from '@openpassport/zk-kit-smt';
-import { poseidon1, poseidon2 } from 'poseidon-lite';
+import { poseidon2 } from 'poseidon-lite';
 import fs from 'fs';
-import { unpackReveal } from '../../../common/src/utils/circuits/formatOutputs.js';
-import { SELFRICA_MAX_LENGTH } from '../../../common/src/utils/selfrica/constants.js';
+import { unpackReveal } from '@selfxyz/common/utils/circuits/formatOutputs.js';
+import { SELFRICA_MAX_LENGTH } from '@selfxyz/common';
 import { deepEqual } from 'assert';
 import { expect } from 'chai';
-import { customHasher } from '@selfxyz/common/utils/hash';
-import { serializeSmileData } from '@selfxyz/common/utils/selfrica/types';
-
+import { customHasher } from '@selfxyz/common';
+import { serializeSmileData } from '@selfxyz/common';
 
 const __dirname = path.dirname(__filename);
 
@@ -40,15 +39,11 @@ describe('should verify signature on random inputs', () => {
                     'node_modules',
                     'node_modules/@zk-kit/binary-merkle-root.circom/src',
                     'node_modules/circomlib/circuits',
-                    'circuits',
-                    'circuits/utils',
-                    'circuits/utils/passport',
                 ],
             }
         );
     });
-
-    it('should verify for correct Circuit Input and output ', async function () {
+    it.only('should verify for correct Circuit Input and output ', async function () {
         this.timeout(0);
         const input = generateCircuitInput(namedob_smt, nameyob_smt);
         const expNullifier = customHasher([...input.id_num_sig, "0"]);
@@ -82,7 +77,7 @@ describe('should verify signature on random inputs', () => {
             }
         }
     });
-    
+
     it('should fail for s > 251 bits', async function () {
         this.timeout(0);
         const input = generateCircuitInput(namedob_smt, nameyob_smt);

@@ -155,7 +155,11 @@ template VC_AND_DISCLOSE(
 
     signal output identity_commitment <== idCommCal.out;
     signal output nullifier <== nullifierCal.out;
-
+    component firstPubkeyPart = Poseidon(16); //since we're going to use 17 parts for the rsa key
+    for (var i = 0; i < 16; i++) {
+        firstPubkeyPart.inputs[i] <== pubKey[i];
+    }
+    signal output pubkeyCommitment <== Poseidon(2)([firstPubkeyPart.out, pubKey[16]]);
 }
 
 component main {

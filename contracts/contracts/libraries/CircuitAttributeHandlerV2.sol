@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {Formatter} from "./Formatter.sol";
 import {AttestationId} from "../constants/AttestationId.sol";
 import {SelfStructs} from "./SelfStructs.sol";
+
 /**
  * @title UnifiedAttributeHandler Library
  * @notice Provides functions for extracting and formatting attributes from both passport and ID card byte arrays.
@@ -42,7 +43,7 @@ library CircuitAttributeHandlerV2 {
     /**
      * @notice Returns the field positions for a given attestation type.
      * @param attestationId The attestation identifier.
-     * @return positions The FieldPositions struct containing all relevant positions.
+     * @return positions The FieldPositions struct containing all relevant positions (inclusive).
      */
     function getFieldPositions(bytes32 attestationId) internal pure returns (FieldPositions memory positions) {
         if (attestationId == AttestationId.E_PASSPORT) {
@@ -110,6 +111,28 @@ library CircuitAttributeHandlerV2 {
                     olderThanEnd: 118,
                     ofacStart: 116,
                     ofacEnd: 117
+                });
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            return
+                FieldPositions({
+                    issuingStateStart: 50,
+                    issuingStateEnd: 57,
+                    nameStart: 66,
+                    nameEnd: 105,
+                    documentNumberStart: 30,
+                    documentNumberEnd: 49,
+                    nationalityStart: 0,
+                    nationalityEnd: 2,
+                    dateOfBirthStart: 106,
+                    dateOfBirthEnd: 113,
+                    genderStart: 160,
+                    genderEnd: 165,
+                    expiryDateStart: 58,
+                    expiryDateEnd: 65,
+                    olderThanStart: 268,
+                    olderThanEnd: 270,
+                    ofacStart: 266,
+                    ofacEnd: 267
                 });
         } else {
             revert("Invalid attestation ID");
@@ -215,6 +238,18 @@ library CircuitAttributeHandlerV2 {
     }
 
     /**
+     * @notice Retrieves and formats the expiry date from the encoded attribute byte array.
+     * @param attestationId The attestation identifier.
+     * @param charcodes The byte array containing attribute data.
+     * @return The formatted expiry date as a string.
+     */
+    function getExpiryDateFullYear(bytes32 attestationId, bytes memory charcodes) internal pure returns (string memory) {
+        FieldPositions memory positions = getFieldPositions(attestationId);
+        return
+            Formatter.formatDateFullYear(extractStringAttribute(charcodes, positions.expiryDateStart, positions.expiryDateEnd));
+    }
+
+    /**
      * @notice Retrieves the 'older than' age attribute from the encoded attribute byte array.
      * @param attestationId The attestation identifier.
      * @param charcodes The byte array containing attribute data.
@@ -222,6 +257,12 @@ library CircuitAttributeHandlerV2 {
      */
     function getOlderThan(bytes32 attestationId, bytes memory charcodes) internal pure returns (uint256) {
         FieldPositions memory positions = getFieldPositions(attestationId);
+        if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            return
+                Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart])) * 100 +
+                Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart + 1])) * 10 +
+                Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart + 2]));
+        }
         return
             Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart])) * 10 +
             Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart + 1]));

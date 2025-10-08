@@ -130,3 +130,25 @@ export {
   prepareAadhaarRegisterData,
   prepareAadhaarRegisterTestData,
 } from './src/utils/aadhaar/mockData.js';
+
+export {
+  generateCircuitInput,
+  generateCircuitInputWithRealData,
+  pubkeyCommitment,
+  NON_OFAC_DUMMY_INPUT,
+  OFAC_DUMMY_INPUT,
+} from './src/utils/selfrica/generateInputs.js';
+
+export {
+  SELFRICA_MAX_LENGTH,
+} from './src/utils/selfrica/constants.js';
+
+export {
+  serializeSmileData,
+} from './src/utils/selfrica/types.js';
+
+export {
+  generateRSAKeyPair,
+  signRSA,
+  verifyRSA,
+} from './src/utils/selfrica/rsa.js';

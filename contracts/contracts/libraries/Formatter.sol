@@ -197,6 +197,28 @@ library Formatter {
         return bytesArray;
     }
 
+    function fieldElementsToBytesSelfrica(uint256[9] memory publicSignals) internal pure returns (bytes memory) {
+        for (uint256 i = 0; i < 9; i++) {
+            if (publicSignals[i] >= SNARK_SCALAR_FIELD) {
+                revert InvalidFieldElement();
+            }
+        }
+
+        uint8[9] memory bytesCount = [31, 31, 31, 31, 31, 31, 31, 31, 23];
+        bytes memory bytesArray = new bytes(271);
+
+        uint256 index = 0;
+        for (uint256 i = 0; i < 9; i++) {
+            uint256 element = publicSignals[i];
+            for (uint8 j = 0; j < bytesCount[i]; j++) {
+                bytesArray[index++] = bytes1(uint8(element & 0xff));
+                element = element >> 8;
+            }
+        }
+
+        return bytesArray;
+    }
+
     /**
      * @notice Extracts forbidden country codes from a packed uint256.
      * @dev Each forbidden country is represented by 3 bytes in the packed data.

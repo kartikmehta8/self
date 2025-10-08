@@ -5,7 +5,7 @@ import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs";
 import { groth16 } from "snarkjs";
 import { PassportData } from "@selfxyz/common/utils/types";
 import { CircuitArtifacts, DscCircuitProof, RegisterCircuitProof, VcAndDiscloseProof } from "./types.js";
-import { prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
+import { generateCircuitInputWithRealData, prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
 
 import { BigNumberish } from "ethers";
 import {
@@ -70,6 +70,14 @@ const vcAndDiscloseCircuitsAadhaar: CircuitArtifacts = {
     wasm: "../circuits/build/disclose/vc_and_disclose_aadhaar/vc_and_disclose_aadhaar_js/vc_and_disclose_aadhaar.wasm",
     zkey: "../circuits/build/disclose/vc_and_disclose_aadhaar/vc_and_disclose_aadhaar_final.zkey",
     vkey: "../circuits/build/disclose/vc_and_disclose_aadhaar/vc_and_disclose_aadhaar_vkey.json",
+  },
+};
+
+const vcAndDiscloseCircuitsSelfrica: CircuitArtifacts = {
+  vc_and_disclose_selfrica: {
+    wasm: "../circuits/build/disclose/vc_and_disclose_selfrica/vc_and_disclose_selfrica_js/vc_and_disclose_selfrica.wasm",
+    zkey: "../circuits/build/disclose/vc_and_disclose_selfrica/vc_and_disclose_selfrica_final.zkey",
+    vkey: "../circuits/build/disclose/vc_and_disclose_selfrica/vc_and_disclose_selfrica_vkey.json",
   },
 };
 
@@ -480,6 +488,31 @@ export async function generateVcAndDiscloseAadhaarProof(
   return fixedProof;
 }
 
+export async function generateVcAndDiscloseSelfricaProof(
+  inputs: ReturnType<typeof generateCircuitInputWithRealData>,
+): Promise<GenericProofStructStruct> {
+  const circuitName = "vc_and_disclose_selfrica";
+  const circuitArtifacts = vcAndDiscloseCircuitsSelfrica;
+  const artifactKey = circuitName;
+
+  const vcAndDiscloseProof = await groth16.fullProve(
+    inputs,
+    circuitArtifacts[artifactKey].wasm,
+    circuitArtifacts[artifactKey].zkey,
+  );
+
+  const vKey = JSON.parse(fs.readFileSync(circuitArtifacts[artifactKey].vkey, "utf8"));
+  const isValid = await groth16.verify(vKey, vcAndDiscloseProof.publicSignals, vcAndDiscloseProof.proof);
+  if (!isValid) {
+    throw new Error("Generated VC and Disclose Selfrica proof verification failed");
+  }
+
+  const rawCallData = await groth16.exportSolidityCallData(vcAndDiscloseProof.proof, vcAndDiscloseProof.publicSignals);
+  const fixedProof = parseSolidityCalldata(rawCallData, {} as GenericProofStructStruct);
+
+  return fixedProof;
+}
+
 export function parseSolidityCalldata<T>(rawCallData: string, _type: T): T {
   const parsed = JSON.parse("[" + rawCallData + "]");
 
@@ -515,6 +548,8 @@ export function getSMTs() {
   ) as typeof SMT;
   const nameAndDob_id_smt = importSMTFromJsonFile("../circuits/tests/consts/ofac/nameAndDobSMT_ID.json") as typeof SMT;
   const nameAndYob_id_smt = importSMTFromJsonFile("../circuits/tests/consts/ofac/nameAndYobSMT_ID.json") as typeof SMT;
+  const nameAndDob_selfrica_smt = importSMTFromJsonFile("../circuits/tests/consts/ofac/nameAndDobSelfricaSMT.json") as typeof SMT;
+  const nameAndYob_selfrica_smt = importSMTFromJsonFile("../circuits/tests/consts/ofac/nameAndYobSelfricaSMT.json") as typeof SMT;
 
   return {
     passportNo_smt,
@@ -524,6 +559,8 @@ export function getSMTs() {
     nameAndYob_id_smt,
     nameDobAadhar_smt,
     nameYobAadhar_smt,
+    nameAndDob_selfrica_smt,
+    nameAndYob_selfrica_smt,
   };
 }
 

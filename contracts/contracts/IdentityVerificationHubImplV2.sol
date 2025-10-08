@@ -9,10 +9,12 @@ import {GenericFormatter} from "./libraries/GenericFormatter.sol";
 import {AttestationId} from "./constants/AttestationId.sol";
 import {IVcAndDiscloseCircuitVerifier} from "./interfaces/IVcAndDiscloseCircuitVerifier.sol";
 import {IVcAndDiscloseAadhaarCircuitVerifier} from "./interfaces/IVcAndDiscloseCircuitVerifier.sol";
+import {IVcAndDiscloseSelfricaCircuitVerifier} from "./interfaces/IVcAndDiscloseCircuitVerifier.sol";
 import {ISelfVerificationRoot} from "./interfaces/ISelfVerificationRoot.sol";
 import {IIdentityRegistryV1} from "./interfaces/IIdentityRegistryV1.sol";
 import {IIdentityRegistryIdCardV1} from "./interfaces/IIdentityRegistryIdCardV1.sol";
 import {IIdentityRegistryAadhaarV1} from "./interfaces/IIdentityRegistryAadhaarV1.sol";
+import {IIdentityRegistrySelfricaV1} from "./interfaces/IIdentityRegistrySelfricaV1.sol";
 import {IRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
 import {IAadhaarRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
 import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
@@ -209,6 +211,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @notice Thrown when the ofac roots don't match.
     /// @dev Ensures that the ofac roots match.
     error InvalidOfacRoots();
+
+    /// @notice Thrown when the pubkey commitment is invalid.
+    /// @dev Ensures that the pubkey commitment is valid.
+    error InvalidPubkeyCommitment();
 
     // ====================================================
     // Constructor
@@ -679,10 +685,23 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
         // Scope 2: Root and date checks
         {
-            _performRootCheck(header.attestationId, vcAndDiscloseProof, indices);
+            if (
+                AttestationId.E_PASSPORT == header.attestationId ||
+                AttestationId.EU_ID_CARD == header.attestationId ||
+                AttestationId.AADHAAR == header.attestationId
+            ) {
+                _performRootCheck(header.attestationId, vcAndDiscloseProof, indices);
+            }
             _performOfacCheck(header.attestationId, vcAndDiscloseProof, indices);
             if (header.attestationId == AttestationId.AADHAAR) {
                 _performNumericCurrentDateCheck(vcAndDiscloseProof, indices);
+            } else if(header.attestationId == AttestationId.SELFRICA_ID_CARD) {
+                _performFullYearCurrentDateCheck(vcAndDiscloseProof, indices);
+                //perform pubkey commitment check
+                IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
+                if (!IIdentityRegistrySelfricaV1($._registries[header.attestationId]).checkPubkeyCommitment(vcAndDiscloseProof.pubSignals[CircuitConstantsV2.SELFRICA_PUBKEY_COMMITMENT_INDEX])) {
+                    revert InvalidPubkeyCommitment();
+                }
             } else {
                 _performCurrentDateCheck(vcAndDiscloseProof, indices);
             }
@@ -975,6 +994,15 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             ) {
                 revert InvalidOfacRoots();
             }
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            if (
+                !IIdentityRegistrySelfricaV1($._registries[attestationId]).checkOfacRoots(
+                    vcAndDiscloseProof.pubSignals[indices.namedobSmtRootIndex],
+                    vcAndDiscloseProof.pubSignals[indices.nameyobSmtRootIndex]
+                )
+            ) {
+                revert InvalidOfacRoots();
+            }
         } else {
             revert InvalidAttestationId();
         }
@@ -997,6 +1025,32 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         uint256 endOfDay = startOfDay + 1 days - 1;
 
         if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > endOfDay + 1 days) {
+            revert CurrentDateNotInValidRange();
+        }
+    }
+
+    function _performFullYearCurrentDateCheck(
+        GenericProofStruct memory vcAndDiscloseProof,
+        CircuitConstantsV2.DiscloseIndices memory indices
+    ) internal view {
+        uint256[3] memory dateNum;
+        for (uint i = 0; i < 4; i++) {
+            uint256 num = vcAndDiscloseProof.pubSignals[indices.currentDateIndex + i];
+            dateNum[0] = dateNum[0] * 10 + num;
+        }
+        for (uint i = 4; i < 6; i++) {
+            uint256 num = vcAndDiscloseProof.pubSignals[indices.currentDateIndex + i];
+            dateNum[1] = dateNum[1] * 10 + num;
+        }
+        for (uint i = 6; i < 8; i++) {
+            uint256 num = vcAndDiscloseProof.pubSignals[indices.currentDateIndex + i];
+            dateNum[2] = dateNum[2] * 10 + num;
+        }
+
+        uint256 currentTimestamp = Formatter.proofDateToUnixTimestampNumeric(dateNum);
+        uint256 startOfDay = _getStartOfDayTimestamp();
+
+        if (currentTimestamp < startOfDay - 1 days + 1 || currentTimestamp > startOfDay + 1 days - 1) {
             revert CurrentDateNotInValidRange();
         }
     }
@@ -1052,6 +1106,22 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
             if (
                 !IVcAndDiscloseAadhaarCircuitVerifier($._discloseVerifiers[attestationId]).verifyProof(
+                    vcAndDiscloseProof.a,
+                    vcAndDiscloseProof.b,
+                    vcAndDiscloseProof.c,
+                    pubSignals
+                )
+            ) {
+                revert InvalidVcAndDiscloseProof();
+            }
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            uint256[29] memory pubSignals;
+            for (uint256 i = 0; i < 29; i++) {
+                pubSignals[i] = vcAndDiscloseProof.pubSignals[i];
+            }
+
+            if (
+                !IVcAndDiscloseSelfricaCircuitVerifier($._discloseVerifiers[attestationId]).verifyProof(
                     vcAndDiscloseProof.a,
                     vcAndDiscloseProof.b,
                     vcAndDiscloseProof.c,
@@ -1148,6 +1218,8 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             return _createEuIdOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
         } else if (attestationId == AttestationId.AADHAAR) {
             return _createAadhaarOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            return _createSelfricaOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
         } else {
             revert InvalidAttestationId();
         }
@@ -1251,6 +1323,26 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         }
 
         return abi.encode(aadhaarOutput);
+    }
+
+    function _createSelfricaOutput(
+        GenericProofStruct memory vcAndDiscloseProof,
+        CircuitConstantsV2.DiscloseIndices memory indices,
+        bytes32 attestationId,
+        uint256 userIdentifier
+    ) internal pure returns (bytes memory) {
+        SelfStructs.SelfricaOutput memory selfricaOutput;
+        selfricaOutput.attestationId = uint256(attestationId);
+        selfricaOutput.userIdentifier = userIdentifier;
+        selfricaOutput.nullifier = vcAndDiscloseProof.pubSignals[indices.nullifierIndex];
+
+        uint256[9] memory revealedDataPacked;
+        for (uint256 i = 0; i < 9; i++) {
+            revealedDataPacked[i] = vcAndDiscloseProof.pubSignals[indices.revealedDataPackedIndex + i];
+        }
+        selfricaOutput.revealedDataPacked = Formatter.fieldElementsToBytesSelfrica(revealedDataPacked);
+
+        return abi.encode(selfricaOutput);
     }
 
     /**

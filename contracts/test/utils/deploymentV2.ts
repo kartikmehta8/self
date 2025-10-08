@@ -16,6 +16,7 @@ import RegisterVerifierArtifactLocal from "../../artifacts/contracts/verifiers/l
 import RegisterIdVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register_id/Verifier_register_id_sha256_sha256_sha256_rsa_65537_4096_staging.sol/Verifier_register_id_sha256_sha256_sha256_rsa_65537_4096_staging.json";
 import RegisterAadhaarVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_aadhaar_staging.sol/Verifier_register_aadhaar_staging.json";
 import DscVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/dsc/Verifier_dsc_sha256_rsa_65537_4096_staging.sol/Verifier_dsc_sha256_rsa_65537_4096_staging.json";
+import VcAndDiscloseSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/disclose/Verifier_vc_and_disclose_selfrica_staging.sol/Verifier_vc_and_disclose_selfrica_staging.json";
 
 export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   let identityVerificationHubV2: any;
@@ -26,9 +27,12 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   let identityRegistryIdImpl: any;
   let identityRegistryAadhaarImpl: any;
   let identityRegistryAadhaarProxy: any;
+  let identityRegistrySelfricaImpl: any;
+  let identityRegistrySelfricaProxy: any;
   let vcAndDiscloseVerifier: any;
   let vcAndDiscloseIdVerifier: any;
   let vcAndDiscloseAadhaarVerifier: any;
+  let vcAndDiscloseSelfricaVerifier: any;
   let registerVerifier: any;
   let registerIdVerifier: any;
   let registerAadhaarVerifier: any;
@@ -74,6 +78,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   let vcAndDiscloseAadhaarVerifierArtifact;
+  // Deploy VC and Disclose Aadhaar verifier
   {
     vcAndDiscloseAadhaarVerifierArtifact = VcAndDiscloseAadhaarVerifierArtifactLocal;
     const vcAndDiscloseAadhaarVerifierFactory = await ethers.getContractFactory(
@@ -82,6 +87,18 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     );
     vcAndDiscloseAadhaarVerifier = await vcAndDiscloseAadhaarVerifierFactory.connect(owner).deploy();
     await vcAndDiscloseAadhaarVerifier.waitForDeployment();
+  }
+
+  let vcAndDiscloseSelfricaVerifierArtifact;
+  // Deploy VC and Disclose Selfrica verifier
+  {
+    vcAndDiscloseSelfricaVerifierArtifact = VcAndDiscloseSelfricaVerifierArtifactLocal;
+    const vcAndDiscloseSelfricaVerifierFactory = await ethers.getContractFactory(
+      vcAndDiscloseSelfricaVerifierArtifact.abi,
+      vcAndDiscloseSelfricaVerifierArtifact.bytecode,
+    );
+    vcAndDiscloseSelfricaVerifier = await vcAndDiscloseSelfricaVerifierFactory.connect(owner).deploy();
+    await vcAndDiscloseSelfricaVerifier.waitForDeployment();
   }
 
   // Deploy register verifier
@@ -182,6 +199,14 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await identityRegistryAadhaarImpl.waitForDeployment();
   }
 
+  // Deploy IdentityRegistrySelfricaImplV1 for Selfrica
+  let IdentityRegistrySelfricaImplFactory;
+  {
+    IdentityRegistrySelfricaImplFactory = await ethers.getContractFactory("IdentityRegistrySelfricaImplV1");
+    identityRegistrySelfricaImpl = await IdentityRegistrySelfricaImplFactory.connect(owner).deploy();
+    await identityRegistrySelfricaImpl.waitForDeployment();
+  }
+
   // Deploy IdentityVerificationHubImplV2
   let IdentityVerificationHubImplV2Factory;
   {
@@ -231,6 +256,17 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await identityRegistryAadhaarProxy.waitForDeployment();
   }
 
+  // Deploy Selfrica registry with temporary hub address
+  let registrySelfricaInitData, registrySelfricaProxyFactory;
+  {
+    registrySelfricaInitData = identityRegistrySelfricaImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
+    registrySelfricaProxyFactory = await ethers.getContractFactory("IdentityRegistry");
+    identityRegistrySelfricaProxy = await registrySelfricaProxyFactory
+      .connect(owner)
+      .deploy(identityRegistrySelfricaImpl.target, registrySelfricaInitData);
+    await identityRegistrySelfricaProxy.waitForDeployment();
+  }
+
   // Deploy hub V2 with simple initialization (V2 has different initialization)
   let initializeDataV2, hubFactory;
   {
@@ -267,6 +303,13 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await updateAadhaarHubTx.wait();
   }
 
+  let registrySelfricaContract, updateSelfricaHubTx;
+  {
+    registrySelfricaContract = await ethers.getContractAt("IdentityRegistrySelfricaImplV1", identityRegistrySelfricaProxy.target);
+    updateSelfricaHubTx = await registrySelfricaContract.updateHub(identityVerificationHubV2.target);
+    await updateSelfricaHubTx.wait();
+  }
+
   let hubContract;
   {
     hubContract = (await ethers.getContractAt(
@@ -286,7 +329,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     from: owner,
   });
 
-  const { passportNo_smt, nameAndDob_smt, nameAndYob_smt, nameDobAadhar_smt, nameYobAadhar_smt } = getSMTs();
+  const { passportNo_smt, nameAndDob_smt, nameAndYob_smt, nameDobAadhar_smt, nameYobAadhar_smt, nameAndDob_selfrica_smt, nameAndYob_selfrica_smt } = getSMTs();
 
   // Update passport roots
   await registryContract.updatePassportNoOfacRoot(passportNo_smt.root, { from: owner });
@@ -301,20 +344,27 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   await registryAadhaarContract.updateNameAndDobOfacRoot(nameDobAadhar_smt.root, { from: owner });
   await registryAadhaarContract.updateNameAndYobOfacRoot(nameYobAadhar_smt.root, { from: owner });
 
+  // Update Selfrica roots
+  await registrySelfricaContract.updateNameAndDobOfacRoot(nameAndDob_selfrica_smt.root, { from: owner });
+  await registrySelfricaContract.updateNameAndYobOfacRoot(nameAndYob_selfrica_smt.root, { from: owner });
+
   // Register verifiers with the hub
   const E_PASSPORT = ethers.hexlify(ethers.zeroPadValue(ethers.toBeHex(1), 32));
   const EU_ID_CARD = ethers.hexlify(ethers.zeroPadValue(ethers.toBeHex(2), 32));
   const AADHAAR = ethers.hexlify(ethers.zeroPadValue(ethers.toBeHex(3), 32));
+  const SELFRICA = ethers.hexlify(ethers.zeroPadValue(ethers.toBeHex(4), 32));
 
   // Update registries in the hub
   await hubContract.updateRegistry(E_PASSPORT, identityRegistryProxy.target);
   await hubContract.updateRegistry(EU_ID_CARD, identityRegistryIdProxy.target);
   await hubContract.updateRegistry(AADHAAR, identityRegistryAadhaarProxy.target);
+  await hubContract.updateRegistry(SELFRICA, identityRegistrySelfricaProxy.target);
 
   // Update VC and Disclose verifiers
   await hubContract.updateVcAndDiscloseCircuit(E_PASSPORT, vcAndDiscloseVerifier.target);
   await hubContract.updateVcAndDiscloseCircuit(EU_ID_CARD, vcAndDiscloseIdVerifier.target);
   await hubContract.updateVcAndDiscloseCircuit(AADHAAR, vcAndDiscloseAadhaarVerifier.target);
+  await hubContract.updateVcAndDiscloseCircuit(SELFRICA, vcAndDiscloseSelfricaVerifier.target);
 
   // Update register verifiers
   await hubContract.updateRegisterCircuitVerifier(
@@ -351,9 +401,12 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     registryId: registryIdContract,
     registryAadhaarImpl: identityRegistryAadhaarImpl,
     registryAadhaar: registryAadhaarContract,
+    registrySelfrica: registrySelfricaContract,
+    registrySelfricaImpl: identityRegistrySelfricaImpl,
     vcAndDisclose: vcAndDiscloseVerifier,
     vcAndDiscloseId: vcAndDiscloseIdVerifier,
     vcAndDiscloseAadhaar: vcAndDiscloseAadhaarVerifier,
+    vcAndDiscloseSelfrica: vcAndDiscloseSelfricaVerifier,
     aadhaarPubkey: aadhaarPubkeyCommitment,
     register: registerVerifier,
     registerId: RegisterVerifierId.register_sha256_sha256_sha256_rsa_65537_4096,
