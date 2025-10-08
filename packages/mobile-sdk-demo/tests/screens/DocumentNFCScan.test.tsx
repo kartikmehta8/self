@@ -8,8 +8,9 @@ import DocumentNFCScan from '../../src/screens/DocumentNFCScan';
 describe('DocumentNFCScan screen', () => {
   it('presents NFC scanning guidance and responds to back presses', async () => {
     const onBack = vi.fn();
+    const onNavigate = vi.fn();
 
-    render(<DocumentNFCScan onBack={onBack} />);
+    render(<DocumentNFCScan onBack={onBack} onNavigate={onNavigate} />);
 
     expect(screen.getByText('Document NFC Scan')).toBeInTheDocument();
     expect(screen.getByText(/nfc-based passport reading/i)).toBeInTheDocument();

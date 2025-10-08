@@ -35,6 +35,17 @@ export default function DocumentScanSuccess({ onBack, onNavigate, document }: Pr
       };
     }
 
+    // Only PassportData has mrz property, check documentCategory to narrow type
+    if (document.documentCategory !== 'passport' && document.documentCategory !== 'id_card') {
+      // Handle Aadhaar or other document types that don't have MRZ
+      return {
+        documentNumber: 'N/A',
+        documentType: document.documentCategory,
+        country: 'N/A',
+        expiryDate: 'N/A',
+      };
+    }
+
     // Parse MRZ to extract information
     const mrz = document.mrz || '';
     let documentNumber = 'Unknown';
