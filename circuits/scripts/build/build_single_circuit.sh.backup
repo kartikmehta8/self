@@ -175,7 +175,7 @@ case "$CIRCUIT_TYPE" in
             exit 1
         fi
         output="output/register"
-        basepath="./circuits/register/instances"
+        basepath="./circuits/circuits/register/instances"
         ;;
     "register_id")
         if ! circuit_exists_in_array "$CIRCUIT_NAME" "${REGISTER_ID_CIRCUITS[@]}"; then
@@ -183,7 +183,7 @@ case "$CIRCUIT_TYPE" in
             exit 1
         fi
         output="output/register"
-        basepath="./circuits/register_id/instances"
+        basepath="./circuits/circuits/register_id/instances"
         ;;
     "register_aadhaar")
         if ! circuit_exists_in_array "$CIRCUIT_NAME" "${REGISTER_AADHAAR_CIRCUITS[@]}"; then
@@ -191,7 +191,7 @@ case "$CIRCUIT_TYPE" in
             exit 1
         fi
         output="output/register"
-        basepath="./circuits/register/instances"
+        basepath="./circuits/circuits/register/instances"
         ;;
     "vc_and_disclose")
         if ! circuit_exists_in_array "$CIRCUIT_NAME" "${DISCLOSE_CIRCUITS[@]}"; then
@@ -199,7 +199,7 @@ case "$CIRCUIT_TYPE" in
             exit 1
         fi
         output="output/disclose"
-        basepath="./circuits/disclose"
+        basepath="./circuits/circuits/disclose"
         ;;
     "dsc")
         if ! circuit_exists_in_array "$CIRCUIT_NAME" "${DSC_CIRCUITS[@]}"; then
@@ -207,7 +207,7 @@ case "$CIRCUIT_TYPE" in
             exit 1
         fi
         output="output/dsc"
-        basepath="./circuits/dsc/instances"
+        basepath="./circuits/circuits/dsc/instances"
         ;;
     *)
         echo "❌ Error: Unknown circuit type '$CIRCUIT_TYPE'"
