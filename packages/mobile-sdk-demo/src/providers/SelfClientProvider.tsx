@@ -9,10 +9,11 @@ import React, { useMemo } from 'react';
 import {
   SelfClientProvider as SdkSelfClientProvider,
   createListenersMap,
+  SdkEvents,
   type Adapters,
   type TrackEventParams,
   type WsConn,
-  webScannerShim,
+  reactNativeScannerAdapter,
 } from '@selfxyz/mobile-sdk-alpha';
 
 import { persistentDocumentsAdapter } from '../utils/documentStore';
@@ -110,12 +111,16 @@ const createWsAdapter = () => {
 
 const hash = (data: Uint8Array): Uint8Array => sha256(data);
 
-export function SelfClientProvider({ children }: PropsWithChildren) {
+type SelfClientProviderProps = PropsWithChildren<{
+  onNavigate?: (screen: string) => void;
+}>;
+
+export function SelfClientProvider({ children, onNavigate }: SelfClientProviderProps) {
   const config = useMemo(() => ({}), []);
 
   const adapters: Adapters = useMemo(
     () => ({
-      scanner: webScannerShim,
+      scanner: reactNativeScannerAdapter,
       network: {
         http: {
           fetch: createFetch(),
@@ -153,9 +158,15 @@ export function SelfClientProvider({ children }: PropsWithChildren) {
   );
 
   const listeners = useMemo(() => {
-    const { map } = createListenersMap();
+    const { map, addListener } = createListenersMap();
+
+    // Auto-navigate from MRZ scan to NFC scan
+    addListener(SdkEvents.DOCUMENT_MRZ_READ_SUCCESS, () => {
+      onNavigate?.('nfc');
+    });
+
     return map;
-  }, []);
+  }, [onNavigate]);
 
   return (
     <SdkSelfClientProvider config={config} adapters={adapters} listeners={listeners}>

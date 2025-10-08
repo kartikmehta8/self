@@ -81,6 +81,7 @@ export {
   loadSelectedDocument,
   markCurrentDocumentAsRegistered,
   reStorePassportDataWithRightCSCA,
+  storePassportData,
 } from './documents/utils';
 
 /** @deprecated Use createSelfClient().extractMRZInfo or import from './mrz' */

@@ -16,10 +16,16 @@ type SelectedDocumentState = {
   metadata: DocumentMetadata;
 };
 
-function DemoApp() {
-  const selfClient = useSelfClient();
+type NavigationState = {
+  screen: ScreenRoute;
+  setScreen: (screen: ScreenRoute, params?: any) => void;
+  screenParams: any;
+};
 
-  const [screen, setScreen] = useState<ScreenRoute>('home');
+function DemoApp({ navigationState }: { navigationState: NavigationState }) {
+  const selfClient = useSelfClient();
+  const { screen, setScreen, screenParams } = navigationState;
+
   const [catalog, setCatalog] = useState<DocumentCatalog>({ documents: [] });
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocumentState | null>(null);
 
@@ -36,7 +42,7 @@ function DemoApp() {
     }
   }, [selfClient]);
 
-  const navigate = (next: ScreenRoute) => setScreen(next);
+  const navigate = useCallback((next: ScreenRoute, params?: any) => setScreen(next, params), [setScreen]);
 
   const screenContext: ScreenContext = {
     navigate,
@@ -67,15 +73,23 @@ function DemoApp() {
   }
 
   const ScreenComponent = descriptor.load();
-  const props = descriptor.getProps?.(screenContext) ?? {};
+  const props = descriptor.getProps?.(screenContext, screenParams) ?? {};
 
   return <ScreenComponent {...props} />;
 }
 
 function App() {
+  const [screen, setScreen] = useState<ScreenRoute>('home');
+  const [screenParams, setScreenParams] = useState<any>(undefined);
+
+  const handleSetScreen = useCallback((nextScreen: ScreenRoute, params?: any) => {
+    setScreen(nextScreen);
+    setScreenParams(params);
+  }, []);
+
   return (
-    <SelfClientProvider>
-      <DemoApp />
+    <SelfClientProvider onNavigate={screenId => handleSetScreen(screenId as ScreenRoute)}>
+      <DemoApp navigationState={{ screen, setScreen: handleSetScreen, screenParams }} />
     </SelfClientProvider>
   );
 }

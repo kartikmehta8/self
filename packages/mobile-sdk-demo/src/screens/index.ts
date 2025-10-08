@@ -6,10 +6,10 @@ import type { ComponentType } from 'react';
 
 import type { DocumentCatalog, DocumentMetadata, IDDocument } from '@selfxyz/common/utils/types';
 
-export type ScreenId = 'generate' | 'register' | 'prove' | 'camera' | 'nfc' | 'documents';
+export type ScreenId = 'generate' | 'register' | 'prove' | 'camera' | 'nfc' | 'documents' | 'success';
 
 export type ScreenContext = {
-  navigate: (next: ScreenRoute) => void;
+  navigate: (next: ScreenRoute, params?: any) => void;
   goHome: () => void;
   documentCatalog: DocumentCatalog;
   selectedDocument: { data: IDDocument; metadata: DocumentMetadata } | null;
@@ -27,7 +27,7 @@ export type ScreenDescriptor = {
   getStatus?: (context: ScreenContext) => ScreenStatus;
   isDisabled?: (context: ScreenContext) => boolean;
   load: () => ComponentType<any>;
-  getProps?: (context: ScreenContext) => Record<string, unknown>;
+  getProps?: (context: ScreenContext, params?: any) => Record<string, unknown>;
 };
 
 export type ScreenRoute = 'home' | ScreenId;
@@ -64,7 +64,7 @@ export const screenDescriptors: ScreenDescriptor[] = [
     title: 'Document MRZ',
     subtitle: 'Scan passport or ID card using your device camera',
     sectionTitle: '📸 Scanning',
-    status: 'placeholder',
+    status: 'working',
     load: () => require('./DocumentCamera').default,
     getProps: ({ navigate }) => ({ onBack: () => navigate('home') }),
   },
@@ -73,9 +73,25 @@ export const screenDescriptors: ScreenDescriptor[] = [
     title: 'Document NFC',
     subtitle: 'Read encrypted data from NFC-enabled documents',
     sectionTitle: '📸 Scanning',
-    status: 'placeholder',
+    status: 'working',
     load: () => require('./DocumentNFCScan').default,
-    getProps: ({ navigate }) => ({ onBack: () => navigate('home') }),
+    getProps: ({ navigate }) => ({
+      onBack: () => navigate('home'),
+      onNavigate: (screen: string, params?: any) => navigate(screen as ScreenRoute, params),
+    }),
+  },
+  {
+    id: 'success',
+    title: 'Scan Success',
+    subtitle: 'Document verification successful',
+    sectionTitle: '📸 Scanning',
+    status: 'working',
+    load: () => require('./DocumentScanSuccess').default,
+    getProps: ({ navigate }, params?: any) => ({
+      onBack: () => navigate('home'),
+      onNavigate: (screen: string) => navigate(screen as ScreenRoute),
+      document: params?.document,
+    }),
   },
   {
     id: 'documents',
