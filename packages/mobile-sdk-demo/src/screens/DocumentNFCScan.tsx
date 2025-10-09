@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { getSKIPEM, initPassportDataParsing } from '@selfxyz/common';
-import { storePassportData, useSelfClient, type ScanResult } from '@selfxyz/mobile-sdk-alpha';
+import { storePassportData, useSelfClient, type NFCScanResult } from '@selfxyz/mobile-sdk-alpha';
 
 import ScreenLayout from '../components/ScreenLayout';
 
@@ -68,11 +68,11 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
 
     try {
       // Scan the document using the SDK
-      const scanResult = await selfClient.scanDocument({
-        mode: 'nfc',
+      const scanResult = await selfClient.scanNFC({
         passportNumber: mrzData.documentNumber,
         dateOfBirth: mrzData.dateOfBirth,
         dateOfExpiry: mrzData.dateOfExpiry,
+        sessionId: `nfc-scan-${Date.now()}`,
       });
 
       // Check if scan was cancelled
@@ -87,8 +87,7 @@ export default function DocumentNFCScan({ onBack, onNavigate }: Props) {
 
       // Parse the passport data
       const skiPem = await getSKIPEM('production');
-      const scanResultNFC = scanResult as Extract<ScanResult, { mode: 'nfc' }>;
-      const parsedPassportData = initPassportDataParsing(scanResultNFC.passportData, skiPem);
+      const parsedPassportData = initPassportDataParsing(scanResult.passportData, skiPem);
 
       // Check again if scan was cancelled
       if (scanCancelledRef.current) {
