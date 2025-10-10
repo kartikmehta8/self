@@ -353,7 +353,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the AADHAAR registration window.
      * @param window The new AADHAAR registration window.
      */
-    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyOwner {
+    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
         AADHAAR_REGISTRATION_WINDOW = window;
     }
 
