@@ -19,6 +19,17 @@ import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
 import {CircuitConstantsV2} from "./constants/CircuitConstantsV2.sol";
 import {Formatter} from "./libraries/Formatter.sol";
 
+/**
+ * @title IdentityVerificationHubImplV2
+ * @notice Main hub for identity verification in the Self Protocol
+ * @dev This contract orchestrates multi-step verification processes including document attestation,
+ * zero-knowledge proofs, OFAC compliance, and attribute disclosure control.
+ *
+ * @custom:version 2.12.0
+ * @custom:version-history
+ * - v2.11.0 (Initializer v11): V2 hub deployment with Ownable2StepUpgradeable governance
+ * - v2.12.0 (Initializer v12): Governance upgrade - migrated to AccessControlUpgradeable with multi-tier governance (CRITICAL_ROLE, STANDARD_ROLE)
+ */
 contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub
     struct IdentityVerificationHubStorage {
@@ -241,6 +252,19 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         $._circuitVersion = 2;
 
         emit HubInitializedV2();
+    }
+
+    /**
+     * @notice Initializes governance for upgraded contracts.
+     * @dev Used when upgrading from Ownable to AccessControl governance.
+     * This function sets up AccessControl roles on an already-initialized contract.
+     * It does NOT modify existing state (hub, roots, etc.).
+     *
+     * SECURITY: This function can only be called once - enforced by reinitializer(12).
+     * The previous version used reinitializer(11), so this upgrade uses version 12.
+     */
+    function initializeGovernance() external reinitializer(12) {
+        __ImplRoot_init();
     }
 
     // ====================================================

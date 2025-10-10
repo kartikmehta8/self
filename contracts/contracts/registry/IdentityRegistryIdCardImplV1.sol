@@ -77,6 +77,11 @@ abstract contract IdentityRegistryIdCardStorageV1 is ImplRoot {
  * @title IdentityRegistryImplV1
  * @notice Provides functions to register and manage identity commitments using a Merkle tree structure.
  * @dev Inherits from IdentityRegistryStorageV1 and implements IIdentityRegistryV1.
+ *
+ * @custom:version 1.2.0
+ * @custom:version-history
+ * - v1.1.0 (Initializer v1): Initial deployment with Ownable2StepUpgradeable governance
+ * - v1.2.0 (Initializer v2): Migrated to AccessControlUpgradeable with multi-tier governance (CRITICAL_ROLE, STANDARD_ROLE)
  */
 contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdentityRegistryIdCardV1 {
     using InternalLeanIMT for LeanIMTData;
@@ -179,6 +184,19 @@ contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdent
         __ImplRoot_init();
         _hub = _hub;
         emit RegistryInitialized(_hub);
+    }
+
+    /**
+     * @notice Initializes governance for upgraded contracts.
+     * @dev Used when upgrading from Ownable to AccessControl governance.
+     * This function sets up AccessControl roles on an already-initialized contract.
+     * It does NOT modify existing state (hub, roots, etc.).
+     *
+     * SECURITY: This function can only be called once - enforced by reinitializer(2).
+     * The previous version used reinitializer(1), so this upgrade uses version 2.
+     */
+    function initializeGovernance() external reinitializer(2) {
+        __ImplRoot_init();
     }
 
     // ====================================================
