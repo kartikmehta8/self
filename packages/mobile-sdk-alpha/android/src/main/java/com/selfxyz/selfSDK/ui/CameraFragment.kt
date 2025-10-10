@@ -102,7 +102,11 @@ abstract class CameraFragment : androidx.fragment.app.Fragment(), ActivityCompat
     fun configureZoom() {
         fotoapparat?.getCapabilities()
                 ?.whenAvailable { capabilities ->
-                    setZoomProperties(capabilities?.zoom as Zoom.VariableZoom)
+                    val zoom = capabilities?.zoom
+                    if (zoom is Zoom.VariableZoom) {
+                        setZoomProperties(zoom)
+                    }
+                    // If zoom is FixedZoom or null, we don't support zoom controls
                 }
 
     }
