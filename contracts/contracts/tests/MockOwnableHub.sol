@@ -59,6 +59,14 @@ contract MockOwnableHub is MockOwnableImplRoot {
     function getRegistry() external view returns (address) {
         return _registry;
     }
+
+    /**
+     * @notice Updates the circuit version
+     * @param version The new circuit version
+     */
+    function updateCircuitVersion(uint256 version) external onlyOwner {
+        _circuitVersion = version;
+    }
 }
 
 

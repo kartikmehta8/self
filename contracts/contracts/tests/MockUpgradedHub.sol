@@ -31,12 +31,11 @@ contract MockUpgradedHub is ImplRoot {
     /**
      * @notice Initializes governance for the upgraded Hub
      * This should be called after the upgrade to set up AccessControl
+     * NOTE: This ONLY initializes governance roles, does NOT modify existing state
      */
     function initialize() external reinitializer(2) {
         __ImplRoot_init();
-        // Set some initial state for testing
-        _registry = address(0x90F79bf6EB2c4f870365E785982E1f101E93b906);
-        _circuitVersion = 1;
+        // DO NOT modify _registry or _circuitVersion - they should be preserved from before upgrade!
         emit HubGovernanceInitialized();
     }
 
