@@ -40,12 +40,14 @@ contract PCR0Manager is AccessControl {
 
     /**
      * @notice Adds a new PCR0 entry by setting its value to true.
-     * @param pcr0 The PCR0 value (must be exactly 48 bytes).
-     * @dev Reverts if the PCR0 value is not 48 bytes or if it is already set.
+     * @param pcr0 The PCR0 value (must be exactly 32 bytes).
+     * @dev Reverts if the PCR0 value is not 32 bytes or if it is already set.
+     * @dev Pads the PCR0 value to 48 bytes by prefixing 16 zero bytes to maintain mobile app compatibility.
      */
     function addPCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
-        require(pcr0.length == 48, "PCR0 must be 48 bytes");
-        bytes32 key = keccak256(pcr0);
+        require(pcr0.length == 32, "PCR0 must be 32 bytes");
+        bytes memory paddedPcr0 = abi.encodePacked(new bytes(16), pcr0);
+        bytes32 key = keccak256(paddedPcr0);
         require(!pcr0Mapping[key], "PCR0 already set");
         pcr0Mapping[key] = true;
         emit PCR0Added(key);
@@ -53,12 +55,14 @@ contract PCR0Manager is AccessControl {
 
     /**
      * @notice Removes an existing PCR0 entry by setting its value to false.
-     * @param pcr0 The PCR0 value (must be exactly 48 bytes).
-     * @dev Reverts if the PCR0 value is not 48 bytes or if it is not currently set.
+     * @param pcr0 The PCR0 value (must be exactly 32 bytes).
+     * @dev Reverts if the PCR0 value is not 32 bytes or if it is not currently set.
+     * @dev Pads the PCR0 value to 48 bytes by prefixing 16 zero bytes to maintain mobile app compatibility.
      */
     function removePCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
-        require(pcr0.length == 48, "PCR0 must be 48 bytes");
-        bytes32 key = keccak256(pcr0);
+        require(pcr0.length == 32, "PCR0 must be 32 bytes");
+        bytes memory paddedPcr0 = abi.encodePacked(new bytes(16), pcr0);
+        bytes32 key = keccak256(paddedPcr0);
         require(pcr0Mapping[key], "PCR0 not set");
         pcr0Mapping[key] = false;
         emit PCR0Removed(key);
@@ -67,6 +71,8 @@ contract PCR0Manager is AccessControl {
     /**
      * @notice Checks whether a given PCR0 value is set to true in the mapping.
      * @param pcr0 The PCR0 value (must be exactly 48 bytes).
+     * @dev Does not pad the PCR0 value as this is handled by the mobile app.
+     * @dev If you are manually calling this function, you need to pad the PCR0 value to 48 bytes, prefixing 16 zero bytes.
      * @return exists True if the PCR0 entry is set, false otherwise.
      */
     function isPCR0Set(bytes calldata pcr0) external view returns (bool exists) {
