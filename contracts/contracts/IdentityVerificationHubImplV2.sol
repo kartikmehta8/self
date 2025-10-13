@@ -229,6 +229,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Constructor that disables initializers for the implementation contract.
      * @dev This prevents the implementation contract from being initialized directly.
      * The actual initialization should only happen through the proxy.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
     constructor() {
         _disableInitializers();

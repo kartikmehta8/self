@@ -167,6 +167,7 @@ contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdent
     /**
      * @notice Constructor that disables initializers.
      * @dev Prevents direct initialization of the implementation contract.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
     constructor() {
         _disableInitializers();

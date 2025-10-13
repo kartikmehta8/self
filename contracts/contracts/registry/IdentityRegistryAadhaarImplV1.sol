@@ -156,6 +156,7 @@ contract IdentityRegistryAadhaarImplV1 is IdentityRegistryAadhaarStorageV1, IIde
     // ====================================================
 
     /// @notice Constructor for the IdentityRegistryAadhaarImplV1 contract.
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
