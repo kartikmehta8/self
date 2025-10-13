@@ -1,0 +1,25 @@
+{
+  "name": "@selfxyz/tests",
+  "version": "1.0.0",
+  "description": "Test utilities for Self SDK",
+  "type": "module",
+  "scripts": {
+    "test": "mocha --import=tsx unified-api.test.ts"
+  },
+  "dependencies": {
+    "@selfxyz/circuits": "workspace:^",
+    "@selfxyz/common": "workspace:^",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "chai": "^5.1.1",
+    "mocha": "^10.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22 <23"
+  }
+}

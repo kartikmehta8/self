@@ -9,6 +9,7 @@
       "packages/*",
       "prover/tests",
       "scripts/tests",
+      "sdk/tests/*",
       "sdk/*"
     ]
   },
