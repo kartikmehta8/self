@@ -68,53 +68,42 @@ async function registerMockPassportOrEUid(
     cscaTree = await axios.get("http://tree.staging.self.xyz/csca-id");
   }
 
-  try {
-    // Parse the tree data from the API response
-    const cscaTreeData = JSON.parse(cscaTree.data.data);
-    const dscInputs = generateCircuitInputsDSC(passportData, cscaTreeData);
-        console.log(" reached till input")
-    const dscCircuitName = getCircuitNameFromPassportData(passportData, "dsc");
 
-    console.log(" reached till csa tree")
-    console.log("DSC Circuit name ",dscCircuitName );
+  //   // Parse the tree data from the API response
+  //   const cscaTreeData = JSON.parse(cscaTree.data.data);
+  //   const dscInputs = generateCircuitInputsDSC(passportData, cscaTreeData);
+  //   const dscCircuitName = getCircuitNameFromPassportData(passportData, "dsc");
+  //   const dscUuid = await handshakeAndGetUuid(
+  //    DSC_URL,
+  //    dscInputs,
+  //    "dsc",
+  //    dscCircuitName
+  //  );
 
-    const dscUuid = await handshakeAndGetUuid(
-     DSC_URL,
-     dscInputs,
-     "dsc",
-     dscCircuitName
-   );
-
-    console.log("Reached till handshake");
-  const dscData = await getProofGeneratedUpdate(dscUuid);
-  //pretty print the circuit name
-  console.log("\x1b[34m%s\x1b[0m", "dsc uuid:", dscUuid);
-  console.log("\x1b[34m%s\x1b[0m", "circuit:", dscCircuitName);
-  console.log(
-    "\x1b[34m%s\x1b[0m",
-    "witness generation duration:",
-    //@ts-ignore
-    (new Date(dscData.witness_generated_at) - new Date(dscData.created_at)) /
-      1000,
-    " seconds"
-  );
-  console.log(
-    "\x1b[34m%s\x1b[0m",
-    "proof   generation duration:",
-    //@ts-ignore
-    (new Date(dscData.proof_generated_at) -
-      //@ts-ignore
-      new Date(dscData.witness_generated_at)) /
-      1000,
-    " seconds"
-  );
-  } catch (error) {
-    console.log("DSC is already registered ?", error);
-  }
-
+  // const dscData = await getProofGeneratedUpdate(dscUuid);
+  // //pretty print the circuit name
+  // console.log("\x1b[34m%s\x1b[0m", "dsc uuid:", dscUuid);
+  // console.log("\x1b[34m%s\x1b[0m", "circuit:", dscCircuitName);
+  // console.log(
+  //   "\x1b[34m%s\x1b[0m",
+  //   "witness generation duration:",
+  //   //@ts-ignore
+  //   (new Date(dscData.witness_generated_at) - new Date(dscData.created_at)) /
+  //     1000,
+  //   " seconds"
+  // );
+  // console.log(
+  //   "\x1b[34m%s\x1b[0m",
+  //   "proof   generation duration:",
+  //   //@ts-ignore
+  //   (new Date(dscData.proof_generated_at) -
+  //     //@ts-ignore
+  //     new Date(dscData.witness_generated_at)) /
+  //     1000,
+  //   " seconds"
+  // );
 
   const serialized_dsc_tree = dscTree.data;
-
   // Register proof generation
   const registerInputs = generateCircuitInputsRegister(
     secret,
@@ -126,7 +115,6 @@ async function registerMockPassportOrEUid(
     passportData,
     "register"
   );
-
   // Determine the correct proof type based on circuit name
   const proofType = registerCircuitName.startsWith("register_id_") ? "register_id" : "register";
 
@@ -137,7 +125,6 @@ async function registerMockPassportOrEUid(
     proofType,
     registerCircuitName
   );
-
   const registerData = await getProofGeneratedUpdate(registerUuid);
   console.log(
     " Got register proof generated update:",
