@@ -173,20 +173,6 @@ contract UpgradeToAccessControlTest is Test {
 
         console2.log("ALL STATE PRESERVED - No storage collisions");
 
-        console2.log("\n=== Phase 3.5: Verify Libraries Are Stateless (No Risk) ===");
-        // Note: CustomVerifier and PoseidonT3 are stateless libraries
-        // They contain pure/view functions only and have no storage
-        // Library addresses are embedded in the contract bytecode during deployment
-        // Since we're using Foundry's upgradeProxy without explicit library linking,
-        // new bytecode is deployed with library addresses embedded
-        // This is SAFE because:
-        // 1. Libraries are stateless (no storage to migrate)
-        // 2. Library functions are deterministic (same input = same output)
-        // 3. We verify functionality works in the next phases
-        console2.log("CustomVerifier library (stateless): ", CUSTOM_VERIFIER);
-        console2.log("PoseidonT3 library (stateless): ", POSEIDON_T3);
-        console2.log("Libraries are stateless - no migration risk");
-
         console2.log("\n=== Phase 4: Verify Governance Roles ===");
 
         // Deployer should have both roles initially

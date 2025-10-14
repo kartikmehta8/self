@@ -17,9 +17,9 @@ import {PCR0Manager} from "../contracts/utils/PCR0Manager.sol";
  * 5. Verifies final state
  *
  * Usage:
- * - Set environment variables:
- *   export CRITICAL_MULTISIG=0x...
- *   export STANDARD_MULTISIG=0x...
+ * - Set in .env file:
+ *   CRITICAL_GOVERNANCE_ADDRESS=0x...
+ *   STANDARD_GOVERNANCE_ADDRESS=0x...
  * - Dry run: forge script script/MigratePCR0Manager.s.sol --fork-url $CELO_RPC_URL -vvv
  * - Execute: forge script script/MigratePCR0Manager.s.sol --rpc-url https://forno.celo.org --broadcast --verify -vvv
  */
@@ -40,12 +40,12 @@ contract MigratePCR0Manager is Script {
         console2.log("\nDeployer:", msg.sender);
         console2.log("Chain ID:", block.chainid);
 
-        // Get multisig addresses from environment
-        criticalMultisig = vm.envAddress("CRITICAL_MULTISIG");
-        standardMultisig = vm.envAddress("STANDARD_MULTISIG");
+        // Get multisig addresses from .env
+        criticalMultisig = vm.envAddress("CRITICAL_GOVERNANCE_ADDRESS");
+        standardMultisig = vm.envAddress("STANDARD_GOVERNANCE_ADDRESS");
 
-        require(criticalMultisig != address(0), "CRITICAL_MULTISIG not set");
-        require(standardMultisig != address(0), "STANDARD_MULTISIG not set");
+        require(criticalMultisig != address(0), "CRITICAL_GOVERNANCE_ADDRESS not set in .env");
+        require(standardMultisig != address(0), "STANDARD_GOVERNANCE_ADDRESS not set in .env");
 
         console2.log("\nGovernance addresses:");
         console2.log("  Critical Multisig:", criticalMultisig);
