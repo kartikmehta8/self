@@ -164,7 +164,9 @@ contract UpgradeToAccessControl is Script {
         console2.log("   Proxy address:", REGISTRY_ID_CARD_PROXY);
 
         Options memory opts;
-        opts.unsafeSkipStorageCheck = true; // Validator flags deleted namespace error when changing from Ownable to AccessControl
+        opts.unsafeSkipStorageCheck = true; // Triggers from changing Ownable to AccessControl
+        // Due to ERC-7201, we can be sure no storage collision will occur as Ownable and AccessControl variables are stored separately
+        // This is double checked by UpgradeToAccessControl.t.sol which verifies no state collision occurs
 
         Upgrades.upgradeProxy(
             REGISTRY_ID_CARD_PROXY,

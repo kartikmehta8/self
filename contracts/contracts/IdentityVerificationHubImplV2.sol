@@ -252,7 +252,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._circuitVersion = 2;
 
-        // Initialize AADHAAR registration window to 20
+        // Initialize Aadhaar registration window
         AADHAAR_REGISTRATION_WINDOW = 20;
 
         emit HubInitializedV2();
