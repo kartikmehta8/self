@@ -53,13 +53,30 @@ contract UpgradeToAccessControlTest is Test {
     bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
     bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
 
-    // Pre-upgrade state
+    // Pre-upgrade state - captures ALL publicly accessible critical state variables
     struct PreUpgradeState {
+        // Hub state (4 variables)
         address hubRegistryPassport;
         address hubRegistryIdCard;
+        address hubRegistryAadhaar;
+        uint256 hubAadhaarWindow;
+        // Passport Registry state (6 variables)
         uint256 passportIdentityRoot;
+        uint256 passportDscKeyRoot;
+        uint256 passportPassportNoOfacRoot;
+        uint256 passportNameDobOfacRoot;
+        uint256 passportNameYobOfacRoot;
+        uint256 passportCscaRoot;
+        // ID Card Registry state (5 variables)
         uint256 idCardIdentityRoot;
+        uint256 idCardDscKeyRoot;
+        uint256 idCardNameDobOfacRoot;
+        uint256 idCardNameYobOfacRoot;
+        uint256 idCardCscaRoot;
+        // Aadhaar Registry state (3 variables)
         uint256 aadhaarIdentityRoot;
+        uint256 aadhaarNameDobOfacRoot;
+        uint256 aadhaarNameYobOfacRoot;
     }
 
     PreUpgradeState preState;
@@ -90,19 +107,39 @@ contract UpgradeToAccessControlTest is Test {
     }
 
     function testFullUpgradeWorkflow() public {
-        console2.log("\n=== Phase 1: Capture Pre-Upgrade State ===");
+        console2.log("\n=== Phase 1: Capture Pre-Upgrade State (ALL Accessible State Variables) ===");
 
+        // Hub state (4 variables)
         preState.hubRegistryPassport = hub.registry(bytes32("e_passport"));
         preState.hubRegistryIdCard = hub.registry(bytes32("eu_id_card"));
-        preState.passportIdentityRoot = passportRegistry.getIdentityCommitmentMerkleRoot();
-        preState.idCardIdentityRoot = idCardRegistry.getIdentityCommitmentMerkleRoot();
-        preState.aadhaarIdentityRoot = aadhaarRegistry.getIdentityCommitmentMerkleRoot();
+        preState.hubRegistryAadhaar = hub.registry(bytes32("aadhaar"));
+        preState.hubAadhaarWindow = hub.AADHAAR_REGISTRATION_WINDOW();
 
-        console2.log("Hub Passport Registry:", preState.hubRegistryPassport);
-        console2.log("Hub ID Card Registry:", preState.hubRegistryIdCard);
-        console2.log("Passport Identity Root:", preState.passportIdentityRoot);
-        console2.log("ID Card Identity Root:", preState.idCardIdentityRoot);
-        console2.log("Aadhaar Identity Root:", preState.aadhaarIdentityRoot);
+        // Passport Registry state (6 variables)
+        preState.passportIdentityRoot = passportRegistry.getIdentityCommitmentMerkleRoot();
+        preState.passportDscKeyRoot = passportRegistry.getDscKeyCommitmentMerkleRoot();
+        preState.passportPassportNoOfacRoot = passportRegistry.getPassportNoOfacRoot();
+        preState.passportNameDobOfacRoot = passportRegistry.getNameAndDobOfacRoot();
+        preState.passportNameYobOfacRoot = passportRegistry.getNameAndYobOfacRoot();
+        preState.passportCscaRoot = passportRegistry.getCscaRoot();
+
+        // ID Card Registry state (5 variables)
+        preState.idCardIdentityRoot = idCardRegistry.getIdentityCommitmentMerkleRoot();
+        preState.idCardDscKeyRoot = idCardRegistry.getDscKeyCommitmentMerkleRoot();
+        preState.idCardNameDobOfacRoot = idCardRegistry.getNameAndDobOfacRoot();
+        preState.idCardNameYobOfacRoot = idCardRegistry.getNameAndYobOfacRoot();
+        preState.idCardCscaRoot = idCardRegistry.getCscaRoot();
+
+        // Aadhaar Registry state (3 variables)
+        preState.aadhaarIdentityRoot = aadhaarRegistry.getIdentityCommitmentMerkleRoot();
+        preState.aadhaarNameDobOfacRoot = aadhaarRegistry.getNameAndDobOfacRoot();
+        preState.aadhaarNameYobOfacRoot = aadhaarRegistry.getNameAndYobOfacRoot();
+
+        console2.log("Captured Hub state: 4 variables");
+        console2.log("Captured Passport Registry state: 6 variables");
+        console2.log("Captured ID Card Registry state: 5 variables");
+        console2.log("Captured Aadhaar Registry state: 3 variables");
+        console2.log("Total state variables captured: 18");
 
         console2.log("\n=== Phase 2: Execute Upgrades ===");
         vm.startPrank(deployer);
@@ -161,17 +198,39 @@ contract UpgradeToAccessControlTest is Test {
         vm.stopPrank();
         console2.log("All upgrades completed");
 
-        console2.log("\n=== Phase 3: Verify State Preservation ===");
+        console2.log("\n=== Phase 3: Verify State Preservation (ALL 18 State Variables) ===");
 
-        // Verify state unchanged
+        // Hub state verification (4 variables)
         assertEq(hub.registry(bytes32("e_passport")), preState.hubRegistryPassport, "Hub passport registry changed");
         assertEq(hub.registry(bytes32("eu_id_card")), preState.hubRegistryIdCard, "Hub ID card registry changed");
-        assertEq(passportRegistry.getIdentityCommitmentMerkleRoot(), preState.passportIdentityRoot, "Passport root changed");
-        assertEq(idCardRegistry.getIdentityCommitmentMerkleRoot(), preState.idCardIdentityRoot, "ID card root changed");
+        assertEq(hub.registry(bytes32("aadhaar")), preState.hubRegistryAadhaar, "Hub aadhaar registry changed");
+        assertEq(hub.AADHAAR_REGISTRATION_WINDOW(), preState.hubAadhaarWindow, "Hub aadhaar window changed");
+        console2.log("Hub state: 4/4 variables preserved");
 
-        assertEq(aadhaarRegistry.getIdentityCommitmentMerkleRoot(), preState.aadhaarIdentityRoot, "Aadhaar root changed");
+        // Passport Registry state verification (6 variables)
+        assertEq(passportRegistry.getIdentityCommitmentMerkleRoot(), preState.passportIdentityRoot, "Passport identity root changed");
+        assertEq(passportRegistry.getDscKeyCommitmentMerkleRoot(), preState.passportDscKeyRoot, "Passport DSC key root changed");
+        assertEq(passportRegistry.getPassportNoOfacRoot(), preState.passportPassportNoOfacRoot, "Passport passport# OFAC root changed");
+        assertEq(passportRegistry.getNameAndDobOfacRoot(), preState.passportNameDobOfacRoot, "Passport name+DOB OFAC root changed");
+        assertEq(passportRegistry.getNameAndYobOfacRoot(), preState.passportNameYobOfacRoot, "Passport name+YOB OFAC root changed");
+        assertEq(passportRegistry.getCscaRoot(), preState.passportCscaRoot, "Passport CSCA root changed");
+        console2.log("Passport Registry: 6/6 variables preserved");
 
-        console2.log("ALL STATE PRESERVED - No storage collisions");
+        // ID Card Registry state verification (5 variables)
+        assertEq(idCardRegistry.getIdentityCommitmentMerkleRoot(), preState.idCardIdentityRoot, "ID Card identity root changed");
+        assertEq(idCardRegistry.getDscKeyCommitmentMerkleRoot(), preState.idCardDscKeyRoot, "ID Card DSC key root changed");
+        assertEq(idCardRegistry.getNameAndDobOfacRoot(), preState.idCardNameDobOfacRoot, "ID Card name+DOB OFAC root changed");
+        assertEq(idCardRegistry.getNameAndYobOfacRoot(), preState.idCardNameYobOfacRoot, "ID Card name+YOB OFAC root changed");
+        assertEq(idCardRegistry.getCscaRoot(), preState.idCardCscaRoot, "ID Card CSCA root changed");
+        console2.log("ID Card Registry: 5/5 variables preserved");
+
+        // Aadhaar Registry state verification (3 variables)
+        assertEq(aadhaarRegistry.getIdentityCommitmentMerkleRoot(), preState.aadhaarIdentityRoot, "Aadhaar identity root changed");
+        assertEq(aadhaarRegistry.getNameAndDobOfacRoot(), preState.aadhaarNameDobOfacRoot, "Aadhaar name+DOB OFAC root changed");
+        assertEq(aadhaarRegistry.getNameAndYobOfacRoot(), preState.aadhaarNameYobOfacRoot, "Aadhaar name+YOB OFAC root changed");
+        console2.log("Aadhaar Registry: 3/3 variables preserved");
+
+        console2.log("TOTAL: 18/18 state variables VERIFIED - NO storage collisions!");
 
         console2.log("\n=== Phase 4: Verify Governance Roles ===");
 
