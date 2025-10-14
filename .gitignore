@@ -28,3 +28,4 @@ app/android/android-passport-nfc-reader/
 # Foundry
 contracts/out/
 contracts/cache_forge/
+contracts/broadcast/
