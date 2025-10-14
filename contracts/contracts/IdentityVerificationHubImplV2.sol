@@ -56,7 +56,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         0xf9b5980dcec1a8b0609576a1f453bb2cad4732a0ea02bb89154d44b14a306c00;
 
     /// @notice The AADHAAR registration window around the current block timestamp.
-    uint256 public AADHAAR_REGISTRATION_WINDOW = 20;
+    uint256 public AADHAAR_REGISTRATION_WINDOW;
 
     /**
      * @notice Returns the storage struct for the main IdentityVerificationHub.
@@ -251,6 +251,9 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         // Initialize circuit version to 2 for V2 hub
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._circuitVersion = 2;
+
+        // Initialize AADHAAR registration window to 20
+        AADHAAR_REGISTRATION_WINDOW = 20;
 
         emit HubInitializedV2();
     }
