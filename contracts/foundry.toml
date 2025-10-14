@@ -27,6 +27,12 @@ evm_version = "cancun"
 # File system permissions for OpenZeppelin plugin
 fs_permissions = [{ access = "read", path = "out" }]
 
+# Linked libraries (deployed on Celo Mainnet)
+libraries = [
+    "contracts/libraries/CustomVerifier.sol:CustomVerifier:0x9E66B82Da87309fAE1403078d498a069A30860c4",
+    "node_modules/poseidon-solidity/PoseidonT3.sol:PoseidonT3:0xF134707a4C4a3a76b8410fC0294d620A7c341581"
+]
+
 # Celo mainnet and testnet RPC endpoints
 [rpc_endpoints]
 celo = "${CELO_RPC_URL}"
