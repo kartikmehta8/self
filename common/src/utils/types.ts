@@ -1,6 +1,7 @@
 import type { ExtractedQRData } from './aadhaar/utils.js';
 import type { CertificateData } from './certificate_parsing/dataStructure.js';
 import type { PassportMetadata } from './passports/passport_parsing/parsePassportData.js';
+import { SelfricaField } from './selfrica/constants.js';
 
 // Base interface for common fields
 interface BaseIDData {
@@ -21,6 +22,12 @@ export interface AadhaarData extends BaseIDData {
   photoHash?: string;
 }
 
+export interface SelfricaData extends BaseIDData {
+  documentCategory: 'selfrica';
+  serializedRealData: string;
+  selfricaFields: SelfricaField[];
+}
+
 export type DeployedCircuits = {
   REGISTER: string[];
   REGISTER_ID: string[];
@@ -34,7 +41,7 @@ export interface DocumentCatalog {
   selectedDocumentId?: string; // This is now a contentHash
 }
 
-export type DocumentCategory = 'passport' | 'id_card' | 'aadhaar';
+export type DocumentCategory = 'passport' | 'id_card' | 'aadhaar' | 'selfrica';
 
 export interface DocumentMetadata {
   id: string; // contentHash as ID for deduplication
@@ -56,7 +63,7 @@ export type DocumentType =
 
 export type Environment = 'prod' | 'stg';
 
-export type IDDocument = AadhaarData | PassportData;
+export type IDDocument = AadhaarData | PassportData | SelfricaData;
 
 export type OfacTree = {
   passportNoAndNationality: any;

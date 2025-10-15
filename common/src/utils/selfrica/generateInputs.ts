@@ -136,7 +136,10 @@ export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: bo
 
     // Create disclose_sel array and split it into two decimal numbers
     // Use provided fields or default to revealing all fields
-    const fieldsToRevealFinal = fieldsToReveal || [];
+    const fieldsToRevealFinal = fieldsToReveal || [
+        'COUNTRY', 'ID_TYPE', 'ID_NUMBER', 'ISSUANCE_DATE', 'EXPIRY_DATE',
+        'FULL_NAME', 'DOB', 'PHOTO_HASH', 'PHONE_NUMBER', 'DOCUMENT', 'GENDER', 'ADDRESS'
+    ];
     const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal);
 
     const circuitInput: SelfricaCircuitInput = {
@@ -157,7 +160,63 @@ export const generateCircuitInput = (nameDobSmt: SMT, nameYobSmt: SMT, ofac?: bo
         user_identifier: '1234567890',
         current_date: ['2', '0', '2', '4', '0', '1', '0', '1'],
         majority_age_ASCII: ['0', '0', '1'].map((x) => x.charCodeAt(0)),
-        selector_older_than: ['1'],
+    }
+
+    return circuitInput;
+}
+
+export const generateSelfricaInputWithOutSig = (
+    serializedRealData: string,
+    nameDobSmt: SMT,
+    nameYobSmt: SMT,
+    ofac: boolean,
+    scope: string,
+    userIdentifier: string,
+    fieldsToReveal?: SelfricaField[],
+    forbiddenCountriesList?: string[],
+    minimumAge?: number,
+) => {
+
+    const msg = Buffer.from(serializedRealData, 'utf8');
+
+    const fullName = serializedRealData.slice(SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH);
+    const dob = serializedRealData.slice(SELFRICA_DOB_INDEX, SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH);
+
+    const smileData = {
+        fullName,
+        dob,
+    } as unknown as SmileData;
+
+    const nameDobInputs = generateCircuitInputsOfac(smileData, nameDobSmt, 2);
+    const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
+
+    const [msgPadded, _] = sha256Pad(msg, 320);
+
+    const fieldsToRevealFinal = fieldsToReveal || [];
+    const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
+
+    //generate the current date
+    const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split("");
+
+    const majorityAgeASCII = minimumAge ? minimumAge.toString().split("").map((x) => x.charCodeAt(0)) : ['0', '0', '0'].map((x) => x.charCodeAt(0));
+    const circuitInput: SelfricaCircuitInput = {
+        SmileID_data_padded: formatInput(msgPadded),
+        compressed_disclose_sel: compressed_disclose_sel,
+        pubKey: [],
+        msg_sig: [],
+        id_num_sig: [],
+        scope: scope,
+        forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
+        ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
+        ofac_name_dob_smt_root: nameDobInputs.smt_root,
+        ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
+        ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
+        ofac_name_yob_smt_root: nameYobInputs.smt_root,
+        ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
+        selector_ofac: ofac ? ['1'] : ['0'],
+        user_identifier: userIdentifier,
+        current_date: currentDate,
+        majority_age_ASCII: majorityAgeASCII,
     }
 
     return circuitInput;
@@ -215,7 +274,10 @@ export const generateCircuitInputWithRealData = (
 
     // Create disclose_sel array and split it into two decimal numbers
     // Use provided fields or default to revealing all fields
-    const fieldsToRevealFinal = fieldsToReveal || [];
+    const fieldsToRevealFinal = fieldsToReveal || [
+        'COUNTRY', 'ID_TYPE', 'ID_NUMBER', 'ISSUANCE_DATE', 'EXPIRY_DATE',
+        'FULL_NAME', 'DOB', 'PHOTO_HASH', 'PHONE_NUMBER', 'DOCUMENT', 'GENDER', 'ADDRESS'
+    ];
     const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
 
     //generate the current date
@@ -241,7 +303,6 @@ export const generateCircuitInputWithRealData = (
         user_identifier: userIdentifier || '1234567890',
         current_date: currentDate,
         majority_age_ASCII: ['0', '2', '0'].map((x) => x.charCodeAt(0)),
-        selector_older_than: ['1'],
     }
 
     return circuitInput;

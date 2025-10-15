@@ -43,7 +43,6 @@ template VC_AND_DISCLOSE(
     signal input user_identifier;
     signal input current_date[8];
     signal input majority_age_ASCII[3];
-    signal input selector_older_than;
 
     signal output attestation_id <== 4;
 
@@ -145,7 +144,6 @@ template VC_AND_DISCLOSE(
     disclose_circuit.selector_ofac <== selector_ofac;
     disclose_circuit.current_date <== current_date;
     disclose_circuit.majority_age_ASCII <== majority_age_ASCII;
-    disclose_circuit.selector_older_than <== selector_older_than;
 
     var revealed_data_packed_chunk_length = computeIntChunkLength(selfrica_length + 2 + 3);
     signal output revealedData_packed[revealed_data_packed_chunk_length] <== disclose_circuit.revealedData_packed;

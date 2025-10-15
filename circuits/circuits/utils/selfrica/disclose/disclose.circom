@@ -31,10 +31,9 @@ template DISCLOSE_SELFRICA(
     signal input selector_ofac;
     signal input current_date[8];
     signal input majority_age_ASCII[3];
-    signal input selector_older_than;
 
     selector_ofac * (selector_ofac - 1) === 0;
-    selector_older_than * (selector_older_than - 1) === 0;
+
 
     signal validity_ASCII[8];
     for (var i = 0; i < EXPIRATION_DATE_LENGTH(); i++) {
@@ -77,9 +76,9 @@ template DISCLOSE_SELFRICA(
 
     revealed_data[selfrica_max_length] <== ofac_name_dob_circuit.ofacCheckResult * selector_ofac;
     revealed_data[selfrica_max_length + 1] <== ofac_name_yob_circuit.ofacCheckResult * selector_ofac;
-    revealed_data[selfrica_max_length + 2] <== older_than_verified[0] * selector_older_than;
-    revealed_data[selfrica_max_length + 3] <== older_than_verified[1] * selector_older_than;
-    revealed_data[selfrica_max_length + 4] <== older_than_verified[2] * selector_older_than;
+    revealed_data[selfrica_max_length + 2] <== older_than_verified[0] ;
+    revealed_data[selfrica_max_length + 3] <== older_than_verified[1] ;
+    revealed_data[selfrica_max_length + 4] <== older_than_verified[2] ;
 
     component country_not_in_list_circuit = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);
 

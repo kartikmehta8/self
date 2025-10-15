@@ -56,7 +56,6 @@ export type SelfricaCircuitInput = {
     user_identifier: string,
     current_date: string[],
     majority_age_ASCII: number[],
-    selector_older_than: string[],
 };
 
 export type SelfricaPublicInput = {

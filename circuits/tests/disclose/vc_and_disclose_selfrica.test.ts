@@ -43,7 +43,7 @@ describe('should verify signature on random inputs', () => {
             }
         );
     });
-    it.only('should verify for correct Circuit Input and output ', async function () {
+    it('should verify for correct Circuit Input and output ', async function () {
         this.timeout(0);
         const input = generateCircuitInput(namedob_smt, nameyob_smt);
         const expNullifier = customHasher([...input.id_num_sig, "0"]);
@@ -176,7 +176,6 @@ describe('should verify signature on random inputs', () => {
         // Test with NON_OFAC_DUMMY_INPUT
         const input = generateCircuitInput(namedob_smt, nameyob_smt, false);
         input.selector_ofac = ["1"];
-        input.selector_older_than = ["1"];
 
         try {
             const witness = await circuit.calculateWitness(input);
@@ -235,7 +234,6 @@ describe('should verify signature on random inputs', () => {
         // Test with OFAC_DUMMY_INPUT
         const input = generateCircuitInput(namedob_smt, nameyob_smt, true);
         input.selector_ofac = ["1"];
-        input.selector_older_than = ["1"];
 
         // Get the expected smile data from OFAC_DUMMY_INPUT
         const expectedSmileData = OFAC_DUMMY_INPUT;
