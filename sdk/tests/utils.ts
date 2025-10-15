@@ -9,6 +9,7 @@ import {
   prepareAadhaarRegisterTestData,
   generateTestData,
   testCustomData,
+  calculateUserIdentifierHash,
 } from "@selfxyz/common";
 import {
   getProofGeneratedUpdate,
@@ -17,7 +18,7 @@ import {
 } from "./ts-api/utils/helper.ts";
 import { DSC_URL, REGISTER_URL } from "./ts-api/utils/constant.ts";
 import { hashEndpointWithScope } from "@selfxyz/common/utils/scope";
-import { PublicSignals } from "snarkjs";
+import { CircuitSignals, groth16, Groth16Proof, PublicSignals } from "snarkjs";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
@@ -27,7 +28,8 @@ import { SMT } from '@openpassport/zk-kit-smt';
 import { poseidon2 } from 'poseidon-lite';
 import nameAndDobAadhaarjson from '../../circuits/tests/consts/ofac/nameAndDobAadhaarSMT.json' with { type: 'json' };
 import nameAndYobAadhaarjson from '../../circuits/tests/consts/ofac/nameAndYobAadhaarSMT.json' with { type: 'json' };
-import { prepareAadhaarRegisterData, processQRData } from "../../common/dist/esm/src/utils/aadhaar/mockData";
+import { AADHAAR_MOCK_PRIVATE_KEY_PEM , AADHAAR_MOCK_PUBLIC_KEY_PEM} from "../../common/src/mock_certificates/aadhaar/mockAadhaarCert.ts";
+import { prepareAadhaarDiscloseData, prepareAadhaarRegisterData, processQRData } from "../../common/dist/esm/src/utils/aadhaar/mockData";
 
 
 // Create SMTs at module level
@@ -39,15 +41,14 @@ nameAndYob_smt.import(nameAndYobAadhaarjson as any);
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const privateKeyPem = fs.readFileSync(
-  path.join(__dirname, '../../circuits/node_modules/anon-aadhaar-circuits/assets/testPrivateKey.pem'),
-  'utf8'
-);
+const privateKeyPem = AADHAAR_MOCK_PRIVATE_KEY_PEM;
 
-const publicKeyPem = fs.readFileSync(
-  path.join(__dirname, '../../circuits/node_modules/anon-aadhaar-circuits/assets/testCertificate.pem'),
-  'utf8'
-);
+const publicKeyPem = AADHAAR_MOCK_PUBLIC_KEY_PEM
+
+// const publicKeyPem = fs.readFileSync(
+//   path.join(__dirname, '../../circuits/node_modules/anon-aadhaar-circuits/assets/testCertificate.pem'),
+//   'utf8'
+// );
 
 // Types for API testing
 export interface ProofData {
@@ -333,7 +334,8 @@ export async function setupTestData(
 }
 
 export async function setupTestDataAadhaar() {
-  const timestamp = new Date(Date.now() - 30 * 60 * 1000 + 19800000).getTime().toString();
+  const timestamp = Date.now().toString();
+  console.log("timestamp", timestamp);
   const qrdata = generateTestData({
     privKeyPem: privateKeyPem,
     data: testCustomData,
@@ -345,8 +347,8 @@ export async function setupTestDataAadhaar() {
     "1234",
     [publicKeyPem]
   );
-  console.log("Inputs for Aadhaar register:", inputs);
 
+    console.log("INputs generated");
 
   const registerUuid = await handshakeAndGetUuid(
     REGISTER_URL,
@@ -354,6 +356,7 @@ export async function setupTestDataAadhaar() {
     "register_aadhaar",
     "register_aadhaar"
   );
+  console.log("Register UUID:", registerUuid);
 
   const registerData = await getProofGeneratedUpdate(registerUuid);
   console.log(
@@ -378,36 +381,68 @@ export async function setupTestDataAadhaar() {
       1000,
     " seconds"
   );
+  console.log("Waiting for identity tree to sync...");
+  await new Promise(resolve => setTimeout(resolve, 5000));
+
+  const scope = hashEndpointWithScope(
+    "http://localhost:3000",
+    "self-playground"
+  );
+  const userContextData = "hello from the playground";
+  const userIdentifier= calculateUserIdentifierHash(42220, "94ba0DB8A9Db66979905784A9d6B2D286e55Bd27", userContextData);
 
 
-  // const tree = new LeanIMT<bigint>((a, b) => poseidon2([a, b]));
-  // const scope = hashEndpointWithScope(
-  //   "http://localhost:3000",
-  //   "self-playground"
-  // );
-  // const {inputs: discloseInputs} = prepareAadhaarDiscloseTestData(
-  //   privateKeyPem,
-  //   tree,
-  //   nameAndDob_smt,
-  //   nameAndYob_smt,
-  //   scope,
-  //   '1234',
-  //   '585225',
-  //   '0',
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   true
-  // );
+  const merkleTree: any = new LeanIMT<bigint>((a, b) => poseidon2([a, b]), []);
+  const identityTreeHeader = await fetch(
+    "http://tree.staging.self.xyz/identity-aadhaar"
+  );
+  const identityTree = JSON.parse((await identityTreeHeader.json() as any).data).map(
+    (x: string[]) => x.map((y: string) => BigInt(y))
+  );
+  merkleTree.insertMany(identityTree[0]);
 
+  const discloseInputs = prepareAadhaarDiscloseData(
+    qrdata.testQRData,
+    merkleTree,
+    nameAndDob_smt,
+    nameAndYob_smt,
+    scope,
+    '1234',
+    userIdentifier.toString(),
+    {
+      forbiddenCountriesListPacked: ['PAK', 'IRN']
+    }
+  );
 
+  const __filenameHelper = fileURLToPath(import.meta.url);
+  const __dirnameHelper = path.dirname(__filenameHelper);
 
+  const wasmPath = path.resolve(__dirnameHelper, "ts-api/utils/assests/vc_and_disclose_aadhaar.wasm");
+  const zkeyPath = path.resolve(__dirnameHelper, "ts-api/utils/assests/vc_and_disclose_aadhaar.zkey");
+  const vKey = JSON.parse(fs.readFileSync(path.resolve(__dirnameHelper, "ts-api/utils/assests/verification_key_aadhaar.json"), "utf8"));
+
+  const discloseProof = await groth16.fullProve(
+    discloseInputs,
+    wasmPath,
+    zkeyPath
+  );
+
+  const isValid = await groth16.verify(vKey, discloseProof.publicSignals, discloseProof.proof);
+  if (!isValid) {
+    throw new Error("Generated disclose proof verification failed");
+  }
+
+  globalProofData = {
+    proof: {
+      a: discloseProof.proof.pi_a.slice(0, 2),
+      b: discloseProof.proof.pi_b.map((b) => b.slice(0, 2)),
+      c: discloseProof.proof.pi_c.slice(0, 2),
+    },
+    publicSignals: discloseProof.publicSignals,
+  };
 
 }
-export function getTestData() {
+export function getProof() {
   if (!globalProofData) {
     throw new Error("Test data not initialized. Call setupTestData() first.");
   }

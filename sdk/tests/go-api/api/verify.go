@@ -190,6 +190,7 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 	allowedIds := map[self.AttestationId]bool{
 		self.Passport: true,
 		self.EUCard:   true,
+		self.Aadhaar:  true,
 	}
 
 	// Use the same verifyEndpoint as TypeScript API to match scope calculation

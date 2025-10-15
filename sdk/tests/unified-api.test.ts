@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import { callAPI, compareAPIs, setupTestData, getTestData, getGlobalPassportData, getUserContextData, getInvalidUserContextData, setupTestDataAadhaar } from './utils.ts';
+import { callAPI, compareAPIs, setupTestData, getProof, getGlobalPassportData, getUserContextData, getInvalidUserContextData, setupTestDataAadhaar } from './utils.ts';
 import { getRevealedDataBytes } from '../core/src/utils/proof.js';
 import { packBytes, packBytesArray } from '../../common/src/utils/bytes.js';
 
@@ -32,7 +32,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
 
     describe('API Verification Tests Passport', function () {
         it('should verify valid proof successfully', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             const body = {
                 attestationId: 1,
                 proof: proof,
@@ -43,7 +43,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject invalid user context', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             const body = {
                 attestationId: 1,
                 proof: proof,
@@ -54,7 +54,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject invalid scope', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             const body = {
                 attestationId: 1,
                 proof: proof,
@@ -65,7 +65,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject invalid merkle root', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             const body = {
                 attestationId: 1,
                 proof: proof,
@@ -76,7 +76,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject attestation ID mismatch', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             const body = {
                 attestationId: 2,
                 proof: proof,
@@ -87,7 +87,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject forbidden countries list mismatch', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             // For attestation ID 1 (Passport), forbidden countries list packed indices are 3-6
             // We modify the forbidden countries list to include UAE and AUS instead of PAK and IRN
             // UAE, AUS packed value: '91625632383317' (calculated using packForbiddenCountriesList(['UAE', 'AUS']))
@@ -107,7 +107,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject minimum age mismatch', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
 
             // Get the current revealed data bytes
             const currentBytes = getRevealedDataBytes(1, publicSignals); // attestationId = 1
@@ -138,7 +138,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject ConfigID not found', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             let userContextData = validUserContext;
             userContextData = userContextData.slice(0, -1) + "7";
             const body = {
@@ -150,7 +150,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
             await runTest(body, 500, ['Config Id not found']);
         });
         it('should reject Config not found', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
             let userContextData = validUserContext;
             userContextData = userContextData.slice(0, -1) + "5";
             const body = {
@@ -163,7 +163,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject future timestamp', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
 
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
@@ -199,7 +199,7 @@ describe('Self SDK Passport API Comparison Tests', function () {
         });
 
         it('should reject old timestamp', async function () {
-            const { proof, publicSignals } = getTestData();
+            const { proof, publicSignals } = getProof();
 
             const pastDate = new Date();
             pastDate.setDate(pastDate.getDate() - 3);
@@ -249,7 +249,7 @@ describe('Self SDK EU ID Card API Comparison Tests', function () {
     before(async () => {
         // Setup EU ID card test data
         await setupTestData("2");
-        euIdTestData = getTestData();
+        euIdTestData = getProof();
     });
 
     describe('EU ID Card API Verification Tests', function () {
@@ -464,21 +464,112 @@ describe('Self SDK EU ID Card API Comparison Tests', function () {
 
 describe.only('Self SDK Aadhaar API Comparison Tests', function () {
     this.timeout(0);
+    let aadhaarProof: any;
+    let validUserContext: any;
     before(async () => {
         await setupTestDataAadhaar();
+        aadhaarProof = getProof();
     });
     it('should verify valid Aadhaar proof successfully', async function () {
-
-        console.log("Aadhaar test data");
-        // const { proof, publicSignals } = aadhaarTestData;
-        // const body = {
-        //     attestationId: 3,
-        //     proof: proof,
-        //     publicSignals: publicSignals,
-        //     userContextData: validUserContext
-        // };
-        // await runTest(body, 200, []);
+        const {proof, publicSignals} = aadhaarProof;
+        validUserContext = getUserContextData();
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: publicSignals,
+            userContextData: validUserContext
+        };
+        await runTest(body, 200, []);
     });
+    it('should reject invalid user context', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+        const invalidUserContext = getInvalidUserContextData();
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: publicSignals,
+            userContextData: invalidUserContext
+        };
+        await runTest(body, 500, ['context hash does not match', 'circuit']);
+    });
+
+    it('should reject invalid scope', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: publicSignals.map((sig, i) => i === 17 ? "17121382998761176299335602807450250650083579600718579431641003529012841023067" : sig),
+            userContextData: validUserContext
+        };
+        await runTest(body, 500, ['Scope']);
+    });
+
+    it('should reject invalid merkle root', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: publicSignals.map((sig, i) => i === 16 ? "9656656992379025128519272376477139373854042233370909906627112932049610896732" : sig),
+            userContextData: validUserContext
+        };
+        await runTest(body, 500, ['Onchain root']);
+    });
+
+    it('should reject attestation ID mismatch', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            // For Aadhaar, attestationIdIndex is 10 - change it from 3 to 1
+            publicSignals: publicSignals.map((sig, i) => i === 10 ? "1" : sig),
+            userContextData: validUserContext
+        };
+        await runTest(body, 500, ['Attestation ID', 'does not match', 'circuit']);
+    });
+
+    it('should reject minimum age mismatch', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+
+        // Get the current revealed data bytes
+        const currentBytes = getRevealedDataBytes(3, publicSignals); // attestationId = 3
+
+        // For Aadhaar, minimum age is at position 118
+        // This is a single byte field. Config expects age 18, we'll change it to 25
+        const modifiedBytes = [...currentBytes];
+        modifiedBytes[118] = 25; // Change age to 25 (from 18)
+
+        const packedData = packBytesArray(modifiedBytes);
+
+        const modifiedPublicSignals = [
+            ...publicSignals.slice(0, 2), // Keep nullifier and commitment (indices 0-1)
+            ...packedData.map(p => p.toString()), // Replace revealed data packed (indices 2-5)
+            ...publicSignals.slice(6) // Keep the rest (forbidden countries onwards)
+        ];
+
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: modifiedPublicSignals,
+            userContextData: validUserContext
+        };
+
+        await runTest(body, 500, ['Minimum age', 'does not match']);
+    });
+
+    it('should reject ConfigID not found', async function () {
+        const { proof, publicSignals } = aadhaarProof;
+        let userContextData = validUserContext;
+        userContextData = userContextData.slice(0, -1) + "7";
+        const body = {
+            attestationId: 3,
+            proof: proof,
+            publicSignals: publicSignals,
+            userContextData: userContextData
+        };
+        await runTest(body, 500, ['Config Id not found']);
+    });
+
+
 });
 
 /*

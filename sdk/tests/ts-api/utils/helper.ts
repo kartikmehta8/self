@@ -303,7 +303,6 @@ export const handshakeAndGetUuid = async (
         ws.send(JSON.stringify(submitBody));
       } else {
         ws.close();
-
         resolve(result.result);
       }
     });
@@ -329,6 +328,8 @@ export const getProofGeneratedUpdate = async (
     socket2.on("status", (data) => {
       try {
         if (data.status === 3 || data.status === 5) {
+          console.error("TEE PROOF GENERATION FAILED:");
+          console.error(JSON.stringify(data, null, 2));
           socket2.close();
           reject(`Proof generation failed:  ${data.request_id}`);
         } else if (data.status === 4) {

@@ -7604,6 +7604,7 @@ __metadata:
     chai: "npm:^5.1.1"
     mocha: "npm:^10.4.0"
     poseidon-lite: "npm:^0.2.0"
+    snarkjs: "npm:^0.7.5"
     tsx: "npm:^4.7.0"
     typescript: "npm:^5.9.2"
   languageName: unknown
