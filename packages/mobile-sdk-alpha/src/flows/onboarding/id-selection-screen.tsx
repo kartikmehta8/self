@@ -79,13 +79,10 @@ const IDSelectionScreen: React.FC<IDSelectionScreenProps> = props => {
   const onSelectDocumentType = (docType: string) => {
     buttonTap();
 
-    const countryName = getDocumentName(docType);
-
     selfClient.emit(SdkEvents.DOCUMENT_TYPE_SELECTED, {
       documentType: docType,
       documentName: getDocumentNameForEvent(docType),
       countryCode: countryCode,
-      countryName: countryName,
     });
   };
 
