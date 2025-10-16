@@ -128,6 +128,7 @@ export {
 export {
   generateCircuitInput,
   generateCircuitInputWithRealData,
+  generateSelfricaInputWithSig,
   pubkeyCommitment,
   NON_OFAC_DUMMY_INPUT,
   OFAC_DUMMY_INPUT,

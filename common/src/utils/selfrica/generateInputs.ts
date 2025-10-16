@@ -226,7 +226,7 @@ export const generateSelfricaInputWithSig = (
     pubkeyBase64: string,
     msgSigBase64: string,
     idNumSigBase64: string,
-    serializedRealData: string,
+    serializedRealDataBase64: string,
     nameDobSmt: SMT,
     nameYobSmt: SMT,
     ofac: boolean,
@@ -236,6 +236,7 @@ export const generateSelfricaInputWithSig = (
     forbiddenCountriesList?: string[],
     minimumAge?: number,
 ) => {
+    const serializedRealData = Buffer.from(serializedRealDataBase64, 'base64').toString('utf8');
     const msg = Buffer.from(serializedRealData, 'utf8');
 
     const fullName = serializedRealData.slice(SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH);
