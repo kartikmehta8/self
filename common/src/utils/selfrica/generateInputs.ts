@@ -222,6 +222,74 @@ export const generateSelfricaInputWithOutSig = (
     return circuitInput;
 }
 
+export const generateSelfricaInputWithSig = (
+    pubkeyBase64: string,
+    msgSigBase64: string,
+    idNumSigBase64: string,
+    serializedRealData: string,
+    nameDobSmt: SMT,
+    nameYobSmt: SMT,
+    ofac: boolean,
+    scope: string,
+    userIdentifier: string,
+    fieldsToReveal?: SelfricaField[],
+    forbiddenCountriesList?: string[],
+    minimumAge?: number,
+) => {
+    const msg = Buffer.from(serializedRealData, 'utf8');
+
+    const fullName = serializedRealData.slice(SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH);
+    const dob = serializedRealData.slice(SELFRICA_DOB_INDEX, SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH);
+
+    const smileData = {
+        fullName,
+        dob,
+    } as unknown as SmileData;
+
+    const nameDobInputs = generateCircuitInputsOfac(smileData, nameDobSmt, 2);
+    const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
+
+    const [msgPadded, _] = sha256Pad(msg, 320);
+
+    const pubkeyBuffer = Buffer.from(pubkeyBase64, 'base64');
+    const pubkeyBigInt = BigInt('0x' + pubkeyBuffer.toString('hex'));
+
+    const msgSigBuffer = Buffer.from(msgSigBase64, 'base64');
+    const msgSigBigInt = BigInt('0x' + msgSigBuffer.toString('hex'));
+
+    const idNumSigBuffer = Buffer.from(idNumSigBase64, 'base64');
+    const idNumSigBigInt = BigInt('0x' + idNumSigBuffer.toString('hex'));
+
+    const fieldsToRevealFinal = fieldsToReveal || [];
+    const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
+
+    const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split("");
+
+    const majorityAgeASCII = minimumAge ? minimumAge.toString().split("").map((x) => x.charCodeAt(0)) : ['0', '0', '0'].map((x) => x.charCodeAt(0));
+
+    const circuitInput: SelfricaCircuitInput = {
+        SmileID_data_padded: formatInput(msgPadded),
+        compressed_disclose_sel: compressed_disclose_sel,
+        pubKey: splitToWords(pubkeyBigInt, 121, 17),
+        msg_sig: splitToWords(msgSigBigInt, 121, 17),
+        id_num_sig: splitToWords(idNumSigBigInt, 121, 17),
+        scope: scope,
+        forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
+        ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
+        ofac_name_dob_smt_root: nameDobInputs.smt_root,
+        ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
+        ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
+        ofac_name_yob_smt_root: nameYobInputs.smt_root,
+        ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
+        selector_ofac: ofac ? ['1'] : ['0'],
+        user_identifier: userIdentifier,
+        current_date: currentDate,
+        majority_age_ASCII: majorityAgeASCII,
+    }
+
+    return circuitInput;
+}
+
 export const generateCircuitInputWithRealData = (
     serializedRealData: string,
     nameDobSmt: SMT,
