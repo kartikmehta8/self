@@ -14,7 +14,6 @@ const PRIVATE_MODULE_PATH = path.join(SDK_DIR, 'mobile-sdk-native');
 const GITHUB_ORG = 'selfxyz';
 const REPO_NAME = 'mobile-sdk-native';
 const BRANCH = 'main';
-const SUBMODULE_URL = `https://github.com/${GITHUB_ORG}/${REPO_NAME}.git`;
 
 // Environment detection
 const isCI = process.env.CI === 'true';
@@ -62,18 +61,15 @@ function runCommand(command, options = {}) {
 
 function sanitizeCommandForLogging(command) {
   // Replace any https://token@github.com patterns with https://[REDACTED]@github.com
-  return command.replace(
-    /https:\/\/[^@]+@github\.com/g,
-    'https://[REDACTED]@github.com',
-  );
+  return command.replace(/https:\/\/[^@]+@github\.com/g, 'https://[REDACTED]@github.com');
 }
 
-function removeExistingModule() {
-  if (fs.existsSync(PRIVATE_MODULE_PATH)) {
-    log(`Removing existing ${REPO_NAME} directory...`, 'cleanup');
-    runCommand(`rm -rf "${PRIVATE_MODULE_PATH}"`);
-  }
-}
+// function removeExistingModule() {
+//   if (fs.existsSync(PRIVATE_MODULE_PATH)) {
+//     log(`Removing existing ${REPO_NAME} directory...`, 'cleanup');
+//     runCommand(`rm -rf "${PRIVATE_MODULE_PATH}"`);
+//   }
+// }
 
 function usingHTTPSGitAuth() {
   try {
@@ -82,11 +78,8 @@ function usingHTTPSGitAuth() {
       cwd: SDK_DIR,
     });
     return result.trim().startsWith('https://');
-  } catch (error) {
-    log(
-      'Could not determine git remote URL, assuming SSH authentication',
-      'warning',
-    );
+  } catch {
+    log('Could not determine git remote URL, assuming SSH authentication', 'warning');
     return false;
   }
 }
@@ -101,14 +94,8 @@ function setupSubmodule() {
     log('CI detected: Using SELFXYZ_INTERNAL_REPO_PAT for submodule', 'info');
     submoduleUrl = `https://${repoToken}@github.com/${GITHUB_ORG}/${REPO_NAME}.git`;
   } else if (isCI) {
-    log(
-      'CI environment detected but SELFXYZ_INTERNAL_REPO_PAT not available - skipping private module setup',
-      'info',
-    );
-    log(
-      'This is expected for forked PRs or environments without access to private modules',
-      'info',
-    );
+    log('CI environment detected but SELFXYZ_INTERNAL_REPO_PAT not available - skipping private module setup', 'info');
+    log('This is expected for forked PRs or environments without access to private modules', 'info');
     return false; // Return false to indicate setup was skipped
   } else if (usingHTTPSGitAuth()) {
     submoduleUrl = `https://github.com/${GITHUB_ORG}/${REPO_NAME}.git`;
@@ -138,25 +125,16 @@ function setupSubmodule() {
     return true; // Return true to indicate successful setup
   } catch (error) {
     if (isCI) {
-      log(
-        'Submodule setup failed in CI environment. Check SELFXYZ_INTERNAL_REPO_PAT permissions.',
-        'error',
-      );
+      log('Submodule setup failed in CI environment. Check SELFXYZ_INTERNAL_REPO_PAT permissions.', 'error');
     } else {
-      log(
-        'Submodule setup failed. Ensure you have SSH access to the repository.',
-        'error',
-      );
+      log('Submodule setup failed. Ensure you have SSH access to the repository.', 'error');
     }
     throw error;
   }
 }
 
 function validateSetup() {
-  const expectedFiles = [
-    'src/main/java',
-    'src/main/res',
-  ];
+  const expectedFiles = ['src/main/java', 'src/main/res'];
 
   for (const file of expectedFiles) {
     const fullPath = path.join(PRIVATE_MODULE_PATH, file);
@@ -171,12 +149,9 @@ function validateSetup() {
 function scrubGitRemoteUrl() {
   try {
     const cleanUrl = `https://github.com/${GITHUB_ORG}/${REPO_NAME}.git`;
-    runCommand(
-      `git -C mobile-sdk-native remote set-url origin "${cleanUrl}"`,
-      { stdio: 'pipe' },
-    );
+    runCommand(`git -C mobile-sdk-native remote set-url origin "${cleanUrl}"`, { stdio: 'pipe' });
     log('Git remote URL scrubbed of credentials', 'success');
-  } catch (error) {
+  } catch {
     log('Failed to scrub git remote URL (non-critical)', 'warning');
   }
 }
