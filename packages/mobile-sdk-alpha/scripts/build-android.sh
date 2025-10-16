@@ -9,39 +9,84 @@ set -e
 
 echo "🤖 Building Android AAR for mobile-sdk-alpha..."
 
-# Navigate to android directory
-cd "$(dirname "$0")/../android"
+# Navigate to SDK directory
+SDK_DIR="$(dirname "$0")/.."
+cd "$SDK_DIR"
 
-# Check if we're in a monorepo and can use the app's gradlew
-APP_GRADLEW="../../../app/android/gradlew"
+# Ensure dist/android directory exists
+mkdir -p dist/android
 
-if [ -f "$APP_GRADLEW" ]; then
-    echo "✅ Using app's Gradle wrapper"
+# Check if native modules source is available
+MOBILE_SDK_NATIVE="mobile-sdk-native"
 
-    # Check if we need to swap build.gradle files
-    if [ -f "build.gradle.source" ]; then
-        echo "📝 Swapping to source build.gradle..."
-        mv build.gradle build.gradle.prebuilt.tmp
-        mv build.gradle.source build.gradle
+echo "🔍 Checking for Android build options..."
+
+if [ -d "$MOBILE_SDK_NATIVE" ]; then
+    echo "✅ Native modules source submodule found, building from source..."
+
+    # Check if we already have a recent AAR file (less than 1 hour old)
+    if [ -f "dist/android/mobile-sdk-alpha-release.aar" ]; then
+        AAR_AGE=$(($(date +%s) - $(stat -f %m "dist/android/mobile-sdk-alpha-release.aar" 2>/dev/null || echo 0)))
+        if [ $AAR_AGE -lt 3600 ]; then  # 1 hour = 3600 seconds
+            echo "✅ Recent AAR found (${AAR_AGE}s old), skipping build"
+            echo "📦 Using existing AAR: dist/android/mobile-sdk-alpha-release.aar"
+            exit 0
+        fi
     fi
 
-    # Build using app's gradlew from the app's android directory
-    # This ensures React Native and other dependencies are available
-    cd ../../../app/android
-    ./gradlew :mobile-sdk-alpha:assembleRelease
+    # Update submodule to latest
+    echo "🔄 Updating submodule to latest..."
+    git submodule update --init --recursive mobile-sdk-native
 
-    # Restore build.gradle files if we swapped them
-    if [ -f "../../packages/mobile-sdk-alpha/android/build.gradle.prebuilt.tmp" ]; then
-        echo "📝 Restoring prebuilt build.gradle..."
-        cd ../../packages/mobile-sdk-alpha/android
-        mv build.gradle build.gradle.source
-        mv build.gradle.prebuilt.tmp build.gradle
+    # Navigate to android directory
+    cd android
+
+    # Check if we're in a monorepo and can use the app's gradlew
+    APP_GRADLEW="../../../app/android/gradlew"
+
+    if [ -f "$APP_GRADLEW" ]; then
+        echo "✅ Using app's Gradle wrapper"
+
+        # Copy source from submodule if available
+        if [ -d "../$MOBILE_SDK_NATIVE/src" ]; then
+            echo "📝 Copying source from submodule to android directory..."
+            rm -rf src
+            cp -r "../$MOBILE_SDK_NATIVE/src" .
+        fi
+
+        if [ -d "../$MOBILE_SDK_NATIVE/libs" ]; then
+            echo "📝 Copying libs from submodule to android directory..."
+            rm -rf libs
+            cp -r "../$MOBILE_SDK_NATIVE/libs" .
+        fi
+
+        # Build using app's gradlew from the app's android directory
+        # This ensures React Native and other dependencies are available
+        cd ../../../app/android
+        ./gradlew :mobile-sdk-alpha:assembleRelease
+
+        echo "✅ Android AAR built successfully from submodule source"
+        echo "📦 AAR location: packages/mobile-sdk-alpha/dist/android/"
+        echo "💡 Changes in mobile-sdk-native/ are tracked with git history"
+    else
+        echo "❌ Error: Could not find app's Gradle wrapper at $APP_GRADLEW"
+        echo "Please ensure you're running this from the monorepo root or that the app is set up."
+        exit 1
     fi
-
-    echo "✅ Android AAR built successfully"
-    echo "📦 AAR location: packages/mobile-sdk-alpha/dist/android/"
 else
-    echo "❌ Error: Could not find app's Gradle wrapper at $APP_GRADLEW"
-    echo "Please ensure you're running this from the monorepo root or that the app is set up."
-    exit 1
+    echo "⚠️  Private source not found, checking for prebuilt AAR..."
+
+    # Check if prebuilt AAR already exists
+    if [ -f "dist/android/mobile-sdk-alpha-release.aar" ]; then
+        echo "✅ Prebuilt AAR found: dist/android/mobile-sdk-alpha-release.aar"
+        echo "📦 Using existing prebuilt AAR"
+    else
+        echo "❌ No prebuilt AAR found at dist/android/mobile-sdk-alpha-release.aar"
+        echo "💡 To build from source, clone the mobile-sdk-native repository:"
+        echo "   node scripts/setup-native-source.cjs"
+        echo "   yarn build:android"
+        echo ""
+        echo "⚠️  Package may not work without AAR file!"
+        exit 1
+    fi
 fi

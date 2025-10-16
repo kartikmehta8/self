@@ -15,7 +15,12 @@ android {
 
 dependencies {
     // Mobile SDK Alpha AAR
-    implementation files('../../../mobile-sdk-alpha/dist/android/mobile-sdk-alpha-release.aar')
+    // Detect if we're in monorepo or published package
+    def sdkRoot = file("$projectDir/../../../mobile-sdk-alpha").exists() ?
+        "$projectDir/../../../mobile-sdk-alpha" : // Monorepo (workspace dependency)
+        "$projectDir/../../node_modules/@selfxyz/mobile-sdk-alpha" // Published package
+
+    implementation files("${sdkRoot}/dist/android/mobile-sdk-alpha-release.aar")
 
     // All required dependencies for mobile-sdk-alpha AAR
 
