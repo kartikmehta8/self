@@ -10,23 +10,20 @@ const rootDir = join(__dirname, '..');
 
 function copyAssets() {
   const sourceDir = join(rootDir, 'svgs');
-  const targetEsmDir = join(rootDir, 'dist/esm/svgs');
-  const targetCjsDir = join(rootDir, 'dist/cjs/svgs');
+  const targetSvgDir = join(rootDir, 'dist/svgs');
 
   if (!existsSync(sourceDir)) {
     console.log('No svgs directory found, skipping asset copy');
     return;
   }
 
-  // Create target directories if they don't exist
-  mkdirSync(targetEsmDir, { recursive: true });
-  mkdirSync(targetCjsDir, { recursive: true });
+  // Create target directory if it doesn't exist
+  mkdirSync(targetSvgDir, { recursive: true });
 
-  // Copy SVGs to both ESM and CJS dist folders
+  // Copy SVGs to single shared location in dist
   try {
-    cpSync(sourceDir, targetEsmDir, { recursive: true });
-    cpSync(sourceDir, targetCjsDir, { recursive: true });
-    console.log('✅ SVG assets copied to dist folders');
+    cpSync(sourceDir, targetSvgDir, { recursive: true });
+    console.log('✅ SVG assets copied to dist/svgs');
   } catch (error) {
     console.error('❌ Failed to copy SVG assets:', error.message);
     process.exit(1);

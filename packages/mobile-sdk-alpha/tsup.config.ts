@@ -53,7 +53,6 @@ export default defineConfig([
     splitting: true,
     clean: true,
     outDir: 'dist/esm',
-    onSuccess: 'node ./scripts/copy-assets.mjs',
     tsconfig: './tsconfig.json',
     target: 'es2020',
     external: [
@@ -101,6 +100,7 @@ export default defineConfig([
     splitting: true,
     clean: false,
     outDir: 'dist/cjs',
+    onSuccess: 'node ./scripts/copy-assets.mjs',
     tsconfig: './tsconfig.cjs.json',
     target: 'es2020',
     external: [

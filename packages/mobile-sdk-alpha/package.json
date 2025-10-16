@@ -70,14 +70,14 @@
       "require": "./dist/cjs/hooks/index.cjs"
     },
     "./svgs/*.svg": {
-      "react-native": "./dist/esm/svgs/*.svg",
-      "import": "./dist/esm/svgs/*.svg",
-      "require": "./dist/cjs/svgs/*.svg"
+      "react-native": "./dist/svgs/*.svg",
+      "import": "./dist/svgs/*.svg",
+      "require": "./dist/svgs/*.svg"
     },
     "./svgs/icons/*.svg": {
-      "react-native": "./dist/esm/svgs/icons/*.svg",
-      "import": "./dist/esm/svgs/icons/*.svg",
-      "require": "./dist/cjs/svgs/icons/*.svg"
+      "react-native": "./dist/svgs/icons/*.svg",
+      "import": "./dist/svgs/icons/*.svg",
+      "require": "./dist/svgs/icons/*.svg"
     }
   },
   "main": "./dist/cjs/index.cjs",
