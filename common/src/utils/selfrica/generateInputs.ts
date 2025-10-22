@@ -1,6 +1,6 @@
 import { SMT } from "@openpassport/zk-kit-smt";
 import { generateSMTProof, getNameDobLeafSelfrica, getNameYobLeafSelfrica } from "../trees.js";
-import { SelfricaCircuitInput, serializeSmileData, SmileData } from "./types.js";
+import { SelfricaCircuitInput, SelfricaRegisterInput, serializeSmileData, SmileData } from "./types.js";
 import { formatInput } from "../circuits/generateInputs.js";
 import { sha256Pad } from '@zk-email/helpers/dist/sha-utils.js';
 import { createSelfricaSelector, SELFRICA_DOB_INDEX, SELFRICA_DOB_LENGTH, SELFRICA_FULL_NAME_INDEX, SELFRICA_FULL_NAME_LENGTH, SELFRICA_MAX_LENGTH, SelfricaField } from "./constants.js";
@@ -8,6 +8,9 @@ import { generateRSAKeyPair, signRSA, verifyRSA } from "./rsa.js";
 import forge from "node-forge";
 import { splitToWords } from "../bytes.js";
 import { poseidon16, poseidon2 } from "poseidon-lite";
+import { Base8, inCurve, mulPointEscalar, subOrder } from "@zk-kit/baby-jubjub";
+import { signECDSA, verifyECDSA, verifyEffECDSA } from "./ecdsa/ecdsa.js";
+import { bigintTo64bitLimbs, getEffECDSAArgs, modInv, modulus } from "./ecdsa/utils.js";
 
 
 export const splitDiscloseSel = (disclose_sel: string[]): string[] => {
@@ -75,6 +78,41 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
     current_date: '20250101',
     majority_age_ASCII: '20',
     selector_older_than: '1',
+}
+
+export const generateSelfricaRegisterInput =(ofac?: boolean) => {
+    let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
+    const serialized = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
+    const msgPadded = Array.from(serialized, x => x.charCodeAt(0));
+
+    const sk = BigInt(subOrder - BigInt(Math.floor(Math.random() * 90098)));
+    const pk = mulPointEscalar(Base8, sk);
+
+    const sig = signECDSA(sk, msgPadded)
+    console.assert(verifyECDSA(msgPadded, sig, pk) == true, "Invalid signature");
+
+    let { T, U } = getEffECDSAArgs(msgPadded, sig);
+    console.assert(verifyEffECDSA(sig.s, T, U, pk) == true, "Invalid signature");
+
+    console.assert(sig.s < subOrder, " s is greater than scalar field");
+    console.assert(inCurve(T), "Point T not on curve");
+    console.assert(inCurve(U), "Point U not on curve");
+
+    const rInv = modInv(sig.R[0], subOrder);
+    const rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
+
+    const selfricaRegisterInput: SelfricaRegisterInput = {
+        SmileID_data_padded: msgPadded.map((x) => x.toString()),
+        s: sig.s.toString(),
+        Tx: T[0].toString(),
+        Ty: T[1].toString(),
+        pubKeyX: pk[0].toString(),
+        pubKeyY: pk[1].toString(),
+        r_inv: rInvLimbs.map((x) => x.toString()),
+    }
+
+    return selfricaRegisterInput;
+
 }
 
 export const generateCircuitInputsOfac = (smileData: SmileData, smt: SMT, proofLevel: number) => {

@@ -1,3 +1,4 @@
+import { Point } from '@zk-kit/baby-jubjub';
 import * as constants from './constants.js';
 
 export type SmileData = {
@@ -36,6 +37,16 @@ export const serializeSmileData = (smileData: SmileData) => {
     serializedData += smileData.address.padEnd(constants.SELFRICA_ADDRESS_LENGTH, '\0');
 
     return serializedData;
+}
+
+export type SelfricaRegisterInput = {
+    SmileID_data_padded: string[],
+    s: string,
+    Tx: string,
+    Ty: string,
+    pubKeyX: string,
+    pubKeyY: string,
+    r_inv: string[],
 }
 
 export type SelfricaCircuitInput = {
@@ -77,3 +88,7 @@ export const getPublicInput = (input: SelfricaCircuitInput) => {
         attestation_id: ['4'],
     }
 }
+export type Signature = {
+    R: Point<bigint>,
+    s: bigint
+};
