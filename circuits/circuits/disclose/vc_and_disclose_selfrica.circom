@@ -46,6 +46,7 @@ template VC_AND_DISCLOSE(
     signal input user_identifier;
     signal input current_date[8];
     signal input majority_age_ASCII[3];
+    signal input secret;
 
     signal output attestation_id <== 4;
 
@@ -74,7 +75,9 @@ template VC_AND_DISCLOSE(
         msg_hasher.in[i] <== SmileID_data_padded[i];
     }
 
-    signal computedRoot <== BinaryMerkleRoot(nLevels)(msg_hasher.out, leaf_depth, path, siblings);
+    signal leaf <== Poseidon(2)([secret, msg_hasher.out]);
+
+    signal computedRoot <== BinaryMerkleRoot(nLevels)(leaf, leaf_depth, path, siblings);
     merkle_root === computedRoot;
 
     signal id_num[ID_NUMBER_LENGTH()];

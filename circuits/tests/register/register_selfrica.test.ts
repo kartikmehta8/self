@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { wasm as wasmTester } from 'circom_tester';
 import path from 'path';
 import { customHasher, packBytesAndPoseidon } from '@selfxyz/common/utils/hash';
+import { poseidon2 } from 'poseidon-lite';
 import fs from 'fs';
 import { generateSelfricaRegisterInput, OFAC_DUMMY_INPUT } from '@selfxyz/common/utils/selfrica/generateInputs.js';
 
@@ -47,13 +48,14 @@ describe('REGISTER SELFRICA Circuit Tests', () => {
     this.timeout(0);
     const input = generateSelfricaRegisterInput(true);
     const nullifier = packBytesAndPoseidon(OFAC_DUMMY_INPUT.idNumber.split('').map((x) => x.charCodeAt(0)));
-    const commitment = packBytesAndPoseidon(input.SmileID_data_padded.map((x) => Number(x)));
+    const commitment = poseidon2([input.secret, packBytesAndPoseidon(input.SmileID_data_padded.map((x) => Number(x)))]);
+
     const w = await circuit.calculateWitness(input);
     await circuit.checkConstraints(w);
     const calnullifier = (await circuit.getOutput(w, ['nullifier'])).nullifier;
     const calcommitment = (await circuit.getOutput(w, ['commitment'])).commitment;
-    expect(nullifier).to.be.equal(calnullifier);
-    expect(commitment).to.be.equal(calcommitment);
+    expect(nullifier.toString()).to.be.equal(calnullifier);
+    expect(commitment.toString()).to.be.equal(calcommitment);
   });
 
   it('should fail if smiledata is tampered', async function () {

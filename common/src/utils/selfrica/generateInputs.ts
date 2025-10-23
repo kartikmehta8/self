@@ -101,7 +101,7 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
   selector_older_than: '1',
 };
 
-export const generateSelfricaRegisterInput = (ofac?: boolean) => {
+export const generateSelfricaRegisterInput = (ofac?: boolean,secret?: string) => {
   let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
   const serialized = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
   const msgPadded = Array.from(serialized, (x) => x.charCodeAt(0));
@@ -138,6 +138,7 @@ export const generateSelfricaRegisterInput = (ofac?: boolean) => {
     pubKeyX: pk[0].toString(),
     pubKeyY: pk[1].toString(),
     r_inv: rInvLimbs.map((x) => x.toString()),
+    secret: secret || "1234",
   };
 
   return selfricaRegisterInput;
@@ -178,15 +179,16 @@ export const generateSelfricaDiscloseInput = (
   fieldsToReveal?: SelfricaField[],
   forbiddenCountriesList?: string[],
   minimumAge?: number,
-  updateTree?: boolean
+  updateTree?: boolean,
+  secret: string = "1234"
 ) => {
   const serialized = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
   const msgPadded = Array.from(serialized, (x) => x.charCodeAt(0));
-  const commitment = packBytesAndPoseidon(msgPadded);
+  const commitment = poseidon2([secret, packBytesAndPoseidon(msgPadded)]);
   if (updateTree) {
-    identityTree.insert(BigInt(commitment));
+    identityTree.insert(commitment);
   }
-  const index = findIndexInTree(identityTree, BigInt(commitment));
+  const index = findIndexInTree(identityTree, commitment);
   const {
     siblings,
     path: merkle_path,
@@ -229,6 +231,7 @@ export const generateSelfricaDiscloseInput = (
     user_identifier: userIdentifier,
     current_date: currentDate,
     majority_age_ASCII: majorityAgeASCII,
+    secret: secret,
   };
 
   return circuitInput;

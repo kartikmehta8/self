@@ -20,6 +20,7 @@ template REGISTER_SELFRICA() {
     signal input pubKeyX;
     signal input pubKeyY;
     signal input r_inv[4];
+    signal input secret;
 
     signal output attestation_id <== 4;
     signal output commitment;
@@ -30,11 +31,11 @@ template REGISTER_SELFRICA() {
         msg_hasher.in[i] <== SmileID_data_padded[i];
     }
 
-    commitment <== msg_hasher.out;
+    commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     //msg_hash bit decomposition
     component bit_decompose = Num2Bits(256);
-    bit_decompose.in <== commitment;
+    bit_decompose.in <== msg_hasher.out;
     signal msg_hash_bits[256] <== bit_decompose.out;
 
 
@@ -67,7 +68,9 @@ template REGISTER_SELFRICA() {
     }
     signal output nullifier <== PackBytesAndPoseidon(ID_NUMBER_LENGTH())(id_num);
 
+    signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
+
 }
 //TODO:
 //We can compress the publicKey but we need to add a compression circuit
-component main { public [ pubKeyX, pubKeyY] } = REGISTER_SELFRICA();
+component main = REGISTER_SELFRICA();

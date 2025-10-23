@@ -47,6 +47,7 @@ export type SelfricaRegisterInput = {
     pubKeyX: string,
     pubKeyY: string,
     r_inv: string[],
+    secret: string,
 }
 
 export type SelfricaDiscloseInput = {
@@ -68,6 +69,7 @@ export type SelfricaDiscloseInput = {
     user_identifier: string,
     current_date: string[],
     majority_age_ASCII: number[],
+    secret: string,
 };
 
 export type SelfricaDisclosePublicInput = {
