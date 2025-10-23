@@ -1,6 +1,6 @@
 import { wasm as wasmTester } from 'circom_tester';
 import * as path from 'path';
-import { generateCircuitInput, NON_OFAC_DUMMY_INPUT, OFAC_DUMMY_INPUT,  } from '@selfxyz/common';
+import {  NON_OFAC_DUMMY_INPUT, OFAC_DUMMY_INPUT } from '@selfxyz/common';
 import { SMT } from '@openpassport/zk-kit-smt';
 import { poseidon2 } from 'poseidon-lite';
 import fs from 'fs';

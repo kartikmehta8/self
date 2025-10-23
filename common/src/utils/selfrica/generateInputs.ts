@@ -6,7 +6,7 @@ import {
   getNameYobLeafSelfrica,
 } from '../trees.js';
 import {
-  SelfricaCircuitInput,
+  SelfricaDiscloseInput,
   SelfricaRegisterInput,
   serializeSmileData,
   SmileData,
@@ -66,7 +66,7 @@ export const createDiscloseSelFromFields = (fieldsToReveal: SelfricaField[]): st
 export const OFAC_DUMMY_INPUT: SmileData = {
   country: 'KEN',
   idType: 'NATIONAL ID',
-  idNumber: '1234567890',
+  idNumber: '12345678901234567890', //20 digits
   issuanceDate: '20200101',
   expiryDate: '20290101',
   fullName: 'ABBAS ABU',
@@ -85,7 +85,7 @@ export const OFAC_DUMMY_INPUT: SmileData = {
 export const NON_OFAC_DUMMY_INPUT: SmileData = {
   country: 'KEN',
   idType: 'NATIONAL ID',
-  idNumber: '1234567890',
+  idNumber: '12345678901234567890', //20 digits
   issuanceDate: '20200101',
   expiryDate: '20290101',
   fullName: 'John Doe',
@@ -210,7 +210,7 @@ export const generateSelfricaDiscloseInput = (
     const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
 
 
-  const circuitInput: SelfricaCircuitInput = {
+    const circuitInput: SelfricaDiscloseInput = {
     SmileID_data_padded: formatInput(msgPadded),
     compressed_disclose_sel: compressed_disclose_sel,
     scope: scope,

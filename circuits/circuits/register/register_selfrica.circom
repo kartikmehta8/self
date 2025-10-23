@@ -22,6 +22,7 @@ template REGISTER_SELFRICA() {
     signal input r_inv[4];
 
     signal output attestation_id <== 4;
+    signal output commitment;
 
     //Calculate msg_hash
     component msg_hasher = PackBytesAndPoseidon(selfrica_length);
@@ -29,9 +30,11 @@ template REGISTER_SELFRICA() {
         msg_hasher.in[i] <== SmileID_data_padded[i];
     }
 
+    commitment <== msg_hasher.out;
+
     //msg_hash bit decomposition
     component bit_decompose = Num2Bits(256);
-    bit_decompose.in <== msg_hasher.out;
+    bit_decompose.in <== commitment;
     signal msg_hash_bits[256] <== bit_decompose.out;
 
 
@@ -56,6 +59,13 @@ template REGISTER_SELFRICA() {
     verifyIdCommSig.Ty <== Ty;
     verifyIdCommSig.pubKeyX <== pubKeyX;
     verifyIdCommSig.pubKeyY <== pubKeyY;
+
+    signal id_num[ID_NUMBER_LENGTH()];
+    var idNumberIdx = ID_NUMBER_INDEX();
+    for (var i = 0; i < ID_NUMBER_LENGTH(); i++) {
+        id_num[i] <== SmileID_data_padded[idNumberIdx + i];
+    }
+    signal output nullifier <== PackBytesAndPoseidon(ID_NUMBER_LENGTH())(id_num);
 
 }
 //TODO:

@@ -49,7 +49,7 @@ export type SelfricaRegisterInput = {
     r_inv: string[],
 }
 
-export type SelfricaCircuitInput = {
+export type SelfricaDiscloseInput = {
     SmileID_data_padded: string[],
     compressed_disclose_sel: string[],
     merkle_root: string[],
@@ -70,22 +70,18 @@ export type SelfricaCircuitInput = {
     majority_age_ASCII: number[],
 };
 
-export type SelfricaPublicInput = {
-    pubKeyX: string,
-    pubKeyY: string,
+export type SelfricaDisclosePublicInput = {
+    attestation_id: string,
+    revealedData_packed: string[],
+    forbidden_countries_list_packed: string[],
+    nullifier: string,
     scope: string,
-    ofac_name_dob_smt_root: string[],
-    ofac_name_yob_smt_root: string[],
-    attestation_id: string[],
+    user_identifier: string,
+    current_date: string[],
+    ofac_name_dob_smt_root: string,
+    ofac_name_yob_smt_root: string,
 }
 
-export const getPublicInput = (input: SelfricaCircuitInput) => {
-    return {
-        ofac_name_dob_smt_root: input.ofac_name_dob_smt_root,
-        ofac_name_yob_smt_root: input.ofac_name_yob_smt_root,
-        attestation_id: ['4'],
-    }
-}
 export type Signature = {
     R: Point<bigint>,
     s: bigint
