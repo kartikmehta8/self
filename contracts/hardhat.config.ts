@@ -34,6 +34,9 @@ const config: HardhatUserConfig = {
   },
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true,
+    },
     localhost: {
       chainId: 31337,
       url: "http://127.0.0.1:8545",

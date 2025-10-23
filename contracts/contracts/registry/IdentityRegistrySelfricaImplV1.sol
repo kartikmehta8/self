@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {LeanIMTData} from "@zk-kit/imt.sol/internal/InternalLeanIMT.sol";
+import {InternalLeanIMT, LeanIMTData} from "@zk-kit/imt.sol/internal/InternalLeanIMT.sol";
 import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
+import {AttestationId} from "../constants/AttestationId.sol";
 import {ImplRoot} from "../upgradeable/ImplRoot.sol";
+
+import {console} from "hardhat/console.sol";
 /**
  * @notice ⚠️ CRITICAL STORAGE LAYOUT WARNING ⚠️
  * =============================================
@@ -40,11 +43,21 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
     /// @notice Address of the identity verification hub.
     address internal _hub;
 
+    /// @notice Address of the PCR0Manager.
+    address internal _PCR0Manager;
+
     /// @notice Merkle tree data structure for identity commitments.
     LeanIMTData internal _identityCommitmentIMT;
 
-    /// @notice Commitment of the public key for Selfrica.
-    uint256 internal _pubkeyCommitment;
+    /// @notice Mapping from public key commitment to its creation timestamp.
+    mapping(uint256 => uint256) internal _rootTimestamps;
+
+    /// @notice Mapping from nullifier to a boolean indicating registration.
+    mapping(uint256 => bool) internal _nullifiers;
+
+    /// @notice Pubkey commitments registered for Selfrica. .
+    mapping(uint256 => bool) internal _isRegisteredPubkeyCommitment;
+
     /// @notice Current name and date of birth OFAC root.
     uint256 internal _nameAndDobOfacRoot;
 
@@ -58,21 +71,49 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
  * @dev Inherits from IdentityRegistrySelfricaStorageV1 and implements IIdentityRegistrySelfricaV1.
  */
 contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistrySelfricaV1 {
+    using InternalLeanIMT for LeanIMTData;
+
     // ====================================================
     // Events
     // ====================================================
 
     /// @notice Emitted when the registry is initialized.
-    event RegistryInitialized(address hub);
+    event RegistryInitialized(address hub, address PCR0Manager);
     /// @notice Emitted when the hub address is updated.
     event HubUpdated(address hub);
-
-    /// @notice Emitted when the public key commitment is updated.
-    event PubkeyUpdated(uint256 pubkeyCommitment);
+    /// @notice Emitted when the PCR0Manager address is updated.
+    event PCR0ManagerUpdated(address PCR0Manager);
     /// @notice Emitted when the name and date of birth OFAC root is updated.
     event NameAndDobOfacRootUpdated(uint256 nameAndDobOfacRoot);
     /// @notice Emitted when the name and year of birth OFAC root is updated.
     event NameAndYobOfacRootUpdated(uint256 nameAndYobOfacRoot);
+    /// @notice Emitted when an identity commitment is successfully registered.
+    event CommitmentRegistered(
+        bytes32 indexed attestationId,
+        uint256 indexed nullifier,
+        uint256 indexed commitment,
+        uint256 timestamp,
+        uint256 imtRoot,
+        uint256 imtIndex
+    );
+    /// @notice Emitted when a public key commitment is successfully registered.
+    event PubkeyRegistered(uint256 indexed commitment);
+    /// @notice Emitted when a public key commitment is removed.
+    event PubkeyRemoved(uint256 indexed commitment);
+
+    /// @notice Emitted when a identity commitment is added by dev team.
+    event DevCommitmentRegistered(
+        bytes32 indexed attestationId,
+        uint256 indexed nullifier,
+        uint256 indexed commitment,
+        uint256 timestamp,
+        uint256 imtRoot,
+        uint256 imtIndex
+    );
+    /// @notice Emitted when a identity commitment is updated by dev team.
+    event DevCommitmentUpdated(uint256 indexed oldLeaf, uint256 indexed newLeaf, uint256 imtRoot, uint256 timestamp);
+    /// @notice Emitted when a identity commitment is removed by dev team.
+    event DevCommitmentRemoved(uint256 indexed oldLeaf, uint256 imtRoot, uint256 timestamp);
 
     // ====================================================
     // Errors
@@ -82,6 +123,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     error HUB_NOT_SET();
     /// @notice Thrown when a function is accessed by an address other than the designated hub.
     error ONLY_HUB_CAN_ACCESS();
+    /// @notice Thrown when attempting to register a commitment that has already been registered.
+    error REGISTERED_COMMITMENT();
+    /// @notice Thrown when the hub address is set to the zero address.
+    error HUB_ADDRESS_ZERO();
 
     // ====================================================
     // Modifiers
@@ -117,11 +162,13 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
      * @notice Initializes the registry implementation.
      * @dev Sets the hub address and initializes the UUPS upgradeable feature.
      * @param _hub The address of the identity verification hub.
+     * @param _PCR0Manager The address of the PCR0Manager.
      */
-    function initialize(address _hub) external initializer {
+    function initialize(address _hub, address _PCR0Manager) external initializer {
         __ImplRoot_init();
         _hub = _hub;
-        emit RegistryInitialized(_hub);
+        _PCR0Manager = _PCR0Manager;
+        emit RegistryInitialized(_hub, _PCR0Manager);
     }
 
     // ====================================================
@@ -137,11 +184,51 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
-     * @notice Retrieves the public key for Selfrica.
-     * @return The current public key for Selfrica.
+     * @notice Retrieves the PCR0Manager address.
+     * @return The current PCR0Manager address.
      */
-    function pubkeyCommitment() external view onlyProxy returns (uint256) {
-        return _pubkeyCommitment;
+    function PCR0Manager() external view onlyProxy returns (address) {
+        return _PCR0Manager;
+    }
+
+    /// @notice Checks if a specific nullifier is registered.
+    /// @param nullifier The nullifier to be checked.
+    /// @return True if the nullifier has been registered, false otherwise.
+    function nullifiers(uint256 nullifier) external view virtual onlyProxy returns (bool) {
+        return _nullifiers[nullifier];
+    }
+
+    /// @notice Retrieves the timestamp of the identity commitment Merkle tree root.
+    /// @param root The Merkle tree root to check.
+    /// @return The timestamp of the root.
+    function rootTimestamps(uint256 root) external view virtual onlyProxy returns (uint256) {
+        return _rootTimestamps[root];
+    }
+
+    /// @notice Checks if the pubkey commitment is registered.
+    /// @param pubkeyCommitment The pubkey commitment to check.
+    /// @return True if the pubkey commitment is registered, false otherwise.
+    function isRegisteredPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
+        return _isRegisteredPubkeyCommitment[pubkeyCommitment];
+    }
+
+    /// @notice Retrieves the total number of identity commitments in the Merkle tree.
+    /// @return The size (i.e., count) of the identity commitment Merkle tree.
+    function getIdentityCommitmentMerkleTreeSize() external view virtual onlyProxy returns (uint256) {
+        return _identityCommitmentIMT.size;
+    }
+
+    /// @notice Checks if the identity commitment Merkle tree contains the specified root.
+    /// @param root The Merkle tree root to check.
+    /// @return True if the root exists in the tree, false otherwise.
+    function checkIdentityCommitmentRoot(uint256 root) external view virtual onlyProxy returns (bool) {
+        return _rootTimestamps[root] > 0;
+    }
+
+    /// @notice Retrieves the current Merkle root of the identity commitments.
+    /// @return The current identity commitment Merkle root.
+    function getIdentityCommitmentMerkleRoot() external view virtual onlyProxy returns (uint256) {
+        return _identityCommitmentIMT._root();
     }
 
     /**
@@ -169,12 +256,31 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
-     * @notice Checks if the provided pubkey comm is stored in the registry.
-     * @param pubkeyComm The pubkey commitment to verify.
-     * @return True if the pubkey comm is stored in the registry, false otherwise.
+     * @notice Checks if the provided pubkey commitment is stored in the registry.
+     * @param pubkeyCommitment The pubkey commitment to verify.
+     * @return True if the pubkey commitment is stored in the registry, false otherwise.
      */
-    function checkPubkeyCommitment(uint256 pubkeyComm) external view onlyProxy returns (bool) {
-        return _pubkeyCommitment == pubkeyComm;
+    function checkPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
+        return _isRegisteredPubkeyCommitment[pubkeyCommitment];
+    }
+
+    // ====================================================
+    // External Functions - Registration
+    // ====================================================
+
+    /// @notice Registers a new identity commitment.
+    /// @dev Caller must be the hub. Reverts if the nullifier is already registered.
+    /// @param nullifier The nullifier associated with the identity commitment.
+    /// @param commitment The identity commitment to register.
+    function registerCommitment(uint256 nullifier, uint256 commitment) external onlyProxy onlyHub {
+        if (_nullifiers[nullifier]) revert REGISTERED_COMMITMENT();
+        console.log("nullifier", nullifier);
+        console.log("commitment", commitment);
+        _nullifiers[nullifier] = true;
+        uint256 index = _identityCommitmentIMT.size;
+        uint256 imt_root = _identityCommitmentIMT._insert(commitment);
+        _rootTimestamps[imt_root] = block.timestamp;
+        emit CommitmentRegistered(AttestationId.SELFRICA_ID_CARD, nullifier, commitment, block.timestamp, imt_root, index);
     }
 
     // ====================================================
@@ -187,16 +293,19 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
      * @param newHubAddress The new address of the hub.
      */
     function updateHub(address newHubAddress) external onlyProxy onlyOwner {
+        if (newHubAddress == address(0)) revert HUB_ADDRESS_ZERO();
         _hub = newHubAddress;
         emit HubUpdated(newHubAddress);
     }
 
     /**
-     * @notice Updates the public key commitment for Selfrica.
+     * @notice Updates the PCR0Manager address.
+     * @dev Callable only via a proxy and restricted to the contract owner.
+     * @param newPCR0ManagerAddress The new address of the PCR0Manager.
      */
-    function updatePubkeyCommitment(uint256 pubkeyComm) external virtual onlyProxy onlyOwner {
-        _pubkeyCommitment = pubkeyComm;
-        emit PubkeyUpdated(pubkeyComm);
+    function updatePCR0Manager(address newPCR0ManagerAddress) external virtual onlyProxy onlyOwner {
+        _PCR0Manager = newPCR0ManagerAddress;
+        emit PCR0ManagerUpdated(newPCR0ManagerAddress);
     }
 
     /**
@@ -213,5 +322,55 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     function updateNameAndYobOfacRoot(uint256 nameAndYobOfacRoot) external virtual onlyProxy onlyOwner {
         _nameAndYobOfacRoot = nameAndYobOfacRoot;
         emit NameAndYobOfacRootUpdated(nameAndYobOfacRoot);
+    }
+
+    /**
+     * @notice Registers a new public key commitment.
+     * @dev Callable only via a proxy and restricted to the contract owner.
+     * @param pubkeyCommitment The public key commitment to register.
+     */
+    function registerPubkeyCommitment(uint256 pubkeyCommitment) external virtual onlyProxy onlyOwner {
+        _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
+        emit PubkeyRegistered(pubkeyCommitment);
+    }
+
+    /// @notice (DEV) Force-adds an identity commitment.
+    /// @dev Callable only by the owner for testing or administration.
+    /// @param nullifier The nullifier associated with the identity commitment.
+    /// @param commitment The identity commitment to add.
+    function devAddIdentityCommitment(
+        uint256 nullifier,
+        uint256 commitment
+    ) external onlyProxy onlyOwner {
+        _nullifiers[nullifier] = true;
+        uint256 imt_root = _identityCommitmentIMT._insert(commitment);
+        _rootTimestamps[imt_root] = block.timestamp;
+        uint256 index = _identityCommitmentIMT._indexOf(commitment);
+        emit DevCommitmentRegistered(AttestationId.SELFRICA_ID_CARD, nullifier, commitment, block.timestamp, imt_root, index);
+    }
+
+    /// @notice (DEV) Updates an existing identity commitment.
+    /// @dev Caller must be the owner. Provides sibling nodes for proof of position.
+    /// @param oldLeaf The current identity commitment to update.
+    /// @param newLeaf The new identity commitment.
+    /// @param siblingNodes An array of sibling nodes for Merkle proof generation.
+    function devUpdateCommitment(
+        uint256 oldLeaf,
+        uint256 newLeaf,
+        uint256[] calldata siblingNodes
+    ) external onlyProxy onlyOwner {
+        uint256 imt_root = _identityCommitmentIMT._update(oldLeaf, newLeaf, siblingNodes);
+        _rootTimestamps[imt_root] = block.timestamp;
+        emit DevCommitmentUpdated(oldLeaf, newLeaf, imt_root, block.timestamp);
+    }
+
+    /// @notice (DEV) Removes an existing identity commitment.
+    /// @dev Caller must be the owner. Provides sibling nodes for proof of position.
+    /// @param oldLeaf The identity commitment to remove.
+    /// @param siblingNodes An array of sibling nodes for Merkle proof generation.
+    function devRemoveCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyOwner {
+        uint256 imt_root = _identityCommitmentIMT._remove(oldLeaf, siblingNodes);
+        _rootTimestamps[imt_root] = block.timestamp;
+        emit DevCommitmentRemoved(oldLeaf, imt_root, block.timestamp);
     }
 }

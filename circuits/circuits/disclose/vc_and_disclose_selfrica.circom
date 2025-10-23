@@ -69,7 +69,6 @@ template VC_AND_DISCLOSE(
         disclose_sel[compressed_bit_len + i] <== high_bits.out[i];
     }
 
-
     component msg_hasher = PackBytesAndPoseidon(selfrica_length);
     for (var i = 0; i < selfrica_length; i++) {
         msg_hasher.in[i] <== SmileID_data_padded[i];
@@ -85,13 +84,6 @@ template VC_AND_DISCLOSE(
     for (var i = 0; i < ID_NUMBER_LENGTH(); i++) {
         id_num[i] <== SmileID_data_padded[idNumberIdx + i];
     }
-
-    //Nullifier = HASH( nullifier sig , scope )
-    component nullifierCal = CustomHasher(ID_NUMBER_LENGTH() + 1);
-    for (var i = 0; i < ID_NUMBER_LENGTH(); i++) {
-        nullifierCal.in[i] <== id_num[i];
-    }
-    nullifierCal.in[ID_NUMBER_LENGTH()] <== scope;
 
     component disclose_circuit = DISCLOSE_SELFRICA(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH, namedobTreeLevels, nameyobTreeLevels);
 
@@ -118,17 +110,16 @@ template VC_AND_DISCLOSE(
 
     var forbidden_countries_list_packed_chunk_length = computeIntChunkLength(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * country_length);
     signal output forbidden_countries_list_packed[forbidden_countries_list_packed_chunk_length] <== disclose_circuit.forbidden_countries_list_packed;
-
-    signal output nullifier <== nullifierCal.out;
-
+    signal output nullifier <== Poseidon(2)([secret, scope]);
 }
 
 component main {
     public [
         scope,
-        user_identifier,
-        current_date,
+        merkle_root,
         ofac_name_dob_smt_root,
-        ofac_name_yob_smt_root
+        ofac_name_yob_smt_root,
+        user_identifier,
+        current_date
     ]
 } = VC_AND_DISCLOSE(40, 64, 64, 121, 17, 33);

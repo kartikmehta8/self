@@ -15,10 +15,10 @@ interface IIdentityRegistrySelfricaV1 {
     function hub() external view returns (address);
 
     /**
-     * @notice Retrieves the public keys for Selfrica.
-     * @return The public keys for Selfrica.
+     * @notice Retrieves the address of the registered PCR0Manager.
+     * @return The address of the PCR0Manager.
      */
-    function pubkeyCommitment() external view returns (uint256);
+    function PCR0Manager() external view returns (address);
 
     /**
      * @notice Checks if the provided pubkey commitment is stored in the registry.
@@ -26,6 +26,13 @@ interface IIdentityRegistrySelfricaV1 {
      * @return True if the pubkey commitment is stored in the registry, false otherwise.
      */
     function checkPubkeyCommitment(uint256 pubkeyCommitment) external view returns (bool);
+
+    /**
+     * @notice Checks if the identity commitment Merkle tree contains the specified root.
+     * @param root The Merkle tree root to check.
+     * @return True if the root exists in the tree, false otherwise.
+     */
+    function checkIdentityCommitmentRoot(uint256 root) external view returns (bool);
 
     /**
      * @notice Retrieves the current name and date of birth OFAC root.
@@ -46,4 +53,12 @@ interface IIdentityRegistrySelfricaV1 {
      * @return True if all provided roots match the stored values, false otherwise.
      */
     function checkOfacRoots(uint256 nameAndDobRoot, uint256 nameAndYobRoot) external view returns (bool);
+
+    /**
+     * @notice Registers a new identity commitment.
+     * @dev Must be called by the identity verification hub. Reverts if the nullifier has already been used.
+     * @param nullifier A unique nullifier to prevent double registration.
+     * @param commitment The identity commitment to register.
+     */
+    function registerCommitment(uint256 nullifier, uint256 commitment) external;
 }

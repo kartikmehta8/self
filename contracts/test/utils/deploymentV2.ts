@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { DscVerifierId, RegisterVerifierId } from "@selfxyz/common/constants";
+import { DscVerifierId, PCR0_MANAGER_ADDRESS, RegisterVerifierId } from "@selfxyz/common/constants";
 import { genAndInitMockPassportData } from "@selfxyz/common/utils/passports/genMockPassportData";
 import { getCscaTreeRoot } from "@selfxyz/common/utils/trees";
 import { PassportData } from "@selfxyz/common/utils/types";
@@ -16,6 +16,7 @@ import RegisterVerifierArtifactLocal from "../../artifacts/contracts/verifiers/l
 import RegisterIdVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register_id/Verifier_register_id_sha256_sha256_sha256_rsa_65537_4096_staging.sol/Verifier_register_id_sha256_sha256_sha256_rsa_65537_4096_staging.json";
 import RegisterAadhaarVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_aadhaar_staging.sol/Verifier_register_aadhaar_staging.json";
 import DscVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/dsc/Verifier_dsc_sha256_rsa_65537_4096_staging.sol/Verifier_dsc_sha256_rsa_65537_4096_staging.json";
+import RegisterSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_selfrica_staging.sol/Verifier_register_selfrica_staging.json";
 import VcAndDiscloseSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/disclose/Verifier_vc_and_disclose_selfrica_staging.sol/Verifier_vc_and_disclose_selfrica_staging.json";
 
 export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
@@ -36,6 +37,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   let registerVerifier: any;
   let registerIdVerifier: any;
   let registerAadhaarVerifier: any;
+  let registerSelfricaVerifier: any;
   let dscVerifier: any;
   let testSelfVerificationRoot: any;
   let owner: HardhatEthersSigner;
@@ -137,6 +139,18 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await registerAadhaarVerifier.waitForDeployment();
   }
 
+  // Deploy register selfrica verifier
+  let registerSelfricaVerifierArtifact, registerSelfricaVerifierFactory;
+  {
+    registerSelfricaVerifierArtifact = RegisterSelfricaVerifierArtifactLocal;
+    registerSelfricaVerifierFactory = await ethers.getContractFactory(
+      registerSelfricaVerifierArtifact.abi,
+      registerSelfricaVerifierArtifact.bytecode,
+    );
+    registerSelfricaVerifier = await registerSelfricaVerifierFactory.connect(owner).deploy();
+    await registerSelfricaVerifier.waitForDeployment();
+  }
+
   // Deploy dsc verifier
   let dscVerifierArtifact, dscVerifierFactory;
   {
@@ -202,7 +216,11 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   // Deploy IdentityRegistrySelfricaImplV1 for Selfrica
   let IdentityRegistrySelfricaImplFactory;
   {
-    IdentityRegistrySelfricaImplFactory = await ethers.getContractFactory("IdentityRegistrySelfricaImplV1");
+    IdentityRegistrySelfricaImplFactory = await ethers.getContractFactory("IdentityRegistrySelfricaImplV1", {
+      libraries: {
+        PoseidonT3: poseidonT3.target,
+      },
+    });
     identityRegistrySelfricaImpl = await IdentityRegistrySelfricaImplFactory.connect(owner).deploy();
     await identityRegistrySelfricaImpl.waitForDeployment();
   }
@@ -259,7 +277,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   // Deploy Selfrica registry with temporary hub address
   let registrySelfricaInitData, registrySelfricaProxyFactory;
   {
-    registrySelfricaInitData = identityRegistrySelfricaImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress]);
+    registrySelfricaInitData = identityRegistrySelfricaImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress, PCR0_MANAGER_ADDRESS]);
     registrySelfricaProxyFactory = await ethers.getContractFactory("IdentityRegistry");
     identityRegistrySelfricaProxy = await registrySelfricaProxyFactory
       .connect(owner)
@@ -378,6 +396,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     registerIdVerifier.target,
   );
   await hubContract.updateRegisterCircuitVerifier(AADHAAR, 0, registerAadhaarVerifier.target);
+  await hubContract.updateRegisterCircuitVerifier(SELFRICA, 0, registerSelfricaVerifier.target);
 
   // Update DSC verifiers
   await hubContract.updateDscVerifier(E_PASSPORT, DscVerifierId.dsc_sha256_rsa_65537_4096, dscVerifier.target);

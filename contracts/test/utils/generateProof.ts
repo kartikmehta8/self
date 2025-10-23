@@ -5,7 +5,7 @@ import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs";
 import { groth16 } from "snarkjs";
 import { PassportData } from "@selfxyz/common/utils/types";
 import { CircuitArtifacts, DscCircuitProof, RegisterCircuitProof, VcAndDiscloseProof } from "./types.js";
-import { generateCircuitInputWithRealData, prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
+import { generateMockSelfricaRegisterInput, generateSelfricaDiscloseInput, prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
 
 import { BigNumberish } from "ethers";
 import {
@@ -40,6 +40,14 @@ const registerCircuitsAadhaar: CircuitArtifacts = {
     wasm: "../circuits/build/register/register_aadhaar/register_aadhaar_js/register_aadhaar.wasm",
     zkey: "../circuits/build/register/register_aadhaar/register_aadhaar_final.zkey",
     vkey: "../circuits/build/register/register_aadhaar/register_aadhaar_vkey.json",
+  },
+};
+
+const registerCircuitsSelfrica: CircuitArtifacts = {
+  register_selfrica: {
+    wasm: "../circuits/build/register/register_selfrica/register_selfrica_js/register_selfrica.wasm",
+    zkey: "../circuits/build/register/register_selfrica/register_selfrica_final.zkey",
+    vkey: "../circuits/build/register/register_selfrica/register_selfrica_vkey.json",
   },
 };
 
@@ -185,6 +193,34 @@ export async function generateRegisterAadhaarProof(
   const isValid = await groth16.verify(vKey, registerProof.publicSignals, registerProof.proof);
   if (!isValid) {
     throw new Error("Generated register Aadhaar proof verification failed");
+  }
+
+  const rawCallData = await groth16.exportSolidityCallData(registerProof.proof, registerProof.publicSignals);
+  const fixedProof = parseSolidityCalldata(rawCallData, {} as GenericProofStructStruct);
+
+  return fixedProof;
+}
+
+export async function generateRegisterSelfricaProof(
+  secret: string,
+  //return type of prepareAadhaarTestData
+  inputs: ReturnType<typeof generateMockSelfricaRegisterInput>["inputs"],
+): Promise<GenericProofStructStruct> {
+  const circuitName = "register_selfrica";
+
+  const circuitArtifacts = registerCircuitsSelfrica;
+  const artifactKey = circuitName;
+
+  const registerProof = await groth16.fullProve(
+    inputs,
+    circuitArtifacts[artifactKey].wasm,
+    circuitArtifacts[artifactKey].zkey,
+  );
+
+  const vKey = JSON.parse(fs.readFileSync(circuitArtifacts[artifactKey].vkey, "utf8"));
+  const isValid = await groth16.verify(vKey, registerProof.publicSignals, registerProof.proof);
+  if (!isValid) {
+    throw new Error("Generated register-selfrica proof verification failed");
   }
 
   const rawCallData = await groth16.exportSolidityCallData(registerProof.proof, registerProof.publicSignals);
@@ -489,7 +525,7 @@ export async function generateVcAndDiscloseAadhaarProof(
 }
 
 export async function generateVcAndDiscloseSelfricaProof(
-  inputs: ReturnType<typeof generateCircuitInputWithRealData>,
+  inputs: ReturnType<typeof generateSelfricaDiscloseInput>,
 ): Promise<GenericProofStructStruct> {
   const circuitName = "vc_and_disclose_selfrica";
   const circuitArtifacts = vcAndDiscloseCircuitsSelfrica;

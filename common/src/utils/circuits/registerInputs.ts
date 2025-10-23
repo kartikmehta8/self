@@ -240,7 +240,7 @@ export function generateTEEInputsDiscloseStateless(
     );
     return { inputs, circuitName, endpointType, endpoint };
   }
-  //if (passportData.documentCategory === 'selfrica') {
+  // if (passportData.documentCategory === 'selfrica') {
     // const { inputs, circuitName, endpointType, endpoint } = generateTEEInputsSelfricaDisclose(
     //   secret,
     //   passportData,
@@ -248,7 +248,7 @@ export function generateTEEInputsDiscloseStateless(
     //   getTree
     // );
     // return { inputs, circuitName, endpointType, endpoint };
-  //}
+  // }
   const { scope, disclosures, endpoint, userId, userDefinedData, chainID } = selfApp;
   const userIdentifierHash = calculateUserIdentifierHash(chainID, userId, userDefinedData);
   const scope_hash = hashEndpointWithScope(endpoint, scope);

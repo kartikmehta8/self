@@ -17,6 +17,7 @@ import {IIdentityRegistryAadhaarV1} from "./interfaces/IIdentityRegistryAadhaarV
 import {IIdentityRegistrySelfricaV1} from "./interfaces/IIdentityRegistrySelfricaV1.sol";
 import {IRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
 import {IAadhaarRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
+import {ISelfricaRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
 import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
 import {CircuitConstantsV2} from "./constants/CircuitConstantsV2.sol";
 import {Formatter} from "./libraries/Formatter.sol";
@@ -280,6 +281,11 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             IIdentityRegistryAadhaarV1($._registries[attestationId]).registerCommitment(
                 registerCircuitProof.pubSignals[CircuitConstantsV2.AADHAAR_NULLIFIER_INDEX],
                 registerCircuitProof.pubSignals[CircuitConstantsV2.AADHAAR_COMMITMENT_INDEX]
+            );
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            IIdentityRegistrySelfricaV1($._registries[attestationId]).registerCommitment(
+                registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_NULLIFIER_INDEX],
+                registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_COMMITMENT_INDEX]
             );
         } else {
             revert InvalidAttestationId();
@@ -674,23 +680,12 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
         // Scope 2: Root and date checks
         {
-            if (
-                AttestationId.E_PASSPORT == header.attestationId ||
-                AttestationId.EU_ID_CARD == header.attestationId ||
-                AttestationId.AADHAAR == header.attestationId
-            ) {
-                _performRootCheck(header.attestationId, vcAndDiscloseProof, indices);
-            }
+            _performRootCheck(header.attestationId, vcAndDiscloseProof, indices);
             _performOfacCheck(header.attestationId, vcAndDiscloseProof, indices);
             if (header.attestationId == AttestationId.AADHAAR) {
                 _performNumericCurrentDateCheck(vcAndDiscloseProof, indices);
             } else if(header.attestationId == AttestationId.SELFRICA_ID_CARD) {
                 _performFullYearCurrentDateCheck(vcAndDiscloseProof, indices);
-                //perform pubkey commitment check
-                IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
-                if (!IIdentityRegistrySelfricaV1($._registries[header.attestationId]).checkPubkeyCommitment(vcAndDiscloseProof.pubSignals[CircuitConstantsV2.SELFRICA_PUBKEY_COMMITMENT_INDEX])) {
-                    revert InvalidPubkeyCommitment();
-                }
             } else {
                 _performCurrentDateCheck(vcAndDiscloseProof, indices);
             }
@@ -785,6 +780,14 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             ) {
                 revert InvalidPubkey();
             }
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            if (
+                !IIdentityRegistrySelfricaV1($._registries[attestationId]).checkPubkeyCommitment(
+                    registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_PUBKEY_COMMITMENT_INDEX]
+                )
+            ) {
+                revert InvalidPubkeyCommitment();
+            }
         } else {
             revert InvalidAttestationId();
         }
@@ -822,6 +825,18 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
                     registerCircuitProof.c,
                     pubSignals
                 )
+            ) {
+                revert InvalidRegisterProof();
+            }
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            uint256[4] memory pubSignals = [
+                registerCircuitProof.pubSignals[0],
+                registerCircuitProof.pubSignals[1],
+                registerCircuitProof.pubSignals[2],
+                registerCircuitProof.pubSignals[3]
+            ];
+            if (
+                !ISelfricaRegisterCircuitVerifier(verifier).verifyProof(registerCircuitProof.a, registerCircuitProof.b, registerCircuitProof.c, pubSignals)
             ) {
                 revert InvalidRegisterProof();
             }
@@ -942,6 +957,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             }
         } else if (attestationId == AttestationId.AADHAAR) {
             if (!IIdentityRegistryAadhaarV1($._registries[attestationId]).checkIdentityCommitmentRoot(merkleRoot)) {
+                revert InvalidIdentityCommitmentRoot();
+            }
+        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            if (!IIdentityRegistrySelfricaV1($._registries[attestationId]).checkIdentityCommitmentRoot(merkleRoot)) {
                 revert InvalidIdentityCommitmentRoot();
             }
         } else {
@@ -1103,8 +1122,8 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
                 revert InvalidVcAndDiscloseProof();
             }
         } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
-            uint256[29] memory pubSignals;
-            for (uint256 i = 0; i < 29; i++) {
+            uint256[28] memory pubSignals;
+            for (uint256 i = 0; i < 28; i++) {
                 pubSignals[i] = vcAndDiscloseProof.pubSignals[i];
             }
 

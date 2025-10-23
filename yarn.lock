@@ -7168,6 +7168,7 @@ __metadata:
     "@types/mocha": "npm:^10.0.6"
     "@types/node": "npm:^22.18.3"
     "@types/snarkjs": "npm:^0.7.7"
+    "@zk-kit/baby-jubjub": "npm:^1.0.3"
     "@zk-kit/imt": "npm:^2.0.0-beta.4"
     "@zk-kit/imt.sol": "npm:^2.0.0-beta.12"
     "@zk-kit/lean-imt": "npm:^2.0.1"

@@ -1,16 +1,16 @@
-import { calculateUserIdentifierHash, customHasher, generateRSAKeyPair, hashEndpointWithScope, NON_OFAC_DUMMY_INPUT, serializeSmileData, pubkeyCommitment } from "@selfxyz/common";
+import { calculateUserIdentifierHash, customHasher, generateRSAKeyPair, hashEndpointWithScope, NON_OFAC_DUMMY_INPUT, serializeSmileData, pubkeyCommitment, SELFRICA_ID_NUMBER_INDEX, SELFRICA_ID_NUMBER_LENGTH, packBytesAndPoseidon } from "@selfxyz/common";
 import { Country3LetterCode } from "@selfxyz/common/constants/countries";
 import { DeployedActorsV2 } from "../utils/types";
 import { deploySystemFixturesV2 } from "../utils/deploymentV2";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { generateCircuitInputWithRealData } from "@selfxyz/common";
+import { generateSelfricaDiscloseInput } from "@selfxyz/common";
 import { getSMTs } from "../utils/generateProof";
 import { getPackedForbiddenCountries } from "@selfxyz/common/utils/contracts/forbiddenCountries";
 import { BigNumberish } from "ethers";
 import { generateVcAndDiscloseSelfricaProof } from "../utils/generateProof";
 import { SELFRICA_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
-import forge from "node-forge";
+import { poseidon2 } from "poseidon-lite";
 
 const { privateKey, publicKey } = generateRSAKeyPair();
 
@@ -18,6 +18,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
   let deployedActors: DeployedActorsV2;
   let snapshotId: string;
   let nullifier: any;
+  let tree: any;
   let nameAndDob_smt: any;
   let nameAndYob_smt: any;
 
@@ -42,13 +43,18 @@ describe("Self Verification Flow V2 - Selfrica", () => {
     nameAndDob_smt = getSMTs().nameAndDob_selfrica_smt;
     nameAndYob_smt = getSMTs().nameAndYob_selfrica_smt;
 
-    const testInputs = generateCircuitInputWithRealData(
-      serializeSmileData(NON_OFAC_DUMMY_INPUT),
+    const hashFunction = (a: bigint, b: bigint) => poseidon2([a, b]);
+    const LeanIMT = await import("@openpassport/zk-kit-lean-imt").then((mod) => mod.LeanIMT);
+    tree = new LeanIMT<bigint>((a, b) => poseidon2([a, b]), []);
+
+    const testInputs = generateSelfricaDiscloseInput(
+      NON_OFAC_DUMMY_INPUT,
       nameAndDob_smt,
       nameAndYob_smt,
+      tree,
       false,
-      privateKey,
-      publicKey,
+      scopeAsBigInt.toString(),
+      userIdentifierHash.toString(),
       [
         "GENDER",
         "FULL_NAME",
@@ -60,15 +66,20 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         "GENDER",
         "ADDRESS",
       ],
+      undefined,
+      18,
+      true,
       scopeAsBigInt.toString(),
-      userIdentifierHash.toString(),
     );
 
-    nullifier = customHasher([...testInputs.id_num_sig, scopeAsBigInt.toString()]);
+    nullifier = testInputs.SmileID_data_padded.slice(SELFRICA_ID_NUMBER_INDEX, SELFRICA_ID_NUMBER_INDEX + SELFRICA_ID_NUMBER_LENGTH).map((x) => Number(x));
+    nullifier = packBytesAndPoseidon(nullifier);
+    const commitment = poseidon2([testInputs.secret, packBytesAndPoseidon(testInputs.SmileID_data_padded.map((x) => Number(x)))]);
+
+    await deployedActors.registrySelfrica.devAddIdentityCommitment(nullifier, commitment);
 
     forbiddenCountriesList = [] as Country3LetterCode[];
     forbiddenCountriesListPacked = getPackedForbiddenCountries(forbiddenCountriesList);
-
 
     verificationConfigV2 = {
       olderThanEnabled: true,
@@ -85,10 +96,6 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
     await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
     baseVcAndDiscloseProof = await generateVcAndDiscloseSelfricaProof(testInputs);
-
-    const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
-    const pubkeyComm = pubkeyCommitment(publicKeyObject);
-    await deployedActors.registrySelfrica.updatePubkeyCommitment(pubkeyComm);
     snapshotId = await ethers.provider.send("evm_snapshot", []);
   })
 
@@ -154,58 +161,6 @@ describe("Self Verification Flow V2 - Selfrica", () => {
       const expectedUserData = ethers.solidityPacked(["bytes"], [userData]);
       const actualUserData = await deployedActors.testSelfVerificationRoot.lastUserData();
       expect(actualUserData).to.equal(expectedUserData);
-    });
-
-    it("should fail if the pubkey commitment is not set", async () => {
-      const destChainId = ethers.zeroPadValue(ethers.toBeHex(31337), 32);
-      const user1Address = await deployedActors.user1.getAddress();
-      const userData = ethers.toUtf8Bytes("test-user-data-for-verification");
-
-      //set the config
-      const verificationConfigV2 = {
-        olderThanEnabled: true,
-        olderThan: "00",
-        forbiddenCountriesEnabled: true,
-        forbiddenCountriesListPacked: forbiddenCountriesListPacked as [
-          BigNumberish,
-          BigNumberish,
-          BigNumberish,
-          BigNumberish,
-        ],
-        ofacEnabled: [false, false, false] as [boolean, boolean, boolean],
-      };
-
-      await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
-
-      const userContextData = ethers.solidityPacked(
-        ["bytes32", "bytes32", "bytes"],
-        [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
-      );
-
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
-
-      const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
-      clonedPubSignal[16] = 1n;
-
-      const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
-        [
-          [
-            baseVcAndDiscloseProof.a,
-            baseVcAndDiscloseProof.b,
-            baseVcAndDiscloseProof.c,
-            clonedPubSignal,
-          ],
-        ],
-      );
-
-      const proofData = ethers.solidityPacked(["bytes32", "bytes"], [attestationId, encodedProof]);
-
-      await deployedActors.testSelfVerificationRoot.resetTestState();
-
-      await expect(
-        deployedActors.testSelfVerificationRoot.verifySelfProof(proofData, userContextData)
-      ).to.be.revertedWithCustomError(deployedActors.hubImplV2, "InvalidPubkeyCommitment");
     });
 
     it("should not verify if the config is not set", async () => {
@@ -341,7 +296,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
       const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
-      clonedPubSignal[17] = 1n;
+      clonedPubSignal[15] = 1n;
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -391,7 +346,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
       const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
-      clonedPubSignal[20] = 1n;
+      clonedPubSignal[19] = 1n;
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -776,13 +731,16 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         ofacEnabled: [false, false, false] as [boolean, boolean, boolean],
       };
 
-      const inputs = generateCircuitInputWithRealData(
-        serializeSmileData(NON_OFAC_DUMMY_INPUT),
+      await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
+
+      const inputs = generateSelfricaDiscloseInput(
+        NON_OFAC_DUMMY_INPUT,
         nameAndDob_smt,
         nameAndYob_smt,
+        tree,
         false,
-        privateKey,
-        publicKey,
+        scopeAsBigInt.toString(),
+        newUserIdentifierHash.toString(),
         [
           "GENDER",
           "FULL_NAME",
@@ -794,8 +752,10 @@ describe("Self Verification Flow V2 - Selfrica", () => {
           "GENDER",
           "ADDRESS",
         ],
+        undefined,
+        18,
+        false,
         scopeAsBigInt.toString(),
-        newUserIdentifierHash.toString(),
       );
 
       const newProof = await generateVcAndDiscloseSelfricaProof(inputs);

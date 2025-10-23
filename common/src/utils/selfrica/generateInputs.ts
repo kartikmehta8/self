@@ -101,7 +101,7 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
   selector_older_than: '1',
 };
 
-export const generateSelfricaRegisterInput = (ofac?: boolean,secret?: string) => {
+export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string) => {
   let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
   const serialized = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
   const msgPadded = Array.from(serialized, (x) => x.charCodeAt(0));
@@ -114,7 +114,7 @@ export const generateSelfricaRegisterInput = (ofac?: boolean,secret?: string) =>
     }
   }
 
-  const sk = BigInt(subOrder - BigInt(Math.floor(Math.random() * 90098)));
+  const sk = secretKey ? secretKey : BigInt(subOrder - BigInt(Math.floor(Math.random() * 90098)));
   const pk = mulPointEscalar(Base8, sk);
 
   const sig = signECDSA(sk, msgPadded);
@@ -141,7 +141,10 @@ export const generateSelfricaRegisterInput = (ofac?: boolean,secret?: string) =>
     secret: secret || "1234",
   };
 
-  return selfricaRegisterInput;
+  return {
+    inputs: selfricaRegisterInput,
+    secretKey: sk
+  };
 };
 
 export const generateCircuitInputsOfac = (smileData: SmileData, smt: SMT, proofLevel: number) => {
@@ -238,88 +241,88 @@ export const generateSelfricaDiscloseInput = (
 };
 
 
-export const generateCircuitInputWithRealData = (
-  serializedRealData: string,
-  nameDobSmt: SMT,
-  nameYobSmt: SMT,
-  ofac?: boolean,
-  privateKeyIn?: string,
-  publicKeyIn?: string,
-  fieldsToReveal?: SelfricaField[],
-  scope?: string,
-  userIdentifier?: string,
-  forbiddenCountriesList?: string[]
-) => {
-  const msg = Buffer.from(serializedRealData, 'utf8');
-  const msgArray = Array.from(msg); // Convert buffer to array of bytes for circuit input
+// export const generateCircuitInputWithRealData = (
+//   serializedRealData: string,
+//   nameDobSmt: SMT,
+//   nameYobSmt: SMT,
+//   ofac?: boolean,
+//   privateKeyIn?: string,
+//   publicKeyIn?: string,
+//   fieldsToReveal?: SelfricaField[],
+//   scope?: string,
+//   userIdentifier?: string,
+//   forbiddenCountriesList?: string[]
+// ) => {
+//   const msg = Buffer.from(serializedRealData, 'utf8');
+//   const msgArray = Array.from(msg); // Convert buffer to array of bytes for circuit input
 
-  // Generate RSA key pair for real data (or use fixed key for deterministic results)
-  const { publicKey, privateKey } =
-    privateKeyIn && publicKeyIn
-      ? { publicKey: publicKeyIn, privateKey: privateKeyIn }
-      : generateRSAKeyPair();
+//   // Generate RSA key pair for real data (or use fixed key for deterministic results)
+//   const { publicKey, privateKey } =
+//     privateKeyIn && publicKeyIn
+//       ? { publicKey: publicKeyIn, privateKey: privateKeyIn }
+//       : generateRSAKeyPair();
 
-  const fullName = serializedRealData.slice(
-    SELFRICA_FULL_NAME_INDEX,
-    SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH
-  );
-  const dob = serializedRealData.slice(
-    SELFRICA_DOB_INDEX,
-    SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH
-  );
+//   const fullName = serializedRealData.slice(
+//     SELFRICA_FULL_NAME_INDEX,
+//     SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH
+//   );
+//   const dob = serializedRealData.slice(
+//     SELFRICA_DOB_INDEX,
+//     SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH
+//   );
 
-  const smileData = {
-    fullName,
-    dob,
-  } as unknown as SmileData;
+//   const smileData = {
+//     fullName,
+//     dob,
+//   } as unknown as SmileData;
 
-  const nameDobInputs = generateCircuitInputsOfac(smileData, nameDobSmt, 2);
-  const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
+//   const nameDobInputs = generateCircuitInputsOfac(smileData, nameDobSmt, 2);
+//   const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
 
-  // Sign with RSA
-  const rsaSig = signRSA(msg, privateKey);
-  console.assert(verifyRSA(msg, rsaSig, publicKey) == true, 'Invalid RSA signature');
+//   // Sign with RSA
+//   const rsaSig = signRSA(msg, privateKey);
+//   console.assert(verifyRSA(msg, rsaSig, publicKey) == true, 'Invalid RSA signature');
 
-  // Convert RSA signature to limbs for circuit input
-  const sigBigInt = BigInt('0x' + rsaSig.toString('hex'));
+//   // Convert RSA signature to limbs for circuit input
+//   const sigBigInt = BigInt('0x' + rsaSig.toString('hex'));
 
-  // Sign nullifier with RSA
-  const idNumber = Buffer.from(msgArray.slice(30, 30 + 20));
-  const nullifierRsaSig = signRSA(idNumber, privateKey);
-  console.assert(
-    verifyRSA(idNumber, nullifierRsaSig, publicKey) == true,
-    'Invalid nullifier RSA signature'
-  );
+//   // Sign nullifier with RSA
+//   const idNumber = Buffer.from(msgArray.slice(30, 30 + 20));
+//   const nullifierRsaSig = signRSA(idNumber, privateKey);
+//   console.assert(
+//     verifyRSA(idNumber, nullifierRsaSig, publicKey) == true,
+//     'Invalid nullifier RSA signature'
+//   );
 
-  // Convert nullifier RSA signature to limbs
-  const nullifierSigBigInt = BigInt('0x' + nullifierRsaSig.toString('hex'));
+//   // Convert nullifier RSA signature to limbs
+//   const nullifierSigBigInt = BigInt('0x' + nullifierRsaSig.toString('hex'));
 
-  // Extract RSA modulus and exponent from PEM formatted public key
-  const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
-  const realRsaModulus = BigInt('0x' + publicKeyObject.n.toString(16));
+//   // Extract RSA modulus and exponent from PEM formatted public key
+//   const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
+//   const realRsaModulus = BigInt('0x' + publicKeyObject.n.toString(16));
 
-  const [msgPadded, _] = sha256Pad(msg, 320);
+//   const [msgPadded, _] = sha256Pad(msg, 320);
 
-  // Create disclose_sel array and split it into two decimal numbers
-  // Use provided fields or default to revealing all fields
-  const fieldsToRevealFinal = fieldsToReveal || [
-    'COUNTRY',
-    'ID_TYPE',
-    'ID_NUMBER',
-    'ISSUANCE_DATE',
-    'EXPIRY_DATE',
-    'FULL_NAME',
-    'DOB',
-    'PHOTO_HASH',
-    'PHONE_NUMBER',
-    'DOCUMENT',
-    'GENDER',
-    'ADDRESS',
-  ];
-  const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
+//   // Create disclose_sel array and split it into two decimal numbers
+//   // Use provided fields or default to revealing all fields
+//   const fieldsToRevealFinal = fieldsToReveal || [
+//     'COUNTRY',
+//     'ID_TYPE',
+//     'ID_NUMBER',
+//     'ISSUANCE_DATE',
+//     'EXPIRY_DATE',
+//     'FULL_NAME',
+//     'DOB',
+//     'PHOTO_HASH',
+//     'PHONE_NUMBER',
+//     'DOCUMENT',
+//     'GENDER',
+//     'ADDRESS',
+//   ];
+//   const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
 
-  //generate the current date
-  const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
+//   //generate the current date
+//   const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
 
 
   // const circuitInput: SelfricaCircuitInput = {
@@ -340,7 +343,7 @@ export const generateCircuitInputWithRealData = (
   // };
 
   // return circuitInput;
-};
+// };
 
 export const pubkeyCommitment = (pubkey: forge.pki.rsa.PublicKey) => {
   const modulusHex = pubkey.n.toString(16);

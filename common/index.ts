@@ -127,7 +127,8 @@ export {
 
 export {
   generateSelfricaDiscloseInput,
-  generateCircuitInputWithRealData,
+  // generateCircuitInputWithRealData,
+  generateMockSelfricaRegisterInput,
   pubkeyCommitment,
   NON_OFAC_DUMMY_INPUT,
   OFAC_DUMMY_INPUT,
@@ -135,6 +136,8 @@ export {
 
 export {
   SELFRICA_MAX_LENGTH,
+  SELFRICA_ID_NUMBER_INDEX,
+  SELFRICA_ID_NUMBER_LENGTH
 } from './src/utils/selfrica/constants.js';
 
 export {

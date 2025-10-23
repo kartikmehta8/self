@@ -6,22 +6,19 @@ source "scripts/build/common.sh"
 # ENV="prod"
 ENV="staging"
 
-echo -e "${GREEN}Building disclose circuits for $ENV environment${NC}"
+echo -e "${GREEN}Building register circuits for $ENV environment${NC}"
 
 # Circuit-specific configurations
-CIRCUIT_TYPE="disclose"
+CIRCUIT_TYPE="register"
 OUTPUT_DIR="build/${CIRCUIT_TYPE}"
 
 # Define circuits and their configurations
 # format: name:poweroftau:build_flag
 CIRCUITS=(
-    # "vc_and_disclose:20:true"
-    # "vc_and_disclose_id:20:true"
-    # "vc_and_disclose_aadhaar:20:true"
-    "vc_and_disclose_selfrica:17:true"
+    "register_selfrica:14:true"
 )
 
 build_circuits "$CIRCUIT_TYPE" "$OUTPUT_DIR" "${CIRCUITS[@]}"
 
-echo -e "${GREEN}Disclose circuits build completed for $ENV environment!${NC}"
+echo -e "${GREEN}Register circuits build completed for $ENV environment!${NC}"
 echo -e "${YELLOW}Generated files are located in: contracts/verifiers/local/${ENV}/${CIRCUIT_TYPE}/${NC}"

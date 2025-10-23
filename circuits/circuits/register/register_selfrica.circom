@@ -6,7 +6,6 @@ include "../utils/passport/customHashers.circom";
 include "../utils/selfrica/verifySignature.circom";
 
 template REGISTER_SELFRICA() {
-
     var selfrica_length = SELFRICA_MAX_LENGTH();
     var country_length = COUNTRY_LENGTH();
     var compressed_bit_len = selfrica_length/2;
@@ -23,15 +22,12 @@ template REGISTER_SELFRICA() {
     signal input secret;
 
     signal output attestation_id <== 4;
-    signal output commitment;
 
     //Calculate msg_hash
     component msg_hasher = PackBytesAndPoseidon(selfrica_length);
     for (var i = 0; i < selfrica_length; i++) {
         msg_hasher.in[i] <== SmileID_data_padded[i];
     }
-
-    commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     //msg_hash bit decomposition
     component bit_decompose = Num2Bits(256);
@@ -67,10 +63,8 @@ template REGISTER_SELFRICA() {
         id_num[i] <== SmileID_data_padded[idNumberIdx + i];
     }
     signal output nullifier <== PackBytesAndPoseidon(ID_NUMBER_LENGTH())(id_num);
+    signal output commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
 
 }
-//TODO:
-//We can compress the publicKey but we need to add a compression circuit
-component main = REGISTER_SELFRICA();
