@@ -22,11 +22,11 @@ export interface AadhaarData extends BaseIDData {
   photoHash?: string;
 }
 
-export interface SelfricaData extends BaseIDData {
-  documentCategory: 'selfrica';
-  serializedRealData: string;
-  selfricaFields: SelfricaField[];
-}
+// export interface SelfricaData extends BaseIDData {
+//   documentCategory: 'selfrica';
+//   serializedRealData: string;
+//   selfricaFields: SelfricaField[];
+// }
 
 export type DeployedCircuits = {
   REGISTER: string[];
@@ -63,7 +63,7 @@ export type DocumentType =
 
 export type Environment = 'prod' | 'stg';
 
-export type IDDocument = AadhaarData | PassportData | SelfricaData;
+export type IDDocument = AadhaarData | PassportData;
 
 export type OfacTree = {
   passportNoAndNationality: any;

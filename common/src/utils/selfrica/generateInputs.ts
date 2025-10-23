@@ -318,26 +318,25 @@ export const generateCircuitInputWithRealData = (
   //generate the current date
   const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
 
-  console.log('currentDate', currentDate);
 
-  const circuitInput: SelfricaCircuitInput = {
-    SmileID_data_padded: formatInput(msgPadded),
-    compressed_disclose_sel: compressed_disclose_sel,
-    scope: scope || '0',
-    forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
-    ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
-    ofac_name_dob_smt_root: nameDobInputs.smt_root,
-    ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
-    ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
-    ofac_name_yob_smt_root: nameYobInputs.smt_root,
-    ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
-    selector_ofac: ofac ? ['1'] : ['0'],
-    user_identifier: userIdentifier || '1234567890',
-    current_date: currentDate,
-    majority_age_ASCII: ['0', '2', '0'].map((x) => x.charCodeAt(0)),
-  };
+  // const circuitInput: SelfricaCircuitInput = {
+  //   SmileID_data_padded: formatInput(msgPadded),
+  //   compressed_disclose_sel: compressed_disclose_sel,
+  //   scope: scope || '0',
+  //   forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
+  //   ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
+  //   ofac_name_dob_smt_root: nameDobInputs.smt_root,
+  //   ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
+  //   ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
+  //   ofac_name_yob_smt_root: nameYobInputs.smt_root,
+  //   ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
+  //   selector_ofac: ofac ? ['1'] : ['0'],
+  //   user_identifier: userIdentifier || '1234567890',
+  //   current_date: currentDate,
+  //   majority_age_ASCII: ['0', '2', '0'].map((x) => x.charCodeAt(0)),
+  // };
 
-  return circuitInput;
+  // return circuitInput;
 };
 
 export const pubkeyCommitment = (pubkey: forge.pki.rsa.PublicKey) => {

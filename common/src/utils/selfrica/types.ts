@@ -81,9 +81,6 @@ export type SelfricaPublicInput = {
 
 export const getPublicInput = (input: SelfricaCircuitInput) => {
     return {
-        pubKey: input.pubKey,
-        msg_sig: input.msg_sig,
-        id_num_sig: input.id_num_sig,
         ofac_name_dob_smt_root: input.ofac_name_dob_smt_root,
         ofac_name_yob_smt_root: input.ofac_name_yob_smt_root,
         attestation_id: ['4'],

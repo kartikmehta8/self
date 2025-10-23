@@ -18,7 +18,7 @@ import {
   getCircuitNameFromPassportData,
   hashEndpointWithScope,
 } from '../../utils/index.js';
-import type { AadhaarData, Environment, IDDocument, OfacTree, SelfricaData } from '../../utils/types.js';
+import type { AadhaarData, Environment, IDDocument, OfacTree } from '../../utils/types.js';
 
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { SMT } from '@openpassport/zk-kit-smt';
@@ -240,7 +240,7 @@ export function generateTEEInputsDiscloseStateless(
     );
     return { inputs, circuitName, endpointType, endpoint };
   }
-  if (passportData.documentCategory === 'selfrica') {
+  //if (passportData.documentCategory === 'selfrica') {
     // const { inputs, circuitName, endpointType, endpoint } = generateTEEInputsSelfricaDisclose(
     //   secret,
     //   passportData,
@@ -248,7 +248,7 @@ export function generateTEEInputsDiscloseStateless(
     //   getTree
     // );
     // return { inputs, circuitName, endpointType, endpoint };
-  }
+  //}
   const { scope, disclosures, endpoint, userId, userDefinedData, chainID } = selfApp;
   const userIdentifierHash = calculateUserIdentifierHash(chainID, userId, userDefinedData);
   const scope_hash = hashEndpointWithScope(endpoint, scope);
@@ -331,9 +331,9 @@ export async function generateTEEInputsRegister(
     return { inputs, circuitName, endpointType, endpoint };
   }
 
-  if (passportData.documentCategory === 'selfrica') {
-    throw new Error('Selfrica does not support registration');
-  }
+  // if (passportData.documentCategory === 'selfrica') {
+  //   throw new Error('Selfrica does not support registration');
+  // }
 
   const inputs = generateCircuitInputsRegister(secret, passportData, dscTree as string);
   const circuitName = getCircuitNameFromPassportData(passportData, 'register');
