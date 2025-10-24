@@ -131,7 +131,7 @@ export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boo
   const rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
 
   const selfricaRegisterInput: SelfricaRegisterInput = {
-    SmileID_data_padded: msgPadded.map((x) => x.toString()),
+    data_padded: msgPadded.map((x) => x.toString()),
     s: sig.s.toString(),
     Tx: T[0].toString(),
     Ty: T[1].toString(),
@@ -216,7 +216,7 @@ export const generateSelfricaDiscloseInput = (
 
 
     const circuitInput: SelfricaDiscloseInput = {
-    SmileID_data_padded: formatInput(msgPadded),
+    data_padded: formatInput(msgPadded),
     compressed_disclose_sel: compressed_disclose_sel,
     scope: scope,
     merkle_root: formatInput(BigInt(identityTree.root)),

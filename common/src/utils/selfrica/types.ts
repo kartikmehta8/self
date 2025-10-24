@@ -40,7 +40,7 @@ export const serializeSmileData = (smileData: SmileData) => {
 }
 
 export type SelfricaRegisterInput = {
-    SmileID_data_padded: string[],
+    data_padded: string[],
     s: string,
     Tx: string,
     Ty: string,
@@ -51,7 +51,7 @@ export type SelfricaRegisterInput = {
 }
 
 export type SelfricaDiscloseInput = {
-    SmileID_data_padded: string[],
+    data_padded: string[],
     compressed_disclose_sel: string[],
     merkle_root: string[],
     leaf_depth: string[],

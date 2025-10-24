@@ -11,7 +11,7 @@ describe('REGISTER SELFRICA Circuit Tests', () => {
   before(async function () {
     this.timeout(0);
     circuit = await wasmTester(
-      path.join(__dirname, '../../circuits/register/register_selfrica.circom'),
+      path.join(__dirname, '../../circuits/register/instances/register_selfrica.circom'),
       {
         verbose: true,
         logOutput: true,
@@ -47,7 +47,7 @@ describe('REGISTER SELFRICA Circuit Tests', () => {
     this.timeout(0);
     const input = generateMockSelfricaRegisterInput(null, true).inputs;
     const nullifier = packBytesAndPoseidon(OFAC_DUMMY_INPUT.idNumber.split('').map((x) => x.charCodeAt(0)));
-    const commitment = poseidon2([input.secret, packBytesAndPoseidon(input.SmileID_data_padded.map((x) => Number(x)))]);
+    const commitment = poseidon2([input.secret, packBytesAndPoseidon(input.data_padded.map((x) => Number(x)))]);
 
     const w = await circuit.calculateWitness(input);
     await circuit.checkConstraints(w);
@@ -60,7 +60,7 @@ describe('REGISTER SELFRICA Circuit Tests', () => {
   it('should fail if smiledata is tampered', async function () {
     this.timeout(0);
     const input = generateMockSelfricaRegisterInput(null, true).inputs;
-    input.SmileID_data_padded[5] = (Number(input.SmileID_data_padded[5]) + 1).toString();
+    input.data_padded[5] = (Number(input.data_padded[5]) + 1).toString();
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
@@ -74,7 +74,7 @@ describe('REGISTER SELFRICA Circuit Tests', () => {
   it('should fail if smiledata is not bytes', async function () {
     this.timeout(0);
     const input = generateMockSelfricaRegisterInput(null, true).inputs;
-    input.SmileID_data_padded[5] = '8000';
+    input.data_padded[5] = '8000';
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);

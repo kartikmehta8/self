@@ -2,15 +2,21 @@ pragma circom 2.1.9;
 
 include "circomlib/circuits/bitify.circom";
 include "../utils/selfrica/constants.circom";
+include "../utils/selfrica/persona_constants.circom";
 include "../utils/passport/customHashers.circom";
 include "../utils/selfrica/verifySignature.circom";
 
-template REGISTER_SELFRICA() {
-    var selfrica_length = SELFRICA_MAX_LENGTH();
-    var country_length = COUNTRY_LENGTH();
-    var compressed_bit_len = selfrica_length/2;
 
-    signal input SmileID_data_padded[selfrica_length];
+template REGISTER_SELFRICA(isSelfrica) {
+
+    var max_length = isSelfrica ? SELFRICA_MAX_LENGTH() : PERSONA_MAX_LENGTH();
+    var country_length = isSelfrica ? COUNTRY_LENGTH() : PERSONA_COUNTRY_LENGTH();
+    var id_number_length = isSelfrica ? ID_NUMBER_LENGTH() : PERSONA_ID_NUMBER_LENGTH();
+    var idNumberIdx = isSelfrica ? ID_NUMBER_INDEX() : PERSONA_ID_NUMBER_INDEX();
+
+    var compressed_bit_len = max_length/2;
+
+    signal input data_padded[max_length];
 
     //Args to verify Hash(smiledata) signature
     signal input s;
@@ -21,12 +27,13 @@ template REGISTER_SELFRICA() {
     signal input r_inv[4];
     signal input secret;
 
-    signal output attestation_id <== 4;
+
+    signal output attestation_id <== isSelfrica ? 4 : 5;
 
     //Calculate msg_hash
-    component msg_hasher = PackBytesAndPoseidon(selfrica_length);
-    for (var i = 0; i < selfrica_length; i++) {
-        msg_hasher.in[i] <== SmileID_data_padded[i];
+    component msg_hasher = PackBytesAndPoseidon(max_length);
+    for (var i = 0; i < max_length; i++) {
+        msg_hasher.in[i] <== data_padded[i];
     }
 
     //msg_hash bit decomposition
@@ -57,12 +64,11 @@ template REGISTER_SELFRICA() {
     verifyIdCommSig.pubKeyX <== pubKeyX;
     verifyIdCommSig.pubKeyY <== pubKeyY;
 
-    signal id_num[ID_NUMBER_LENGTH()];
-    var idNumberIdx = ID_NUMBER_INDEX();
-    for (var i = 0; i < ID_NUMBER_LENGTH(); i++) {
-        id_num[i] <== SmileID_data_padded[idNumberIdx + i];
+    signal id_num[id_number_length];
+    for (var i = 0; i < id_number_length; i++) {
+        id_num[i] <== data_padded[idNumberIdx + i];
     }
-    signal output nullifier <== PackBytesAndPoseidon(ID_NUMBER_LENGTH())(id_num);
+    signal output nullifier <== PackBytesAndPoseidon(id_number_length)(id_num);
     signal output commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
