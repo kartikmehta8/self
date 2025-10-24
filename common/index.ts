@@ -133,25 +133,18 @@ export {
 
 export {
   generateSelfricaDiscloseInput,
-  // generateCircuitInputWithRealData,
   generateMockSelfricaRegisterInput,
-  pubkeyCommitment,
   NON_OFAC_DUMMY_INPUT,
   OFAC_DUMMY_INPUT,
-} from './src/utils/selfrica/generateInputs.js';
+  PERSONA_DUMMY_INPUT,
+} from './src/utils/selfrica_persona/generateInputs.js';
 
 export {
   SELFRICA_MAX_LENGTH,
   SELFRICA_ID_NUMBER_INDEX,
   SELFRICA_ID_NUMBER_LENGTH
-} from './src/utils/selfrica/constants.js';
+} from './src/utils/selfrica_persona/constants.js';
 
 export {
   serializeSmileData,
-} from './src/utils/selfrica/types.js';
-
-export {
-  generateRSAKeyPair,
-  signRSA,
-  verifyRSA,
-} from './src/utils/selfrica/rsa.js';
+} from './src/utils/selfrica_persona/types.js';

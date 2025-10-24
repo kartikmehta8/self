@@ -1,13 +1,13 @@
 pragma circom 2.1.9;
 
 include "circomlib/circuits/bitify.circom";
-include "../utils/selfrica/constants.circom";
-include "../utils/selfrica/persona_constants.circom";
+include "../utils/selfrica_persona/constants.circom";
+include "../utils/selfrica_persona/persona_constants.circom";
 include "../utils/passport/customHashers.circom";
-include "../utils/selfrica/verifySignature.circom";
+include "../utils/selfrica_persona/verifySignature.circom";
 
 
-template REGISTER_SELFRICA(isSelfrica) {
+template REGISTER_SELFRICA_PERSONA(isSelfrica) {
 
     var max_length = isSelfrica ? SELFRICA_MAX_LENGTH() : PERSONA_MAX_LENGTH();
     var country_length = isSelfrica ? COUNTRY_LENGTH() : PERSONA_COUNTRY_LENGTH();

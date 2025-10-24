@@ -1,7 +1,7 @@
 import type { ExtractedQRData } from './aadhaar/utils.js';
 import type { CertificateData } from './certificate_parsing/dataStructure.js';
 import type { PassportMetadata } from './passports/passport_parsing/parsePassportData.js';
-import { SelfricaField } from './selfrica/constants.js';
+import { SelfricaField } from './selfrica_persona/constants.js';
 
 // Base interface for common fields
 interface BaseIDData {

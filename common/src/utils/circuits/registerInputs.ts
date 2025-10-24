@@ -22,7 +22,7 @@ import type { AadhaarData, Environment, IDDocument, OfacTree } from '../../utils
 
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { SMT } from '@openpassport/zk-kit-smt';
-import { SelfricaField } from '../selfrica/constants.js';
+import { SelfricaField } from '../selfrica_persona/constants.js';
 
 export { generateCircuitInputsRegister } from './generateInputs.js';
 

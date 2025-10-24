@@ -6,62 +6,27 @@ import {
   getNameYobLeafSelfrica,
 } from '../trees.js';
 import {
+  PersonaData,
+  PersonaDataLimits,
   SelfricaDiscloseInput,
   SelfricaRegisterInput,
   serializeSmileData,
   SmileData,
 } from './types.js';
 import { findIndexInTree, formatInput } from '../circuits/generateInputs.js';
-import { sha256Pad } from '@zk-email/helpers/dist/sha-utils.js';
 import {
   createSelfricaSelector,
-  SELFRICA_DOB_INDEX,
-  SELFRICA_DOB_LENGTH,
-  SELFRICA_FULL_NAME_INDEX,
-  SELFRICA_FULL_NAME_LENGTH,
   SELFRICA_MAX_LENGTH,
   SelfricaField,
 } from './constants.js';
-import { generateRSAKeyPair, signRSA, verifyRSA } from './rsa.js';
-import forge from 'node-forge';
-import { splitToWords } from '../bytes.js';
-import { poseidon16, poseidon2 } from 'poseidon-lite';
+import { poseidon2 } from 'poseidon-lite';
 import { Base8, inCurve, mulPointEscalar, subOrder } from '@zk-kit/baby-jubjub';
 import { signECDSA, verifyECDSA, verifyEffECDSA } from './ecdsa/ecdsa.js';
 import { bigintTo64bitLimbs, getEffECDSAArgs, modInv, modulus } from './ecdsa/utils.js';
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { packBytesAndPoseidon } from '../hash.js';
 import { COMMITMENT_TREE_DEPTH } from '../../constants/constants.js';
-
-export const splitDiscloseSel = (disclose_sel: string[]): string[] => {
-  if (disclose_sel.length !== SELFRICA_MAX_LENGTH) {
-    throw new Error(
-      `disclose_sel must have length ${SELFRICA_MAX_LENGTH}, got ${disclose_sel.length}`
-    );
-  }
-
-  // Split into two arrays of 133 bits each
-  const disclose_sel_low_bits = disclose_sel.slice(0, 133);
-  const disclose_sel_high_bits = disclose_sel.slice(133, 266);
-
-  // Convert little-endian bit arrays to decimal
-  const bitsToDecimal = (bits: string[]): string => {
-    let result = BigInt(0);
-    for (let i = 0; i < bits.length; i++) {
-      if (bits[i] === '1') {
-        result += BigInt(1) << BigInt(i);
-      }
-    }
-    return result.toString();
-  };
-
-  return [bitsToDecimal(disclose_sel_low_bits), bitsToDecimal(disclose_sel_high_bits)];
-};
-
-export const createDiscloseSelFromFields = (fieldsToReveal: SelfricaField[]): string[] => {
-  const [highResult, lowResult] = createSelfricaSelector(fieldsToReveal);
-  return [highResult.toString(), lowResult.toString()];
-};
+import { PERSONA_MAX_LENGTH } from './persona_constants.js';
 
 export const OFAC_DUMMY_INPUT: SmileData = {
   country: 'KEN',
@@ -101,10 +66,26 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
   selector_older_than: '1',
 };
 
-export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string) => {
-  let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
-  const serialized = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
-  const msgPadded = Array.from(serialized, (x) => x.charCodeAt(0));
+
+
+export const createSelfricaDiscloseSelFromFields = (fieldsToReveal: SelfricaField[]): string[] => {
+  const [highResult, lowResult] = createSelfricaSelector(fieldsToReveal);
+  return [highResult.toString(), lowResult.toString()];
+};
+
+
+export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string, isSelfrica: boolean = true) => {
+  let serializedData: string;
+  if (isSelfrica) {
+     let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
+     serializedData = serializeSmileData(smileData).padEnd(SELFRICA_MAX_LENGTH, '\0');
+  }
+  else {
+    const paddedData = validateAndPadPersonaData(PERSONA_DUMMY_INPUT);
+    serializedData = serializePersonaData(paddedData);
+  }
+
+  const msgPadded = Array.from(serializedData, (x) => x.charCodeAt(0));
   for (let i = 0; i < msgPadded.length; i++) {
     const val = msgPadded[i];
     if (typeof val !== 'number' || val < 0 || val > 255) {
@@ -141,10 +122,7 @@ export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boo
     secret: secret || "1234",
   };
 
-  return {
-    inputs: selfricaRegisterInput,
-    secretKey: sk
-  };
+  return selfricaRegisterInput;
 };
 
 export const generateCircuitInputsOfac = (smileData: SmileData, smt: SMT, proofLevel: number) => {
@@ -202,7 +180,7 @@ export const generateSelfricaDiscloseInput = (
   const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
 
   const fieldsToRevealFinal = fieldsToReveal || [];
-  const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal);
+  const compressed_disclose_sel = createSelfricaDiscloseSelFromFields(fieldsToRevealFinal);
 
   const majorityAgeASCII = minimumAge
     ? minimumAge
@@ -241,118 +219,76 @@ export const generateSelfricaDiscloseInput = (
 };
 
 
-// export const generateCircuitInputWithRealData = (
-//   serializedRealData: string,
-//   nameDobSmt: SMT,
-//   nameYobSmt: SMT,
-//   ofac?: boolean,
-//   privateKeyIn?: string,
-//   publicKeyIn?: string,
-//   fieldsToReveal?: SelfricaField[],
-//   scope?: string,
-//   userIdentifier?: string,
-//   forbiddenCountriesList?: string[]
-// ) => {
-//   const msg = Buffer.from(serializedRealData, 'utf8');
-//   const msgArray = Array.from(msg); // Convert buffer to array of bytes for circuit input
-
-//   // Generate RSA key pair for real data (or use fixed key for deterministic results)
-//   const { publicKey, privateKey } =
-//     privateKeyIn && publicKeyIn
-//       ? { publicKey: publicKeyIn, privateKey: privateKeyIn }
-//       : generateRSAKeyPair();
-
-//   const fullName = serializedRealData.slice(
-//     SELFRICA_FULL_NAME_INDEX,
-//     SELFRICA_FULL_NAME_INDEX + SELFRICA_FULL_NAME_LENGTH
-//   );
-//   const dob = serializedRealData.slice(
-//     SELFRICA_DOB_INDEX,
-//     SELFRICA_DOB_INDEX + SELFRICA_DOB_LENGTH
-//   );
-
-//   const smileData = {
-//     fullName,
-//     dob,
-//   } as unknown as SmileData;
-
-//   const nameDobInputs = generateCircuitInputsOfac(smileData, nameDobSmt, 2);
-//   const nameYobInputs = generateCircuitInputsOfac(smileData, nameYobSmt, 1);
-
-//   // Sign with RSA
-//   const rsaSig = signRSA(msg, privateKey);
-//   console.assert(verifyRSA(msg, rsaSig, publicKey) == true, 'Invalid RSA signature');
-
-//   // Convert RSA signature to limbs for circuit input
-//   const sigBigInt = BigInt('0x' + rsaSig.toString('hex'));
-
-//   // Sign nullifier with RSA
-//   const idNumber = Buffer.from(msgArray.slice(30, 30 + 20));
-//   const nullifierRsaSig = signRSA(idNumber, privateKey);
-//   console.assert(
-//     verifyRSA(idNumber, nullifierRsaSig, publicKey) == true,
-//     'Invalid nullifier RSA signature'
-//   );
-
-//   // Convert nullifier RSA signature to limbs
-//   const nullifierSigBigInt = BigInt('0x' + nullifierRsaSig.toString('hex'));
-
-//   // Extract RSA modulus and exponent from PEM formatted public key
-//   const publicKeyObject = forge.pki.publicKeyFromPem(publicKey);
-//   const realRsaModulus = BigInt('0x' + publicKeyObject.n.toString(16));
-
-//   const [msgPadded, _] = sha256Pad(msg, 320);
-
-//   // Create disclose_sel array and split it into two decimal numbers
-//   // Use provided fields or default to revealing all fields
-//   const fieldsToRevealFinal = fieldsToReveal || [
-//     'COUNTRY',
-//     'ID_TYPE',
-//     'ID_NUMBER',
-//     'ISSUANCE_DATE',
-//     'EXPIRY_DATE',
-//     'FULL_NAME',
-//     'DOB',
-//     'PHOTO_HASH',
-//     'PHONE_NUMBER',
-//     'DOCUMENT',
-//     'GENDER',
-//     'ADDRESS',
-//   ];
-//   const compressed_disclose_sel = createDiscloseSelFromFields(fieldsToRevealFinal).reverse();
-
-//   //generate the current date
-//   const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
-
-
-  // const circuitInput: SelfricaCircuitInput = {
-  //   SmileID_data_padded: formatInput(msgPadded),
-  //   compressed_disclose_sel: compressed_disclose_sel,
-  //   scope: scope || '0',
-  //   forbidden_countries_list: forbiddenCountriesList || [...Array(120)].map((x) => '0'),
-  //   ofac_name_dob_smt_leaf_key: nameDobInputs.smt_leaf_key,
-  //   ofac_name_dob_smt_root: nameDobInputs.smt_root,
-  //   ofac_name_dob_smt_siblings: nameDobInputs.smt_siblings,
-  //   ofac_name_yob_smt_leaf_key: nameYobInputs.smt_leaf_key,
-  //   ofac_name_yob_smt_root: nameYobInputs.smt_root,
-  //   ofac_name_yob_smt_siblings: nameYobInputs.smt_siblings,
-  //   selector_ofac: ofac ? ['1'] : ['0'],
-  //   user_identifier: userIdentifier || '1234567890',
-  //   current_date: currentDate,
-  //   majority_age_ASCII: ['0', '2', '0'].map((x) => x.charCodeAt(0)),
-  // };
-
-  // return circuitInput;
-// };
-
-export const pubkeyCommitment = (pubkey: forge.pki.rsa.PublicKey) => {
-  const modulusHex = pubkey.n.toString(16);
-  const realRsaModulus = BigInt('0x' + modulusHex);
-
-  const pubkeyParts = splitToWords(realRsaModulus, 121, 17);
-
-  const firstPosiedonPart = poseidon16(pubkeyParts.slice(0, 16));
-  const pubkeyCommitment = poseidon2([firstPosiedonPart, pubkeyParts[16]]);
-
-  return pubkeyCommitment;
+//PERSONA
+export const PERSONA_DUMMY_INPUT: PersonaData = {
+  country: 'USA',
+  idType: 'tribalid',
+  idNumber: 'Y123ABC',
+  documentNumber: '585225',
+  issuanceDate: '20200728',
+  expiryDate: '20300101',
+  fullName: 'JANE DOE',
+  dob: '19900101',
+  addressSubdivision: 'CA',
+  addressPostalCode: '94105',
+  photoHash: '1234567890abcdef123',
+  phoneNumber: '+12345678901',
+  gender: 'M',
 };
+
+export function validateAndPadPersonaData(data: PersonaData): PersonaData {
+  const result: PersonaData = {} as PersonaData;
+
+  for (const [field, value] of Object.entries(data)) {
+    const maxLength = PersonaDataLimits[field as keyof typeof PersonaDataLimits];
+
+    if (maxLength && value.length > maxLength) {
+      throw new Error(`Field '${field}' too long: ${value.length} > ${maxLength}`);
+    }
+    result[field as keyof PersonaData] = maxLength ? value.padEnd(maxLength, '\0') : value;
+  }
+  return result;
+}
+
+export function serializePersonaData(personaData: PersonaData): string {
+  let serializedData = '';
+
+  serializedData += personaData.country;
+  serializedData += personaData.idType;
+  serializedData += personaData.idNumber;
+  serializedData += personaData.documentNumber;
+  serializedData += personaData.issuanceDate;
+  serializedData += personaData.expiryDate;
+  serializedData += personaData.fullName;
+  serializedData += personaData.dob;
+  serializedData += personaData.addressSubdivision;
+  serializedData += personaData.addressPostalCode;
+  serializedData += personaData.photoHash;
+  serializedData += personaData.phoneNumber;
+  serializedData += personaData.gender;
+
+  return serializedData;
+}
+
+export function generatePersonaSelector(fields: string[]): string[] {
+  const validFields = Object.keys(PersonaDataLimits);
+  const invalidFields = fields.filter((field) => !validFields.includes(field));
+
+  if (invalidFields.length > 0) {
+    throw new Error(
+      `Invalid field(s): ${invalidFields.join(', ')}. Valid fields are: ${validFields.join(', ')}`
+    );
+  }
+
+  const totalLength = PERSONA_MAX_LENGTH;
+  const selector = new Array(totalLength).fill('0');
+  let index = 0;
+
+  for (const [field, length] of Object.entries(PersonaDataLimits)) {
+    if (fields.includes(field)) {
+      selector.fill('1', index, index + length);
+    }
+    index += length;
+  }
+  return selector;
+}
