@@ -14,13 +14,6 @@ import { PERSONA_MAX_LENGTH } from '@selfxyz/common/utils/selfrica_persona/perso
 
 const __dirname = path.dirname(__filename);
 
-const nameAndDobjson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../consts/ofac/nameAndDobSelfricaSMT.json'), 'utf8')
-);
-const nameAndYobjson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../consts/ofac/nameAndYobSelfricaSMT.json'), 'utf8')
-);
-
 // Helper function to compute chunk length (matches computeIntChunkLength in circuit)
 const computeChunkLength = (dataLength: number): number => {
   return Math.ceil(dataLength / 31);
@@ -36,6 +29,8 @@ const testConfigs = [
     maxLength: SELFRICA_MAX_LENGTH,
     chunkLength: computeChunkLength(SELFRICA_MAX_LENGTH + 2 + 1),
     serializeData: serializeSmileData,
+    nameAndDobPath: '../consts/ofac/nameAndDobSelfricaSMT.json',
+    nameAndYobPath: '../consts/ofac/nameAndYobSelfricaSMT.json',
   },
   {
     name: 'PERSONA',
@@ -46,10 +41,12 @@ const testConfigs = [
     maxLength: PERSONA_MAX_LENGTH,
     chunkLength: computeChunkLength(PERSONA_MAX_LENGTH + 2 + 1),
     serializeData: (data: any) => serializePersonaData(validateAndPadPersonaData(data)),
+    nameAndDobPath: '../consts/ofac/nameAndDobPersonaSMT.json',
+    nameAndYobPath: '../consts/ofac/nameAndYobPersonaSMT.json',
   },
 ];
 
-testConfigs.forEach(({ name, circuitPath, isSelfrica, dummyInputNonOfac, dummyInputOfac, maxLength, chunkLength, serializeData }) => {
+testConfigs.forEach(({ name, circuitPath, isSelfrica, dummyInputNonOfac, dummyInputOfac, maxLength, chunkLength, serializeData, nameAndDobPath, nameAndYobPath }) => {
   describe(`VC_AND_DISCLOSE ${name} Circuit Tests`, () => {
     let circuit: any;
     let namedob_smt: SMT;
@@ -65,6 +62,15 @@ testConfigs.forEach(({ name, circuitPath, isSelfrica, dummyInputNonOfac, dummyIn
 
     before(async function () {
       this.timeout(0);
+
+      // Load provider-specific OFAC trees
+      const nameAndDobjson = JSON.parse(
+        fs.readFileSync(path.join(__dirname, nameAndDobPath), 'utf8')
+      );
+      const nameAndYobjson = JSON.parse(
+        fs.readFileSync(path.join(__dirname, nameAndYobPath), 'utf8')
+      );
+
       namedob_smt = new SMT(poseidon2, true);
       nameyob_smt = new SMT(poseidon2, true);
       namedob_smt.import(nameAndDobjson);

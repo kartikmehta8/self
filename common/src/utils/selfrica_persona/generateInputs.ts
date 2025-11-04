@@ -2,8 +2,8 @@ import { SMT } from '@openpassport/zk-kit-smt';
 import {
   generateMerkleProof,
   generateSMTProof,
-  getNameDobLeafSelfrica,
-  getNameYobLeafSelfrica,
+  getNameDobLeafSelfricaPersona,
+  getNameYobLeafSelfricaPersona,
 } from '../trees.js';
 import {
   PersonaData,
@@ -159,13 +159,13 @@ export const generateMockSelfricaRegisterInput = (secretKey?: bigint, ofac?: boo
   return selfricaRegisterInput;
 };
 
-export const generateCircuitInputsOfac = (data: SmileData | PersonaData, smt: SMT, proofLevel: number) => {
+export const generateCircuitInputsOfac = (data: SmileData | PersonaData, smt: SMT, proofLevel: number, isSelfrica: boolean = true) => {
   const name = data.fullName;
   const dob = data.dob;
   const yob = data.dob.slice(0, 4);
 
-  const nameDobLeaf = getNameDobLeafSelfrica(name, dob);
-  const nameYobLeaf = getNameYobLeafSelfrica(name, yob);
+  const nameDobLeaf = getNameDobLeafSelfricaPersona(name, dob, isSelfrica);
+  const nameYobLeaf = getNameYobLeafSelfricaPersona(name, yob, isSelfrica);
 
   let root, closestleaf, siblings;
   if (proofLevel == 2) {
@@ -221,8 +221,8 @@ export const generateSelfricaDiscloseInput = (
     leaf_depth,
   } = generateMerkleProof(identityTree, index, COMMITMENT_TREE_DEPTH);
 
-  const nameDobInputs = generateCircuitInputsOfac(data, nameDobSmt, 2);
-  const nameYobInputs = generateCircuitInputsOfac(data, nameYobSmt, 1);
+  const nameDobInputs = generateCircuitInputsOfac(data, nameDobSmt, 2, isSelfrica);
+  const nameYobInputs = generateCircuitInputsOfac(data, nameYobSmt, 1, isSelfrica);
 
   const fieldsToRevealFinal = fieldsToReveal || [];
   let compressed_disclose_sel: string[];
