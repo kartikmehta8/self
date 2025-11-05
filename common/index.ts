@@ -136,8 +136,6 @@ export {
   generateMockSelfperRegisterInput,
   NON_OFAC_DUMMY_INPUT,
   OFAC_DUMMY_INPUT,
-  NON_OFAC_PERSONA_DUMMY_INPUT,
-  OFAC_PERSONA_DUMMY_INPUT,
 } from './src/utils/selfper/generateInputs.js';
 
 export {
@@ -147,5 +145,6 @@ export {
 } from './src/utils/selfper/constants.js';
 
 export {
-  serializeSmileData,
+  serializeSelfperData,
+  SelfperData,
 } from './src/utils/selfper/types.js';

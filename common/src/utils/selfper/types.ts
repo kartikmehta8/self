@@ -1,22 +1,7 @@
 import { Point } from '@zk-kit/baby-jubjub';
 import * as constants from './constants.js';
-import {
-  PERSONA_COUNTRY_LENGTH,
-  PERSONA_ID_TYPE_LENGTH,
-  PERSONA_ID_NUMBER_LENGTH,
-  PERSONA_DOCUMENT_NUMBER_LENGTH,
-  PERSONA_ISSUANCE_DATE_LENGTH,
-  PERSONA_EXPIRATION_DATE_LENGTH,
-  PERSONA_FULL_NAME_LENGTH,
-  PERSONA_DOB_LENGTH,
-  PERSONA_ADDRESS_SUBDIVISION_LENGTH,
-  PERSONA_ADDRESS_POSTAL_CODE_LENGTH,
-  PERSONA_PHOTO_HASH_LENGTH,
-  PERSONA_PHONE_NUMBER_LENGTH,
-  PERSONA_GENDER_LENGTH,
-} from './persona_constants.js';
 
-export type SmileData = {
+export type SelfperData = {
     country: string;
     idType: string;
     idNumber: string;
@@ -35,21 +20,21 @@ export type SmileData = {
     selector_older_than: string;
 };
 
-export const serializeSmileData = (smileData: SmileData) => {
+export const serializeSelfperData = (selfperData: SelfperData) => {
     //ensure max length of each field
     let serializedData = '';
-    serializedData += smileData.country.toUpperCase().padEnd(constants.SELFPER_COUNTRY_LENGTH, '\0');
-    serializedData += smileData.idType.toUpperCase().padEnd(constants.SELFPER_ID_TYPE_LENGTH, '\0');
-    serializedData += smileData.idNumber.padEnd(constants.SELFPER_ID_NUMBER_LENGTH, '\0');
-    serializedData += smileData.issuanceDate.padEnd(constants.SELFPER_ISSUANCE_DATE_LENGTH, '\0');
-    serializedData += smileData.expiryDate.padEnd(constants.SELFPER_EXPIRY_DATE_LENGTH, '\0');
-    serializedData += smileData.fullName.padEnd(constants.SELFPER_FULL_NAME_LENGTH, '\0');
-    serializedData += smileData.dob.padEnd(constants.SELFPER_DOB_LENGTH, '\0');
-    serializedData += smileData.photoHash.padEnd(constants.SELFPER_PHOTO_HASH_LENGTH, '\0');
-    serializedData += smileData.phoneNumber.padEnd(constants.SELFPER_PHONE_NUMBER_LENGTH, '\0');
-    serializedData += smileData.document.padEnd(constants.SELFPER_DOCUMENT_LENGTH, '\0');
-    serializedData += smileData.gender.padEnd(constants.SELFPER_GENDER_LENGTH, '\0');
-    serializedData += smileData.address.padEnd(constants.SELFPER_ADDRESS_LENGTH, '\0');
+    serializedData += selfperData.country.toUpperCase().padEnd(constants.SELFPER_COUNTRY_LENGTH, '\0');
+    serializedData += selfperData.idType.toUpperCase().padEnd(constants.SELFPER_ID_TYPE_LENGTH, '\0');
+    serializedData += selfperData.idNumber.padEnd(constants.SELFPER_ID_NUMBER_LENGTH, '\0');
+    serializedData += selfperData.issuanceDate.padEnd(constants.SELFPER_ISSUANCE_DATE_LENGTH, '\0');
+    serializedData += selfperData.expiryDate.padEnd(constants.SELFPER_EXPIRY_DATE_LENGTH, '\0');
+    serializedData += selfperData.fullName.padEnd(constants.SELFPER_FULL_NAME_LENGTH, '\0');
+    serializedData += selfperData.dob.padEnd(constants.SELFPER_DOB_LENGTH, '\0');
+    serializedData += selfperData.photoHash.padEnd(constants.SELFPER_PHOTO_HASH_LENGTH, '\0');
+    serializedData += selfperData.phoneNumber.padEnd(constants.SELFPER_PHONE_NUMBER_LENGTH, '\0');
+    serializedData += selfperData.document.padEnd(constants.SELFPER_DOCUMENT_LENGTH, '\0');
+    serializedData += selfperData.gender.padEnd(constants.SELFPER_GENDER_LENGTH, '\0');
+    serializedData += selfperData.address.padEnd(constants.SELFPER_ADDRESS_LENGTH, '\0');
 
     return serializedData;
 }
@@ -103,35 +88,3 @@ export type Signature = {
     R: Point<bigint>,
     s: bigint
 };
-
-export interface PersonaData {
-    country: string; // 3 bytes - ISO-3166-1 alpha-2
-    idType: string; // 8 bytes - id-class (pp, dl, nric, tribalid)
-    idNumber: string; // 32 bytes - identification-number
-    documentNumber: string; // 32 bytes - document-number (may be blank)
-    issuanceDate: string; // 8 bytes - issue-date as YYYYMMDD
-    expiryDate: string; // 8 bytes - expiration-date as YYYYMMDD
-    fullName: string; // 64 bytes - name-first + name-middle? + name-last
-    dob: string; // 8 bytes - birthdate as YYYYMMDD
-    addressSubdivision: string; // 24 bytes - address-subdivision
-    addressPostalCode: string; // 12 bytes - address-postal-code
-    photoHash: string; // 32 bytes - SHA-256 of stored ID image
-    phoneNumber: string; // 12 bytes - E.164 format
-    gender: string; // 1 byte - sex mapped to M/F/X/-
-  }
-
-  export const PersonaDataLimits = {
-    country: PERSONA_COUNTRY_LENGTH,
-    idType: PERSONA_ID_TYPE_LENGTH,
-    idNumber: PERSONA_ID_NUMBER_LENGTH,
-    documentNumber: PERSONA_DOCUMENT_NUMBER_LENGTH,
-    issuanceDate: PERSONA_ISSUANCE_DATE_LENGTH,
-    expiryDate: PERSONA_EXPIRATION_DATE_LENGTH,
-    fullName: PERSONA_FULL_NAME_LENGTH,
-    dob: PERSONA_DOB_LENGTH,
-    addressSubdivision: PERSONA_ADDRESS_SUBDIVISION_LENGTH,
-    addressPostalCode: PERSONA_ADDRESS_POSTAL_CODE_LENGTH,
-    photoHash: PERSONA_PHOTO_HASH_LENGTH,
-    phoneNumber: PERSONA_PHONE_NUMBER_LENGTH,
-    gender: PERSONA_GENDER_LENGTH,
-  };

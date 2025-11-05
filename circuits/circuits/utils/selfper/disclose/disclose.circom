@@ -1,26 +1,24 @@
 pragma circom 2.1.9;
 
-include "./ofac/ofac_name_dob_selfrica_persona.circom";
-include "./ofac/ofac_name_yob_selfrica_persona.circom";
+include "./ofac/ofac_name_dob_selfper.circom";
+include "./ofac/ofac_name_yob_selfper.circom";
 include "../../aadhaar/disclose/country_not_in_list.circom";
 include "../date/isValid.circom";
 include "../date/isOlderThan.circom";
 include "../constants.circom";
-include "../persona_constants.circom";
 
-template DISCLOSE_SELFRICA_PERSONA(
+template DISCLOSE_SELFPER(
     MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH,
     name_dob_tree_levels,
-    name_yob_tree_levels,
-    isSelfrica
+    name_yob_tree_levels
 ) {
-    var max_length = isSelfrica ? SELFRICA_MAX_LENGTH() : PERSONA_MAX_LENGTH();
-    var country_length = isSelfrica ? COUNTRY_LENGTH() : PERSONA_COUNTRY_LENGTH();
-    var country_index = isSelfrica ? COUNTRY_INDEX() : PERSONA_COUNTRY_INDEX();
-    var expiration_date_length = isSelfrica ? EXPIRATION_DATE_LENGTH() : PERSONA_EXPIRATION_DATE_LENGTH();
-    var expiration_date_index = isSelfrica ? EXPIRATION_DATE_INDEX() : PERSONA_EXPIRATION_DATE_INDEX();
-    var dob_length = isSelfrica ? DOB_LENGTH() : PERSONA_DOB_LENGTH();
-    var dob_index = isSelfrica ? DOB_INDEX() : PERSONA_DOB_INDEX();
+    var max_length = SELFPER_MAX_LENGTH();
+    var country_length = COUNTRY_LENGTH();
+    var country_index = COUNTRY_INDEX();
+    var expiration_date_length = EXPIRATION_DATE_LENGTH();
+    var expiration_date_index = EXPIRATION_DATE_INDEX();
+    var dob_length = DOB_LENGTH();
+    var dob_index = DOB_INDEX();
 
 
     signal input data_padded[max_length];
@@ -59,13 +57,13 @@ template DISCLOSE_SELFRICA_PERSONA(
     is_older_than.currDate <== current_date;
     is_older_than.birthDateASCII <== birth_date_ASCII;
 
-    component ofac_name_dob_circuit = OFAC_NAME_DOB_SELFRICA_PERSONA(name_dob_tree_levels, isSelfrica);
+    component ofac_name_dob_circuit = OFAC_NAME_DOB_SELFPER(name_dob_tree_levels);
     ofac_name_dob_circuit.data_padded <== data_padded;
     ofac_name_dob_circuit.smt_leaf_key <== ofac_name_dob_smt_leaf_key;
     ofac_name_dob_circuit.smt_root <== ofac_name_dob_smt_root;
     ofac_name_dob_circuit.smt_siblings <== ofac_name_dob_smt_siblings;
 
-    component ofac_name_yob_circuit = OFAC_NAME_YOB_SELFRICA_PERSONA(name_yob_tree_levels, isSelfrica);
+    component ofac_name_yob_circuit = OFAC_NAME_YOB_SELFPER(name_yob_tree_levels);
     ofac_name_yob_circuit.data_padded <== data_padded;
     ofac_name_yob_circuit.smt_leaf_key <== ofac_name_yob_smt_leaf_key;
     ofac_name_yob_circuit.smt_root <== ofac_name_yob_smt_root;

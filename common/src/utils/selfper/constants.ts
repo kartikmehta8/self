@@ -151,14 +151,16 @@ export function createSelfperSelector(fieldsToReveal: SelfperField[]): [bigint, 
   let lowResult = 0n;
   let highResult = 0n;
 
-  for (let i = 0; i < 133; i++) {
+  const splitPoint = Math.floor(SELFPER_MAX_LENGTH / 2); // 332 / 2 = 166
+
+  for (let i = 0; i < splitPoint; i++) {
     if (bits[i]) {
       lowResult += 1n << BigInt(i);
     }
   }
-  for (let i = 133; i < SELFPER_MAX_LENGTH; i++) {
+  for (let i = splitPoint; i < SELFPER_MAX_LENGTH; i++) {
     if (bits[i]) {
-      highResult += 1n << BigInt(i - 133);
+      highResult += 1n << BigInt(i - splitPoint);
     }
   }
 

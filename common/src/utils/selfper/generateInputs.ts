@@ -6,12 +6,10 @@ import {
   getNameYobLeafSelfper,
 } from '../trees.js';
 import {
-  PersonaData,
-  PersonaDataLimits,
   SelfperDiscloseInput,
   SelfperRegisterInput,
-  serializeSmileData,
-  SmileData,
+  serializeSelfperData,
+  SelfperData,
 } from './types.js';
 import { findIndexInTree, formatInput } from '../circuits/generateInputs.js';
 import {
@@ -26,9 +24,8 @@ import { bigintTo64bitLimbs, getEffECDSAArgs, modInv, modulus } from './ecdsa/ut
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { packBytesAndPoseidon } from '../hash.js';
 import { COMMITMENT_TREE_DEPTH } from '../../constants/constants.js';
-import { PERSONA_MAX_LENGTH } from './persona_constants.js';
 
-export const OFAC_DUMMY_INPUT: SmileData = {
+export const OFAC_DUMMY_INPUT: SelfperData = {
   country: 'KEN',
   idType: 'NATIONAL ID',
   idNumber: '12345678901234567890123456789012', //32 digits
@@ -47,7 +44,7 @@ export const OFAC_DUMMY_INPUT: SmileData = {
   selector_older_than: '1',
 };
 
-export const NON_OFAC_DUMMY_INPUT: SmileData = {
+export const NON_OFAC_DUMMY_INPUT: SelfperData = {
   country: 'KEN',
   idType: 'NATIONAL ID',
   idNumber: '12345678901234567890123456789012', //32 digits
@@ -65,59 +62,16 @@ export const NON_OFAC_DUMMY_INPUT: SmileData = {
   majority_age_ASCII: '20',
   selector_older_than: '1',
 };
-
-export const OFAC_PERSONA_DUMMY_INPUT: PersonaData = {
-  country: 'USA',
-  idType: 'tribalid',
-  idNumber: 'Y123ABC',
-  documentNumber: '585225',
-  issuanceDate: '20200728',
-  expiryDate: '20300101',
-  fullName: 'ABBAS ABU',
-  dob: '19481210',
-  addressSubdivision: 'CA',
-  addressPostalCode: '94105',
-  photoHash: '1234567890abcdef123',
-  phoneNumber: '+12345678901',
-  gender: 'M',
-};
-
-
-export const NON_OFAC_PERSONA_DUMMY_INPUT: PersonaData = {
-  country: 'USA',
-  idType: 'tribalid',
-  idNumber: 'Y123ABC',
-  documentNumber: '585225',
-  issuanceDate: '20200728',
-  expiryDate: '20300101',
-  fullName: 'John Doe',
-  dob: '19900101',
-  addressSubdivision: 'CA',
-  addressPostalCode: '94105',
-  photoHash: '1234567890abcdef123',
-  phoneNumber: '+12345678901',
-  gender: 'M',
-};
-
-
-
 
 export const createSelfperDiscloseSelFromFields = (fieldsToReveal: SelfperField[]): string[] => {
   const [highResult, lowResult] = createSelfperSelector(fieldsToReveal);
-  return [highResult.toString(), lowResult.toString()];
+  return [lowResult.toString(), highResult.toString()];
 };
 
 
-export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string, isSelfrica: boolean = true) => {
-  let serializedData: string;
-  if (isSelfrica) {
-     let smileData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
-     serializedData = serializeSmileData(smileData).padEnd(SELFPER_MAX_LENGTH, '\0');
-  }
-  else {
-    const paddedData = validateAndPadPersonaData(ofac ? OFAC_PERSONA_DUMMY_INPUT : NON_OFAC_PERSONA_DUMMY_INPUT);
-    serializedData = serializePersonaData(paddedData);
-  }
+export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string) => {
+  const selfperData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
+  const serializedData = serializeSelfperData(selfperData).padEnd(SELFPER_MAX_LENGTH, '\0');
 
   const msgPadded = Array.from(serializedData, (x) => x.charCodeAt(0));
   for (let i = 0; i < msgPadded.length; i++) {
@@ -159,7 +113,7 @@ export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: bool
   return selfperRegisterInput;
 };
 
-export const generateCircuitInputsOfac = (data: SmileData | PersonaData, smt: SMT, proofLevel: number, isSelfrica: boolean = true) => {
+export const generateCircuitInputsOfac = (data: SelfperData, smt: SMT, proofLevel: number) => {
   const name = data.fullName;
   const dob = data.dob;
   const yob = data.dob.slice(0, 4);
@@ -195,20 +149,10 @@ export const generateSelfperDiscloseInput = (
   forbiddenCountriesList?: string[],
   minimumAge?: number,
   updateTree?: boolean,
-  secret: string = "1234",
-  isSelfrica: boolean = true
+  secret: string = "1234"
 ) => {
-  let serializedData: string;
-  let data: SmileData | PersonaData;
-  if (isSelfrica) {
-    data = ofac_input ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
-    serializedData = serializeSmileData(data).padEnd(SELFPER_MAX_LENGTH, '\0');
-  }
-  else {
-    data = ofac_input ? OFAC_PERSONA_DUMMY_INPUT : NON_OFAC_PERSONA_DUMMY_INPUT;
-    const paddedData = validateAndPadPersonaData(data);
-    serializedData = serializePersonaData(paddedData);
-  }
+  const data = ofac_input ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
+  const serializedData = serializeSelfperData(data).padEnd(SELFPER_MAX_LENGTH, '\0');
   const msgPadded = Array.from(serializedData, (x) => x.charCodeAt(0));
   const commitment = poseidon2([secret, packBytesAndPoseidon(msgPadded)]);
   if (updateTree) {
@@ -221,45 +165,11 @@ export const generateSelfperDiscloseInput = (
     leaf_depth,
   } = generateMerkleProof(identityTree, index, COMMITMENT_TREE_DEPTH);
 
-  const nameDobInputs = generateCircuitInputsOfac(data, nameDobSmt, 2, isSelfrica);
-  const nameYobInputs = generateCircuitInputsOfac(data, nameYobSmt, 1, isSelfrica);
+  const nameDobInputs = generateCircuitInputsOfac(data, nameDobSmt, 2);
+  const nameYobInputs = generateCircuitInputsOfac(data, nameYobSmt, 1);
 
   const fieldsToRevealFinal = fieldsToReveal || [];
-  let compressed_disclose_sel: string[];
-
-  if (isSelfrica) {
-    compressed_disclose_sel = createSelfperDiscloseSelFromFields(fieldsToRevealFinal);
-  } else {
-    // For PERSONA, we need to convert field names and use generatePersonaSelector
-    const personaFields = fieldsToRevealFinal.map(field => {
-      // Map SELFPER field names to Persona field names
-      const fieldMap: Record<string, string> = {
-        'COUNTRY': 'country',
-        'ID_TYPE': 'idType',
-        'ID_NUMBER': 'idNumber',
-        'DOCUMENT': 'documentNumber',
-        'ISSUANCE_DATE': 'issuanceDate',
-        'EXPIRY_DATE': 'expiryDate',
-        'FULL_NAME': 'fullName',
-        'DOB': 'dob',
-        'ADDRESS': 'addressSubdivision', // Note: Persona uses addressSubdivision and addressPostalCode
-        'PHOTO_HASH': 'photoHash',
-        'PHONE_NUMBER': 'phoneNumber',
-        'GENDER': 'gender',
-      };
-      return fieldMap[field] || field.toLowerCase();
-    });
-
-    const personaSelector = generatePersonaSelector(personaFields);
-    // Compress the selector into 2 bigints (similar to SELFPER)
-    const compressedBitLen = Math.ceil(personaSelector.length / 2);
-    const lowBits = personaSelector.slice(0, compressedBitLen).join('');
-    const highBits = personaSelector.slice(compressedBitLen).join('');
-    compressed_disclose_sel = [
-      BigInt('0b' + lowBits).toString(),
-      BigInt('0b' + highBits).toString()
-    ];
-  }
+  const compressed_disclose_sel = createSelfperDiscloseSelFromFields(fieldsToRevealFinal);
 
   const majorityAgeASCII = minimumAge
     ? minimumAge
@@ -296,64 +206,3 @@ export const generateSelfperDiscloseInput = (
 
   return circuitInput;
 };
-
-
-//PERSONA
-
-
-export function validateAndPadPersonaData(data: PersonaData): PersonaData {
-  const result: PersonaData = {} as PersonaData;
-
-  for (const [field, value] of Object.entries(data)) {
-    const maxLength = PersonaDataLimits[field as keyof typeof PersonaDataLimits];
-
-    if (maxLength && value.length > maxLength) {
-      throw new Error(`Field '${field}' too long: ${value.length} > ${maxLength}`);
-    }
-    result[field as keyof PersonaData] = maxLength ? value.padEnd(maxLength, '\0') : value;
-  }
-  return result;
-}
-
-export function serializePersonaData(personaData: PersonaData): string {
-  let serializedData = '';
-
-  serializedData += personaData.country;
-  serializedData += personaData.idType;
-  serializedData += personaData.idNumber;
-  serializedData += personaData.documentNumber;
-  serializedData += personaData.issuanceDate;
-  serializedData += personaData.expiryDate;
-  serializedData += personaData.fullName;
-  serializedData += personaData.dob;
-  serializedData += personaData.addressSubdivision;
-  serializedData += personaData.addressPostalCode;
-  serializedData += personaData.photoHash;
-  serializedData += personaData.phoneNumber;
-  serializedData += personaData.gender;
-
-  return serializedData;
-}
-
-export function generatePersonaSelector(fields: string[]): string[] {
-  const validFields = Object.keys(PersonaDataLimits);
-  const invalidFields = fields.filter((field) => !validFields.includes(field));
-
-  if (invalidFields.length > 0) {
-    throw new Error(
-      `Invalid field(s): ${invalidFields.join(', ')}. Valid fields are: ${validFields.join(', ')}`
-    );
-  }
-
-  const totalLength = PERSONA_MAX_LENGTH;
-  const selector = new Array(totalLength).fill('0');
-  let index = 0;
-
-  for (const [field, length] of Object.entries(PersonaDataLimits)) {
-    if (fields.includes(field)) {
-      selector.fill('1', index, index + length);
-    }
-    index += length;
-  }
-  return selector;
-}
