@@ -60,7 +60,6 @@ const entry = {
   'src/utils/selfper/generateInputs': 'src/utils/selfper/generateInputs.ts',
   'src/utils/selfper/constants': 'src/utils/selfper/constants.ts',
   'src/utils/selfper/types': 'src/utils/selfper/types.ts',
-  'src/utils/selfper/decodePublicSignals': 'src/utils/selfper/decodePublicSignals.ts',
   // Level 3 Hash Function Exports
   'src/utils/hash/poseidon': 'src/utils/hash/poseidon.ts',
   'src/utils/hash/sha': 'src/utils/hash/sha.ts',

@@ -64,27 +64,22 @@ export const NON_OFAC_DUMMY_INPUT: SelfperData = {
 };
 
 export const createSelfperDiscloseSelFromFields = (fieldsToReveal: SelfperField[]): string[] => {
-  const [highResult, lowResult] = createSelfperSelector(fieldsToReveal);
+  const [lowResult, highResult] = createSelfperSelector(fieldsToReveal);
   return [lowResult.toString(), highResult.toString()];
 };
 
 
-export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string) => {
+export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string, attestationId?: string) => {
   const selfperData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
   const serializedData = serializeSelfperData(selfperData).padEnd(SELFPER_MAX_LENGTH, '\0');
 
   const msgPadded = Array.from(serializedData, (x) => x.charCodeAt(0));
-  for (let i = 0; i < msgPadded.length; i++) {
-    const val = msgPadded[i];
-    if (typeof val !== 'number' || val < 0 || val > 255) {
-      throw new Error(
-        `Invalid byte value in msgPadded at index ${i}: ${val}`
-      );
-    }
-  }
 
-  const sk = secretKey ? secretKey : BigInt(subOrder - BigInt(Math.floor(Math.random() * 90098)));
+  const sk = secretKey ? secretKey : BigInt(Math.floor(Math.random() * Number(subOrder - 2n))) + 1n;
+
   const pk = mulPointEscalar(Base8, sk);
+  console.assert(inCurve(pk), 'Point pk not on curve');
+  console.assert(pk[0] != 0n && pk[1] != 0n, 'pk is zero');
 
   const sig = signECDSA(sk, msgPadded);
   console.assert(verifyECDSA(msgPadded, sig, pk) == true, 'Invalid signature');
@@ -108,6 +103,7 @@ export const generateMockSelfperRegisterInput = (secretKey?: bigint, ofac?: bool
     pubKeyY: pk[1].toString(),
     r_inv: rInvLimbs.map((x) => x.toString()),
     secret: secret || "1234",
+    attestation_id: attestationId || '4',
   };
 
   return selfperRegisterInput;
@@ -149,6 +145,7 @@ export const generateSelfperDiscloseInput = (
   forbiddenCountriesList?: string[],
   minimumAge?: number,
   updateTree?: boolean,
+  attestationId?: string,
   secret: string = "1234"
 ) => {
   const data = ofac_input ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
@@ -202,6 +199,7 @@ export const generateSelfperDiscloseInput = (
     current_date: currentDate,
     majority_age_ASCII: majorityAgeASCII,
     secret: secret,
+    attestation_id: attestationId || '4',
   };
 
   return circuitInput;

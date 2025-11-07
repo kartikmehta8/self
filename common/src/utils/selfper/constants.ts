@@ -120,24 +120,6 @@ export const SELFPER_PUBLIC_SIGNALS_OFAC_NAME_YOB_SMT_ROOT = 26;
 // Helper functions for selector bits
 // ------------------------------
 
-/**
- * Helper function to extract a specific field from serialized Selfper data
- * @param serializedData - The serialized Selfper data string
- * @param field - The field to extract
- * @returns The extracted field data as a string
- */
-export function extractSelfperField(serializedData: string, field: SelfperField): string {
-  const startIndex = SELFPER_REVEAL_DATA_INDICES[field];
-  const length = SELFPER_FIELD_LENGTHS[field];
-  const extracted = serializedData.slice(startIndex, startIndex + length);
-  return extracted.replace(/\0+$/, ''); // Remove trailing null characters
-}
-
-/**
- * Helper function to create a selector field for revealing specific Selfper data
- * @param fieldsToReveal - Array of field names to reveal
- * @returns Selector value as bigint
- */
 export function createSelfperSelector(fieldsToReveal: SelfperField[]): [bigint, bigint] {
   const bits = Array(SELFPER_MAX_LENGTH).fill(0);
 
@@ -151,7 +133,7 @@ export function createSelfperSelector(fieldsToReveal: SelfperField[]): [bigint, 
   let lowResult = 0n;
   let highResult = 0n;
 
-  const splitPoint = Math.floor(SELFPER_MAX_LENGTH / 2); // 332 / 2 = 166
+  const splitPoint = Math.floor(SELFPER_MAX_LENGTH / 2);
 
   for (let i = 0; i < splitPoint; i++) {
     if (bits[i]) {
@@ -164,5 +146,5 @@ export function createSelfperSelector(fieldsToReveal: SelfperField[]): [bigint, 
     }
   }
 
-  return [highResult, lowResult];
+  return [lowResult, highResult];
 }

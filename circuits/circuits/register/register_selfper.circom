@@ -2,7 +2,6 @@ pragma circom 2.1.9;
 
 include "circomlib/circuits/bitify.circom";
 include "../utils/selfper/constants.circom";
-include "../utils/selfper/persona_constants.circom";
 include "../utils/passport/customHashers.circom";
 include "../utils/selfper/verifySignature.circom";
 
@@ -25,9 +24,7 @@ template REGISTER_SELFPER() {
     signal input pubKeyY;
     signal input r_inv[4];
     signal input secret;
-
-
-    signal output attestation_id <== 4;
+    signal input attestation_id;
 
     //Calculate msg_hash
     component msg_hasher = PackBytesAndPoseidon(max_length);
@@ -36,6 +33,7 @@ template REGISTER_SELFPER() {
     }
 
     //msg_hash bit decomposition
+    //TODO: should we add msg_hash_bits [254] & [255] == 0?
     component bit_decompose = Num2Bits(256);
     bit_decompose.in <== msg_hasher.out;
     signal msg_hash_bits[256] <== bit_decompose.out;
@@ -74,4 +72,4 @@ template REGISTER_SELFPER() {
 
 }
 
-component main = REGISTER_SELFPER();
+component main {public [attestation_id]} = REGISTER_SELFPER();

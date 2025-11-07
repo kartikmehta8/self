@@ -47,7 +47,7 @@ template VC_AND_DISCLOSE_SELFPER(
     signal input majority_age_ASCII[3];
     signal input secret;
 
-    signal output attestation_id <== 4;
+    signal input attestation_id;
 
     // Convert the two decimal inputs back to bit array
     signal disclose_sel[max_length];
@@ -118,6 +118,7 @@ component main {
         ofac_name_dob_smt_root,
         ofac_name_yob_smt_root,
         user_identifier,
-        current_date
+        current_date,
+        attestation_id
     ]
 } = VC_AND_DISCLOSE_SELFPER(40, 64, 64, 121, 17, 33);

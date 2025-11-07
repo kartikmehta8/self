@@ -48,6 +48,7 @@ export type SelfperRegisterInput = {
     pubKeyY: string,
     r_inv: string[],
     secret: string,
+    attestation_id: string,
 }
 
 export type SelfperDiscloseInput = {
@@ -70,6 +71,7 @@ export type SelfperDiscloseInput = {
     current_date: string[],
     majority_age_ASCII: number[],
     secret: string,
+    attestation_id: string,
 };
 
 export type SelfperDisclosePublicInput = {
