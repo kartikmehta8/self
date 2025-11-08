@@ -3,7 +3,7 @@ pragma circom 2.1.9;
 include "circomlib/circuits/comparators.circom";
 
 /// @title DateIsLess
-/// @notice compares two dates in the YYYYMMDD numeric format
+/// @notice compares two dates
 /// @param day_1 is the day of the first date
 /// @param day_2 is the day of the second date
 /// @param month_1 is the month of the first date

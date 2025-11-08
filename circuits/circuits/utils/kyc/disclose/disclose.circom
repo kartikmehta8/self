@@ -47,6 +47,7 @@ template DISCLOSE_KYC(
     }
     IsValidFullYear()(current_date, validity_ASCII);
 
+    //TODO: We are not checking whether the birth date ASCII is within 48 - 57 (trusting the TEE to do this)
     signal birth_date_ASCII[8];
     for (var i = 0; i < dob_length ; i++) {
         birth_date_ASCII[i] <== data_padded[dob_index + i];

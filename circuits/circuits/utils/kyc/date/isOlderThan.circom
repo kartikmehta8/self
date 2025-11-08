@@ -6,9 +6,9 @@ include "./dateIsLess.circom";
 
 /// @title IsOlderThan
 /// @notice Verifies if user is older than the majority at the current date
-/// @param majorityASCII Majority user wants to prove he is older than: YY — ASCII
-/// @param currDate Current date: YYMMDD — number
-/// @param birthDateASCII Birthdate: YYMMDD — ASCII
+/// @param majorityASCII Majority user wants to prove he is older than: YYY — ASCII
+/// @param currDate Current date: YYYYMMDD — number
+/// @param birthDateASCII Birthdate: YYYYMMDD — ASCII
 /// @output out Result of the comparison
 /// @dev output is not constrained — verifier has to handle this check
 
