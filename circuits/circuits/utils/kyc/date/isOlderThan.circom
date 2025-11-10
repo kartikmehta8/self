@@ -40,8 +40,13 @@ template IsOlderThan() {
 
     // assert majority is between 0 and 999 (48-57 in ASCII)
     component lessThan[6];
+    component range_check_majority[3];
     for (var i = 0; i < 6; i++) {
-        lessThan[i] = LessThan(8);
+        lessThan[i] = LessThan(6);
+    }
+    for (var i = 0; i < 3; i++) {
+        range_check_majority[i] = Num2Bits(6);
+        range_check_majority[i].in <== majorityASCII[i];
     }
     lessThan[0].in[0] <== 47;
     lessThan[0].in[1] <== majorityASCII[0];

@@ -7,6 +7,28 @@ include "../date/isValid.circom";
 include "../date/isOlderThan.circom";
 include "../constants.circom";
 
+/// @title DISCLOSE_KYC
+/// @notice Performs comprehensive KYC verification including OFAC checks, age verification, document validity, and country restrictions
+/// @param MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH Maximum number of countries in the forbidden countries list
+/// @param name_dob_tree_levels Depth of the sparse merkle tree for OFAC name+DOB verification
+/// @param name_yob_tree_levels Depth of the sparse merkle tree for OFAC name+YOB verification
+/// @input data_padded The padded KYC data containing all document fields (country, expiration date, DOB, etc.)
+/// @input selector_data_padded Selector array to control which fields from data_padded are revealed
+/// @input forbidden_countries_list Flat array of forbidden country codes
+/// @input ofac_name_dob_smt_leaf_key Leaf key for OFAC name+DOB sparse merkle tree verification
+/// @input ofac_name_dob_smt_root Root of the OFAC name+DOB sparse merkle tree
+/// @input ofac_name_dob_smt_siblings Sibling nodes for OFAC name+DOB merkle proof
+/// @input ofac_name_yob_smt_leaf_key Leaf key for OFAC name+YOB sparse merkle tree verification
+/// @input ofac_name_yob_smt_root Root of the OFAC name+YOB sparse merkle tree
+/// @input ofac_name_yob_smt_siblings Sibling nodes for OFAC name+YOB merkle proof
+/// @input selector_ofac Binary selector to enable/disable OFAC checks (0 or 1)
+/// @input current_date Current date in YYYYMMDD format )
+/// @input majority_age_ASCII Age threshold for majority verification (ASCII encoded, 3 digits)
+/// @output forbidden_countries_list_packed Packed representation of the forbidden countries list
+/// @output revealedData_packed Packed array containing selectively revealed data fields and verification results
+/// @dev The output includes OFAC check results, age verification result, and selectively disclosed document fields
+/// @dev selector_ofac must be binary (0 or 1) and is constrained
+
 template DISCLOSE_KYC(
     MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH,
     name_dob_tree_levels,
@@ -47,7 +69,6 @@ template DISCLOSE_KYC(
     }
     IsValidFullYear()(current_date, validity_ASCII);
 
-    //TODO: We are not checking whether the birth date ASCII is within 48 - 57 (trusting the TEE to do this)
     signal birth_date_ASCII[8];
     for (var i = 0; i < dob_length ; i++) {
         birth_date_ASCII[i] <== data_padded[dob_index + i];

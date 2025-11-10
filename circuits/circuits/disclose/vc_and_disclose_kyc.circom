@@ -7,12 +7,43 @@ include "@openpassport/zk-email-circuits/utils/bytes.circom";
 include "../utils/passport/customHashers.circom";
 include "../utils/kyc/disclose/disclose.circom";
 
+/// @title VC_AND_DISCLOSE_KYC
+/// @notice Combines verifiable credential verification with KYC disclosure, validating data against a merkle tree and performing comprehensive compliance checks
+/// @param MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH Maximum number of countries in the forbidden countries list
+/// @param namedobTreeLevels Depth of the sparse merkle tree for OFAC name+DOB verification
+/// @param nameyobTreeLevels Depth of the sparse merkle tree for OFAC name+YOB verification
+/// @param nLevels Depth of the binary merkle tree for credential verification
+/// @input data_padded The padded KYC data containing all document fields
+/// @input compressed_disclose_sel Two-element array representing compressed disclosure selector
+/// @input scope Application-specific scope identifier for nullifier generation
+/// @input forbidden_countries_list Flat array of forbidden country codes
+/// @input merkle_root Root of the binary merkle tree for credential verification
+/// @input leaf_depth Depth of the leaf in the merkle tree
+/// @input path Binary path to the leaf in the merkle tree
+/// @input siblings Sibling nodes for merkle proof verification
+/// @input ofac_name_dob_smt_leaf_key Leaf key for OFAC name+DOB sparse merkle tree verification
+/// @input ofac_name_dob_smt_root Root of the OFAC name+DOB sparse merkle tree
+/// @input ofac_name_dob_smt_siblings Sibling nodes for OFAC name+DOB merkle proof
+/// @input ofac_name_yob_smt_leaf_key Leaf key for OFAC name+YOB sparse merkle tree verification
+/// @input ofac_name_yob_smt_root Root of the OFAC name+YOB sparse merkle tree
+/// @input ofac_name_yob_smt_siblings Sibling nodes for OFAC name+YOB merkle proof
+/// @input selector_ofac Binary selector to enable/disable OFAC checks (0 or 1)
+/// @input user_identifier Unique identifier for the user
+/// @input current_date Current date in YYYYMMDD format
+/// @input majority_age_ASCII Age threshold for majority verification (ASCII encoded, 3 digits)
+/// @input secret Secret value used for leaf generation and nullifier computation
+/// @input attestation_id Unique identifier for this attestation
+/// @output revealedData_packed Packed array containing selectively revealed data fields and verification results
+/// @output forbidden_countries_list_packed Packed representation of the forbidden countries list
+/// @output nullifier Unique nullifier derived from secret and scope to prevent double-spending
+/// @dev Verifies the credential against a binary merkle tree
+/// @dev The compressed_disclose_sel is split into two 133-bit values and reconstructed into a selector array
+/// @dev TODO: we can pass majority_age(number) rather than majority_age_ASCII which will save few constraints, but kept it for now to match with other circuits
+
 template VC_AND_DISCLOSE_KYC(
     MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH,
     namedobTreeLevels,
     nameyobTreeLevels,
-    n,
-    k,
     nLevels
 ) {
     var max_length = KYC_MAX_LENGTH();
@@ -78,11 +109,6 @@ template VC_AND_DISCLOSE_KYC(
     signal computedRoot <== BinaryMerkleRoot(nLevels)(leaf, leaf_depth, path, siblings);
     merkle_root === computedRoot;
 
-    signal id_num[id_number_length];
-    for (var i = 0; i < id_number_length; i++) {
-        id_num[i] <== data_padded[idNumberIdx + i];
-    }
-
     component disclose_circuit = DISCLOSE_KYC(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH, namedobTreeLevels, nameyobTreeLevels);
 
     for (var i = 0; i < max_length; i++) {
@@ -121,4 +147,4 @@ component main {
         current_date,
         attestation_id
     ]
-} = VC_AND_DISCLOSE_KYC(40, 64, 64, 121, 17, 33);
+} = VC_AND_DISCLOSE_KYC(40, 64, 64, 33);
