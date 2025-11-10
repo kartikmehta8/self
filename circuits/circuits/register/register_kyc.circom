@@ -22,7 +22,7 @@ template REGISTER_KYC() {
     signal input Ty;
     signal input pubKeyX;
     signal input pubKeyY;
-    signal input r_inv[4];
+    signal input neg_r_inv[4];
     signal input secret;
     signal input attestation_id;
 
@@ -33,7 +33,6 @@ template REGISTER_KYC() {
     }
 
     //msg_hash bit decomposition
-    //TODO: should we add msg_hash_bits [254] & [255] == 0?
     component bit_decompose = Num2Bits(256);
     bit_decompose.in <== msg_hasher.out;
     signal msg_hash_bits[256] <== bit_decompose.out;
@@ -54,7 +53,7 @@ template REGISTER_KYC() {
 
     component verifyIdCommSig = VERIFY_KYC_SIGNATURE();
     verifyIdCommSig.s <== s;
-    verifyIdCommSig.r_inv <== r_inv;
+    verifyIdCommSig.neg_r_inv <== neg_r_inv;
     verifyIdCommSig.msg_hash_limbs <== msg_hash_limbs;
     verifyIdCommSig.Tx <== Tx;
     verifyIdCommSig.Ty <== Ty;

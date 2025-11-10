@@ -92,7 +92,7 @@ export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean,
   console.assert(inCurve(U), 'Point U not on curve');
 
   const rInv = modInv(sig.R[0], subOrder);
-  const rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
+  const neg_rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
 
   const kycRegisterInput: KycRegisterInput = {
     data_padded: msgPadded.map((x) => x.toString()),
@@ -101,7 +101,7 @@ export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean,
     Ty: T[1].toString(),
     pubKeyX: pk[0].toString(),
     pubKeyY: pk[1].toString(),
-    r_inv: rInvLimbs.map((x) => x.toString()),
+    neg_r_inv: neg_rInvLimbs.map((x) => x.toString()),
     secret: secret || "1234",
     attestation_id: attestationId || '4',
   };

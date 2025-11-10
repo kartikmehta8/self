@@ -12,7 +12,7 @@ include "../crypto/bigInt/bigInt.circom";
 template VERIFY_KYC_SIGNATURE(){
 
     signal input s;
-    signal input r_inv[4];
+    signal input neg_r_inv[4];
     signal input msg_hash_limbs[4];
     signal input Tx;
     signal input Ty;
@@ -20,7 +20,7 @@ template VERIFY_KYC_SIGNATURE(){
     signal input pubKeyY;
 
 
-    var SUBGROUP_ORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041;
+    var SUBGROUP_ORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041; //(251 bits)
     var BASE8[2] = [
             5299619240641551281634865583518297030282874472190772894086521144482721001553,
             16950150798460657717958625567821834550301663161624707787222815936182638968203
@@ -29,12 +29,18 @@ template VERIFY_KYC_SIGNATURE(){
     component computes2bits = Num2Bits(254);
     computes2bits.in <== s;
 
+    // asserts s is a 251 bit number
+    for(var i = 0; i < 3; i++){
+        computes2bits.out[251 + i] === 0;
+    }
+
+
     // Check s should be less than SUBGROUPT_ORDER - 1
     component compConst = CompConstant(SUBGROUP_ORDER - 1);
     compConst.in <== computes2bits.out;
     compConst.out === 0;
 
-    // Check if s is not 0
+    // Check if s is 0
     signal is_s_zero <== IsZero()(s);
     is_s_zero === 0;
 
@@ -48,11 +54,11 @@ template VERIFY_KYC_SIGNATURE(){
 
     //Check is - r_inv < scalar_mod
     component scalar_range_check = BigLessThan(64,4);
-    scalar_range_check.a <== r_inv;
+    scalar_range_check.a <== neg_r_inv;
     scalar_range_check.b <== scalar_mod;
     scalar_range_check.out === 1 ;
 
-       //msg_hash % SUBORDER
+    //msg_hash % SUBORDER
     component msgReduced = BigMultModP(64, 4, 4, 4);
     for(var i = 0; i < 4; i++){
         msgReduced.in1[i]<== msg_hash_limbs[i];
@@ -65,29 +71,29 @@ template VERIFY_KYC_SIGNATURE(){
         msgReduced.modulus[i]<== scalar_mod[i];
     }
 
-    // calculates (-r_inv * msg_hash) % SUBGROUP_ORDER
-    component r_inv_msg_hash = BabyScalarMul();
+    // calculates (- r_inv * msg_hash) % SUBGROUP_ORDER
+    component neg_r_inv_msg_hash = BabyScalarMul();
     for(var i = 0 ;i < 4 ;i++) {
-        r_inv_msg_hash.in1[i] <== r_inv[i];
-        r_inv_msg_hash.in2[i] <== msgReduced.mod[i];
+        neg_r_inv_msg_hash.in1[i] <== neg_r_inv[i];
+        neg_r_inv_msg_hash.in2[i] <== msgReduced.mod[i];
     }
 
-    signal r_inv_msg_hash_bits[256];
+    signal neg_r_inv_msg_hash_bits[256];
     component num2bits[4];
 
-   // convert r_inv_msg_hash limbs to bits
+   // convert neg_r_inv_msg_hash limbs to bits
     for (var i = 0; i < 4; i++){
         num2bits[i]= Num2Bits(64);
-        num2bits[i].in <==r_inv_msg_hash.out[i];
+        num2bits[i].in <== neg_r_inv_msg_hash.out[i];
         for(var j = 0; j < 64; j++){
-            r_inv_msg_hash_bits[i * 64 +j] <== num2bits[i].out[j];
+            neg_r_inv_msg_hash_bits[i * 64 +j] <== num2bits[i].out[j];
         }
     }
 
 
     component mulFix = EscalarMulFix(254, BASE8);
     for (var i = 0; i < 254; i++) {
-        mulFix.e[i] <== r_inv_msg_hash_bits[i];
+        mulFix.e[i] <== neg_r_inv_msg_hash_bits[i];
     }
 
     component ecdsa = BabyJubJubECDSA();

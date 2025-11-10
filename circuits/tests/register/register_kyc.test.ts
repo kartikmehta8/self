@@ -116,7 +116,7 @@ describe('REGISTER KYC Circuit Tests', () => {
   it('should fail if r_inv is greater than scalar field', async function () {
     this.timeout(0);
     input = generateMockKycRegisterInput(null, true, undefined);
-    input.r_inv = ["7454187305358665460", "12339561404529962506", "3965992003123030795", "435874783350371333"];
+    input.neg_r_inv = ["7454187305358665460", "12339561404529962506", "3965992003123030795", "435874783350371333"];
 
     try {
       const w = await circuit.calculateWitness(input);

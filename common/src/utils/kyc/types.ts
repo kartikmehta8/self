@@ -46,7 +46,7 @@ export type KycRegisterInput = {
     Ty: string,
     pubKeyX: string,
     pubKeyY: string,
-    r_inv: string[],
+    neg_r_inv: string[],
     secret: string,
     attestation_id: string,
 }
