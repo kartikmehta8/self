@@ -110,12 +110,8 @@ template VERIFY_KYC_SIGNATURE(){
     ecdsa.Uy <== mulFix.out[1];
     ecdsa.s <== s;
 
-
     ecdsa.pubKeyX === pubKeyX;
     ecdsa.pubKeyY === pubKeyY;
-
-    signal is_pkx_zero <== IsZero()(pubKeyX);
-    is_pkx_zero === 0;
 
 }
 
