@@ -52,6 +52,13 @@ template VERIFY_KYC_SIGNATURE(){
     scalar_mod[2] <== 3965992003123030795;
     scalar_mod[3] <== 435874783350371333;
 
+    //range check on neg_r_inv[i] < 2 ^ 64
+    component range_check_neg_r_inv[4];
+    for(var i = 0; i < 4; i++){
+        range_check_neg_r_inv[i] = Num2Bits(64);
+        range_check_neg_r_inv[i].in <== neg_r_inv[i];
+    }
+
     //Check is - r_inv < scalar_mod
     component scalar_range_check = BigLessThan(64,4);
     scalar_range_check.a <== neg_r_inv;
