@@ -50,7 +50,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
     cloudBackupEnabled,
     toggleCloudBackupEnabled,
     biometricsAvailable,
-    backedUpWithTurnKey,
+    turnkeyBackupEnabled,
   } = useSettingStore();
   const { upload, disableBackup } = useBackupMnemonic();
   const navigation =
@@ -157,7 +157,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
     buttonTap();
     setSelectedMethod('turnkey');
 
-    if (backedUpWithTurnKey) {
+    if (turnkeyBackupEnabled) {
       return;
     }
 
@@ -200,7 +200,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
       setTurnkeyPending(false);
     }
   }, [
-    backedUpWithTurnKey,
+    turnkeyBackupEnabled,
     backupAccount,
     getOrCreateMnemonic,
     showAlreadySignedInModal,
@@ -259,7 +259,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
               </Pressable>
             )}
 
-            {/* {backedUpWithTurnKey ? (
+            {turnkeyBackupEnabled ? (
               <SecondaryButton
                 disabled
                 trackEvent={BackupEvents.CLOUD_BACKUP_DISABLE_STARTED}
@@ -281,10 +281,11 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
                   {turnkeyPending ? '…' : ''}
                 </Text>
               </Pressable>
-            )} */}
+            )}
 
             <BottomButton
               cloudBackupEnabled={cloudBackupEnabled}
+              turnkeyBackupEnabled={turnkeyBackupEnabled}
               nextScreen={params?.nextScreen}
             />
           </View>
@@ -303,9 +304,11 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
 
 function BottomButton({
   cloudBackupEnabled,
+  turnkeyBackupEnabled,
   nextScreen,
 }: {
   cloudBackupEnabled: boolean;
+  turnkeyBackupEnabled: boolean;
   nextScreen?: NextScreen;
 }) {
   const { trackEvent } = useSelfClient();
@@ -318,7 +321,9 @@ function BottomButton({
     navigation.goBack();
   };
 
-  if (nextScreen && cloudBackupEnabled) {
+  const hasBackup = cloudBackupEnabled || turnkeyBackupEnabled;
+
+  if (nextScreen && hasBackup) {
     return (
       <PrimaryButton
         onPress={() => {
@@ -330,7 +335,7 @@ function BottomButton({
         Continue
       </PrimaryButton>
     );
-  } else if (nextScreen && !cloudBackupEnabled) {
+  } else if (nextScreen && !hasBackup) {
     return (
       <SecondaryButton
         onPress={() => {
@@ -342,7 +347,7 @@ function BottomButton({
         Back up manually
       </SecondaryButton>
     );
-  } else if (cloudBackupEnabled) {
+  } else if (hasBackup) {
     return (
       <PrimaryButton
         onPress={goBack}
