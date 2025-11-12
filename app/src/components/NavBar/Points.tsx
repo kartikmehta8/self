@@ -77,7 +77,6 @@ const Points: React.FC = () => {
 
   const getBackupState = usePointEventStore(state => {
     const backups = state.events.filter(e => e.type === 'backup');
-    console.log('backups', backups);
     const isPending = backups.some(e => e.status === 'pending');
     const isCompleted = backups.some(e => e.status === 'completed');
     return {
