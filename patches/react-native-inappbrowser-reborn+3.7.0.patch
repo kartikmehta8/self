@@ -121,13 +121,13 @@ index c764c87..2906943 100644
 +  {
 +    return dispatch_get_main_queue();
    }
- 
+
 -  BOOL ephemeralWebSession = [options[@"ephemeralWebSession"] boolValue];
 +  + (BOOL)requiresMainQueueSetup
 +  {
 +    return NO;
 +  }
- 
+
 -  if (@available(iOS 11, *)) {
 -    NSURL *url = [[NSURL alloc] initWithString:authURL];
 -    __weak typeof(self) weakSelf = self;
@@ -160,8 +160,6 @@ index c764c87..2906943 100644
 +
 +    if (@available(iOS 11, *)) {
 +      NSURL *url = [[NSURL alloc] initWithString:authURL];
-+      NSLog(@"[RNInAppBrowser] Redirect URL: %@", redirectURL);
-+      NSLog(@"[RNInAppBrowser] Ephemeral session: %@", ephemeralWebSession ? @"YES" : @"NO");
 +
 +      __weak typeof(self) weakSelf = self;
 +      void (^completionHandler)(NSURL * _Nullable, NSError *_Nullable) = ^(NSURL* _Nullable callbackURL, NSError* _Nullable error) {
@@ -169,16 +167,11 @@ index c764c87..2906943 100644
 +        if (strongSelf && redirectResolve) {
 +          if (!error) {
 +            NSString *url = callbackURL.absoluteString;
-+            NSLog(@"[RNInAppBrowser] Auth SUCCESS - Callback URL: %@", url);
 +            redirectResolve(@{
 +              @"type" : @"success",
 +              @"url" : url,
 +            });
 +          } else {
-+            NSLog(@"[RNInAppBrowser] Auth FAILED - Error code: %ld", (long)error.code);
-+            NSLog(@"[RNInAppBrowser] Auth FAILED - Error domain: %@", error.domain);
-+            NSLog(@"[RNInAppBrowser] Auth FAILED - Error description: %@", error.localizedDescription);
-+            NSLog(@"[RNInAppBrowser] Auth FAILED - Error user info: %@", error.userInfo);
 +            redirectResolve(@{
 +              @"type" : @"cancel",
 +            });
@@ -195,35 +188,30 @@ index c764c87..2906943 100644
 +          if (redirectUrl && redirectUrl.scheme) {
 +              // It's a full URL, extract the scheme
 +              escapedRedirectURL = redirectUrl.scheme;
-+              NSLog(@"[RNInAppBrowser] Extracted callback URL scheme from full URL: %@", escapedRedirectURL);
 +          } else {
 +              // It's probably just a scheme already (e.g., "com.warroom.proofofpassport")
 +              escapedRedirectURL = redirectURL;
-+              NSLog(@"[RNInAppBrowser] Using redirect URL as scheme directly: %@", escapedRedirectURL);
 +          }
 +      } else {
-+          NSLog(@"[RNInAppBrowser] WARNING: No redirect URL provided!");
        }
 -    };
- 
+
 -    NSString *escapedRedirectURL = nil;
 -    if (redirectURL) {
 -        escapedRedirectURL = [[NSURL alloc] initWithString:redirectURL].scheme;
 -    }
 +      if (@available(iOS 12.0, *)) {
-+        NSLog(@"[RNInAppBrowser] Creating ASWebAuthenticationSession (iOS 12+)");
 +        webAuthSession = [[ASWebAuthenticationSession alloc]
 +          initWithURL:url
 +          callbackURLScheme:escapedRedirectURL
 +          completionHandler:completionHandler];
 +      } else {
-+        NSLog(@"[RNInAppBrowser] Creating SFAuthenticationSession (iOS 11)");
 +        authSession = [[SFAuthenticationSession alloc]
 +          initWithURL:url
 +          callbackURLScheme:escapedRedirectURL
 +          completionHandler:completionHandler];
 +      }
- 
+
 -    if (@available(iOS 12.0, *)) {
 -      webAuthSession = [[ASWebAuthenticationSession alloc]
 -        initWithURL:url
@@ -256,7 +244,7 @@ index c764c87..2906943 100644
 +      [self flowDidFinish];
      }
 +  }
- 
+
 -#pragma clang diagnostic push
 -#pragma clang diagnostic ignored "-Wpartial-availability"
 -#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && defined(__IPHONE_13_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0
@@ -308,8 +296,6 @@ index c764c87..2906943 100644
 +    @catch (NSException *exception) {
 +      reject(RNInAppBrowserErrorCode, @"Unable to open url.", nil);
 +      [self flowDidFinish];
-+      NSLog(@"CRASH: %@", exception);
-+      NSLog(@"Stack Trace: %@", [exception callStackSymbols]);
 +      return;
      }
 -  } else {
@@ -354,11 +340,11 @@ index c764c87..2906943 100644
 +      if(animated) {
 +        safariHackVC.modalTransitionStyle = [self getTransitionStyle: modalTransitionStyle];
 +      }
- 
+
 +      if([modalPresentationStyle isEqualToString:@"formSheet"] && formSheetPreferredContentSize){
 +        NSNumber *width = [formSheetPreferredContentSize valueForKey:@"width"];
 +        NSNumber *height = [formSheetPreferredContentSize valueForKey:@"height"];
- 
+
 -RCT_EXPORT_METHOD(open:(NSDictionary *)options
 -                  resolver:(RCTPromiseResolveBlock)resolve
 -                  rejecter:(RCTPromiseRejectBlock)reject)
@@ -385,7 +371,7 @@ index c764c87..2906943 100644
 +      [ctrl presentViewController:safariVC animated:animated completion:nil];
 +    }
    }
- 
+
 -  NSString* authURL = [options valueForKey:@"url"];
 -  NSString* dismissButtonStyle = [options valueForKey:@"dismissButtonStyle"];
 -  NSNumber* preferredBarTintColor = [options valueForKey:@"preferredBarTintColor"];
@@ -419,8 +405,6 @@ index c764c87..2906943 100644
 -  @catch (NSException *exception) {
 -    reject(RNInAppBrowserErrorCode, @"Unable to open url.", nil);
 -    [self flowDidFinish];
--    NSLog(@"CRASH: %@", exception);
--    NSLog(@"Stack Trace: %@", [exception callStackSymbols]);
 -    return;
 +
 +  - (void)_close
@@ -478,7 +462,7 @@ index c764c87..2906943 100644
 +      [self close];
      }
    }
- 
+
 -  UIViewController *ctrl = RCTPresentedViewController();
 -  if (modalEnabled) {
 -    // This is a hack to present the SafariViewController modally
@@ -500,7 +484,7 @@ index c764c87..2906943 100644
 +      resolve(@NO);
      }
 +  }
- 
+
 -    if([modalPresentationStyle isEqualToString:@"formSheet"] && formSheetPreferredContentSize){
 -      NSNumber *width = [formSheetPreferredContentSize valueForKey:@"width"];
 -      NSNumber *height = [formSheetPreferredContentSize valueForKey:@"height"];
@@ -510,7 +494,7 @@ index c764c87..2906943 100644
 +  - (void)waitForActiveSceneAndStartSession {
 +    [self waitForActiveSceneWithAttempt:0 maxAttempts:50];
 +  }
- 
+
 -      if(width && height){
 -        safariHackVC.preferredContentSize = CGSizeMake([width doubleValue], [height doubleValue]);
 +  - (void)waitForActiveSceneWithAttempt:(int)attempt maxAttempts:(int)maxAttempts {
@@ -519,13 +503,12 @@ index c764c87..2906943 100644
 +      for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
 +        if (scene.activationState == UISceneActivationStateForegroundActive &&
 +            [scene isKindOfClass:[UIWindowScene class]]) {
-+          NSLog(@"[RNInAppBrowser] Scene is now ACTIVE after %d attempts, starting session", attempt);
 +          [self startAuthSession];
 +          return;
 +        }
        }
 -    }
- 
+
 -    safariHackVC.presentationController.delegate = self;
 -#pragma clang diagnostic push
 -#pragma clang diagnostic ignored "-Wpartial-availability"
@@ -534,12 +517,10 @@ index c764c87..2906943 100644
 -      [safariHackVC setModalInPresentation:TRUE];
 +      // Scene not active yet
 +      if (attempt < maxAttempts) {
-+        NSLog(@"[RNInAppBrowser] Scene still inactive, attempt %d/%d, retrying...", attempt + 1, maxAttempts);
 +        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 +          [self waitForActiveSceneWithAttempt:attempt + 1 maxAttempts:maxAttempts];
 +        });
 +      } else {
-+        NSLog(@"[RNInAppBrowser] WARNING: Scene never became active after %d attempts, trying anyway", maxAttempts);
 +        [self startAuthSession];
 +      }
 +    } else {
@@ -564,13 +545,9 @@ index c764c87..2906943 100644
 +
 +  - (void)startAuthSession {
 +    if (@available(iOS 12.0, *)) {
-+      NSLog(@"[RNInAppBrowser] Starting ASWebAuthenticationSession...");
-+      BOOL started = [webAuthSession start];
-+      NSLog(@"[RNInAppBrowser] ASWebAuthenticationSession start result: %@", started ? @"YES" : @"NO");
++      [webAuthSession start];
 +    } else {
-+      NSLog(@"[RNInAppBrowser] Starting SFAuthenticationSession...");
-+      BOOL started = [authSession start];
-+      NSLog(@"[RNInAppBrowser] SFAuthenticationSession start result: %@", started ? @"YES" : @"NO");
++      [authSession start];
 +    }
    }
 -}
@@ -591,7 +568,7 @@ index c764c87..2906943 100644
 -      }];
 -  }];
 -}
- 
+
 -RCT_EXPORT_METHOD(close) {
 -  [self _close];
 -}
@@ -605,7 +582,7 @@ index c764c87..2906943 100644
 +    }
 +    redirectReject = reject;
 +    redirectResolve = resolve;
- 
+
 -RCT_EXPORT_METHOD(closeAuth) {
 -  if (@available(iOS 11, *)) {
 +    return YES;
@@ -799,14 +776,12 @@ index c764c87..2906943 100644
 +        UIWindowScene *windowScene = (UIWindowScene *)scene;
 +        UIWindow *window = windowScene.keyWindow ?: windowScene.windows.firstObject;
 +        if (window) {
-+          NSLog(@"[RNInAppBrowser] Found active window in foreground scene");
 +          return window;
 +        }
 +      }
 +    }
 +
 +    // Fallback to keyWindow
-+    NSLog(@"[RNInAppBrowser] No active scene found, using keyWindow");
 +    return [UIApplication sharedApplication].keyWindow;
    }
 -  return modalTransitionStyle;
