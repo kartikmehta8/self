@@ -107,8 +107,8 @@ export const useSettingStore = create<SettingsState>()(
       setTurnkeyBackupEnabled: (turnkeyBackupEnabled: boolean) =>
         set({ turnkeyBackupEnabled }),
       hasCompletedBackupForPoints: false,
-      setBackupForPointsCompleted: () =>
-        set({ hasCompletedBackupForPoints: true }),
+      setBackupForPointsCompleted: (value: boolean = true) =>
+        set({ hasCompletedBackupForPoints: value }),
       resetBackupForPoints: () => set({ hasCompletedBackupForPoints: false }),
       pointsAddress: null,
       setPointsAddress: (address: string | null) =>

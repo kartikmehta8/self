@@ -129,7 +129,9 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
       trackEvent(BackupEvents.CLOUD_BACKUP_ENABLED_DONE);
 
       if (params?.returnToScreen) {
-        navigation.navigate(params.returnToScreen);
+        setTimeout(() => {
+          navigation.navigate(params.returnToScreen);
+        }, 500);
       }
     } catch (error) {
       console.error('iCloud backup error', error);
@@ -176,7 +178,9 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
       setTurnkeyPending(false);
 
       if (params?.returnToScreen) {
-        navigation.navigate(params.returnToScreen);
+        setTimeout(() => {
+          navigation.navigate(params.returnToScreen);
+        }, 500);
       }
     } catch (error) {
       if (error instanceof Error && error.message === 'already_exists') {
@@ -188,7 +192,9 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
       ) {
         console.log('Already backed up with Turnkey');
         if (params?.returnToScreen) {
-          navigation.navigate(params.returnToScreen);
+          setTimeout(() => {
+            navigation.navigate(params.returnToScreen);
+          }, 500);
         } else if (params?.nextScreen) {
           navigation.navigate(params.nextScreen);
         } else {

@@ -75,18 +75,35 @@ const Points: React.FC = () => {
     }, []),
   );
 
-  //TODO - uncomment after merging - https://github.com/selfxyz/self/pull/1363/
-  // useEffect(() => {
-  //   const backupEvent = usePointEventStore
-  //     .getState()
-  //     .events.find(
-  //       event => event.type === 'backup' && event.status === 'completed',
-  //     );
+  const getBackupState = usePointEventStore(state => {
+    const backups = state.events.filter(e => e.type === 'backup');
+    console.log('backups', backups);
+    const isPending = backups.some(e => e.status === 'pending');
+    const isCompleted = backups.some(e => e.status === 'completed');
+    return {
+      pending: isPending,
+      completed: isCompleted,
+      started: isPending || isCompleted,
+    };
+  });
 
-  //   if (backupEvent && !hasCompletedBackupForPoints) {
-  //     setBackupForPointsCompleted();
-  //   }
-  // }, [setBackupForPointsCompleted, hasCompletedBackupForPoints]);
+  //we show the backup success message immediately. This flips the flag to false undo the action
+  //and to show the backup button again.
+  //Another way is to show success modal here, but this ccan be delayed (as polling can be upto 32 seconds)
+  useEffect(() => {
+    if (
+      !getBackupState.pending &&
+      !getBackupState.completed &&
+      hasCompletedBackupForPoints
+    ) {
+      setBackupForPointsCompleted(false);
+    }
+  }, [
+    getBackupState.completed,
+    getBackupState.pending,
+    hasCompletedBackupForPoints,
+    setBackupForPointsCompleted,
+  ]);
 
   // Track if we should check for backup completion on next focus
   const shouldCheckBackupRef = React.useRef(false);

@@ -33,10 +33,13 @@ export async function checkEventProcessingStatus(
     // 200 means completed or failed - check the response body
     if (response.status === 200) {
       const data: JobStatusResponse = await response.json();
-      if (data.status === 'complete') {
+      if (data.success === true) {
         return 'completed';
       }
-      if (data.status === 'failed') {
+      if (data.success === false) {
+        if (data.message && data.message === 'Address already verified') {
+          return 'completed';
+        }
         return 'failed';
       }
     }
