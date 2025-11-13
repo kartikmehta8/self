@@ -6,7 +6,8 @@ import { POINTS_API_BASE_URL } from '@/utils/points/constants';
 
 export type JobStatusResponse = {
   job_id: string;
-  status: 'complete' | 'failed';
+  success: boolean;
+  message?: string;
 };
 
 export async function checkEventProcessingStatus(

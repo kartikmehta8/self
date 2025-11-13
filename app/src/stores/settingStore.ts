@@ -31,7 +31,7 @@ interface PersistedSettingsState {
   addSubscribedTopic: (topic: string) => void;
   removeSubscribedTopic: (topic: string) => void;
   hasCompletedBackupForPoints: boolean;
-  setBackupForPointsCompleted: () => void;
+  setBackupForPointsCompleted: (value?: boolean) => void;
   resetBackupForPoints: () => void;
   pointsAddress: string | null;
   setPointsAddress: (address: string | null) => void;
