@@ -2,12 +2,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
+import { ethers } from 'ethers';
 import { v4 } from 'uuid';
 
+import { RPC_URL } from '@selfxyz/common';
 import { SelfAppBuilder } from '@selfxyz/common/utils/appType';
 
 import { getOrGeneratePointsAddress } from '@/providers/authProvider';
-import { POINTS_API_BASE_URL } from '@/utils/points/constants';
+import {
+  POINTS_API_BASE_URL,
+  POINTS_TOKEN_CONTRACT_ADDRESS,
+} from '@/utils/points/constants';
 import type { IncomingPoints } from '@/utils/points/types';
 
 export type WhitelistedContract = {
@@ -93,15 +98,16 @@ export const getPointsAddress = async (): Promise<string> => {
 
 export const getTotalPoints = async (address: string): Promise<number> => {
   try {
-    const url = `${POINTS_API_BASE_URL}/points/${address.toLowerCase()}`;
-    const response = await fetch(url);
+    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const contract = new ethers.Contract(
+      POINTS_TOKEN_CONTRACT_ADDRESS,
+      ['function balanceOf(address) view returns (uint256)'],
+      provider,
+    );
 
-    if (!response.ok) {
-      return 0;
-    }
+    const balance = await contract.balanceOf(address);
 
-    const data = await response.json();
-    return data.total_points || 0;
+    return Number(ethers.formatUnits(balance, 'ether'));
   } catch (error) {
     console.error('Error fetching total points:', error);
     return 0;
