@@ -18,9 +18,6 @@ import {
   KycField,
 } from './constants.js';
 import { poseidon2 } from 'poseidon-lite';
-import { Base8, inCurve, mulPointEscalar, subOrder } from '@zk-kit/baby-jubjub';
-import { signECDSA, verifyECDSA, verifyEffECDSA } from './ecdsa/ecdsa.js';
-import { bigintTo64bitLimbs, getEffECDSAArgs, modInv, modulus } from './ecdsa/utils.js';
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { packBytesAndPoseidon } from '../hash.js';
 import { COMMITMENT_TREE_DEPTH } from '../../constants/constants.js';
@@ -69,40 +66,15 @@ export const createKycDiscloseSelFromFields = (fieldsToReveal: KycField[]): stri
 };
 
 
-export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string, attestationId?: string) => {
+export const generateMockKycRegisterInput = (ofac?: boolean,  userSecret?: string, teeSecret?: string, attestationId?: string) => {
   const kycData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
   const serializedData = serializeKycData(kycData).padEnd(KYC_MAX_LENGTH, '\0');
-
   const msgPadded = Array.from(serializedData, (x) => x.charCodeAt(0));
-
-  const sk = secretKey ? secretKey : BigInt(Math.floor(Math.random() * Number(subOrder - 2n))) + 1n;
-
-  const pk = mulPointEscalar(Base8, sk);
-  console.assert(inCurve(pk), 'Point pk not on curve');
-  console.assert(pk[0] != 0n && pk[1] != 0n, 'pk is zero');
-
-  const sig = signECDSA(sk, msgPadded);
-  console.assert(verifyECDSA(msgPadded, sig, pk) == true, 'Invalid signature');
-
-  let { T, U } = getEffECDSAArgs(msgPadded, sig);
-  console.assert(verifyEffECDSA(sig.s, T, U, pk) == true, 'Invalid signature');
-
-  console.assert(sig.s < subOrder, ' s is greater than scalar field');
-  console.assert(inCurve(T), 'Point T not on curve');
-  console.assert(inCurve(U), 'Point U not on curve');
-
-  const rInv = modInv(sig.R[0], subOrder);
-  const neg_rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
 
   const kycRegisterInput: KycRegisterInput = {
     data_padded: msgPadded.map((x) => x.toString()),
-    s: sig.s.toString(),
-    Tx: T[0].toString(),
-    Ty: T[1].toString(),
-    pubKeyX: pk[0].toString(),
-    pubKeyY: pk[1].toString(),
-    neg_r_inv: neg_rInvLimbs.map((x) => x.toString()),
-    secret: secret || "1234",
+    tee_secret: teeSecret || "1234",
+    user_secret: userSecret || "1234",
     attestation_id: attestationId || '4',
   };
 

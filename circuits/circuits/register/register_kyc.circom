@@ -3,7 +3,7 @@ pragma circom 2.1.9;
 include "circomlib/circuits/bitify.circom";
 include "../utils/kyc/constants.circom";
 include "../utils/passport/customHashers.circom";
-include "../utils/kyc/verifySignature.circom";
+
 
 
 template REGISTER_KYC() {
@@ -13,17 +13,9 @@ template REGISTER_KYC() {
     var id_number_length = ID_NUMBER_LENGTH();
     var idNumberIdx = ID_NUMBER_INDEX();
 
-    var compressed_bit_len = max_length/2;
-
     signal input data_padded[max_length];
-
-    signal input s;
-    signal input Tx;
-    signal input Ty;
-    signal input pubKeyX;
-    signal input pubKeyY;
-    signal input neg_r_inv[4];
-    signal input secret;
+    signal input tee_secret;
+    signal input user_secret;
     signal input attestation_id;
 
     //Calculate msg_hash
@@ -37,37 +29,14 @@ template REGISTER_KYC() {
     bit_decompose.in <== msg_hasher.out;
     signal msg_hash_bits[256] <== bit_decompose.out;
 
-
-    signal msg_hash_limbs[4];
-    component bits2Num[4];
-
-    // Convert msg_hash_bits (little-endian) to 4 LE limbs
-    for (var i = 0; i < 4; i++) {
-        bits2Num[i] = Bits2Num(64);
-        for (var j = 0; j < 64; j++) {
-            bits2Num[i].in[j] <== msg_hash_bits[i * 64 + j];
-        }
-        msg_hash_limbs[i] <== bits2Num[i].out;
-    }
-
-
-    component verifyIdCommSig = VERIFY_KYC_SIGNATURE();
-    verifyIdCommSig.s <== s;
-    verifyIdCommSig.neg_r_inv <== neg_r_inv;
-    verifyIdCommSig.msg_hash_limbs <== msg_hash_limbs;
-    verifyIdCommSig.Tx <== Tx;
-    verifyIdCommSig.Ty <== Ty;
-    verifyIdCommSig.pubKeyX <== pubKeyX;
-    verifyIdCommSig.pubKeyY <== pubKeyY;
-
     signal id_num[id_number_length];
     for (var i = 0; i < id_number_length; i++) {
         id_num[i] <== data_padded[idNumberIdx + i];
     }
-    signal output nullifier <== PackBytesAndPoseidon(id_number_length)(id_num);
-    signal output commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
-    signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
+    signal output nullifier <== PackBytesAndPoseidon(id_number_length)(id_num);
+    signal output commitment <== Poseidon(2)([user_secret, msg_hasher.out]);
+    signal output tee_secret_hash <== Poseidon(1)([tee_secret]);
 
 }
 
