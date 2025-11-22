@@ -7,10 +7,12 @@ import React, { useCallback, useState } from 'react';
 import { Keyboard, StyleSheet } from 'react-native';
 import { Text, TextArea, View, XStack, YStack } from 'tamagui';
 import Clipboard from '@react-native-clipboard/clipboard';
+import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
+import { isMRZDocument } from '@selfxyz/common/utils/types';
 import {
   markCurrentDocumentAsRegistered,
   useSelfClient,
@@ -37,7 +39,13 @@ import {
   reStorePassportDataWithRightCSCA,
 } from '@/providers/passportDataProvider';
 
-const RecoverWithPhraseScreen: React.FC = () => {
+type RecoverWithPhraseScreenProps = StaticScreenProps<{
+  restoreAllDocuments?: boolean;
+}>;
+const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
+  route: { params },
+}) => {
+  const { restoreAllDocuments = false } = params;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const selfClient = useSelfClient();
@@ -111,7 +119,7 @@ const RecoverWithPhraseScreen: React.FC = () => {
           },
         },
       );
-      if (!isRegistered) {
+      if (!isRegistered && !restoreAllDocuments) {
         console.warn(
           'Secret provided did not match a registered passport. Please try again.',
         );
@@ -129,6 +137,56 @@ const RecoverWithPhraseScreen: React.FC = () => {
       }
 
       await markCurrentDocumentAsRegistered(selfClient);
+
+      if (restoreAllDocuments) {
+        const catalog = await selfClient.loadDocumentCatalog();
+        for (const document of catalog.documents) {
+          try {
+            if (!document.isRegistered && document.mock === false) {
+              const data = await selfClient.loadDocumentById(document.id);
+              if (data) {
+                const { isRegistered: docIsRegistered, csca: docCsca } =
+                  await isUserRegisteredWithAlternativeCSCA(
+                    data,
+                    secret as string,
+                    {
+                      getCommitmentTree(docCategory) {
+                        return useProtocolStore.getState()[docCategory]
+                          .commitment_tree;
+                      },
+                      getAltCSCA(docCategory) {
+                        if (docCategory === 'aadhaar') {
+                          const publicKeys =
+                            useProtocolStore.getState().aadhaar.public_keys;
+                          // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                          return publicKeys
+                            ? Object.fromEntries(
+                                publicKeys.map(key => [key, key]),
+                              )
+                            : {};
+                        }
+
+                        return useProtocolStore.getState()[docCategory]
+                          .alternative_csca;
+                      },
+                    },
+                  );
+
+                if (docIsRegistered && docCsca && isMRZDocument(data)) {
+                  await reStorePassportDataWithRightCSCA(
+                    data,
+                    docCsca as string,
+                  );
+                }
+                await markCurrentDocumentAsRegistered(selfClient);
+              }
+            }
+          } catch (error) {
+            console.error('Error restoring document:', error);
+          }
+        }
+      }
+
       setRestoring(false);
       trackEvent(BackupEvents.ACCOUNT_RECOVERY_COMPLETED);
       navigation.navigate('AccountVerifiedSuccess');

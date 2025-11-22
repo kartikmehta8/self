@@ -23,7 +23,11 @@ import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 
 const AccountRecoveryScreen: React.FC = () => {
-  const onRestoreAccountPress = useHapticNavigation('AccountRecoveryChoice');
+  const onRestoreAccountPress = useHapticNavigation('AccountRecoveryChoice', {
+    params: {
+      restoreAllDocuments: true,
+    },
+  });
   const onCreateAccountPress = useHapticNavigation('CloudBackupSettings', {
     params: {
       nextScreen: 'SaveRecoveryPhrase',

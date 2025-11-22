@@ -183,7 +183,9 @@ export const SelfClientProvider = ({ children }: PropsWithChildren) => {
 
     addListener(SdkEvents.PROVING_ACCOUNT_RECOVERY_REQUIRED, () => {
       if (navigationRef.isReady()) {
-        navigationRef.navigate('AccountRecoveryChoice');
+        navigationRef.navigate('AccountRecoveryChoice', {
+          restoreAllDocuments: false,
+        });
       }
     });
 

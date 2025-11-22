@@ -4,10 +4,12 @@
 
 import React, { useCallback, useState } from 'react';
 import { Separator, View, XStack, YStack } from 'tamagui';
+import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
+import { isMRZDocument } from '@selfxyz/common/utils/types';
 import {
   markCurrentDocumentAsRegistered,
   useSelfClient,
@@ -41,7 +43,14 @@ import { STORAGE_NAME, useBackupMnemonic } from '@/services/cloud-backup';
 import { useSettingStore } from '@/stores/settingStore';
 import type { Mnemonic } from '@/types/mnemonic';
 
-const AccountRecoveryChoiceScreen: React.FC = () => {
+type AccountRecoveryChoiceScreenProps = StaticScreenProps<{
+  restoreAllDocuments?: boolean;
+}>;
+
+const AccountRecoveryChoiceScreen: React.FC<
+  AccountRecoveryChoiceScreenProps
+> = ({ route: { params } }) => {
+  const { restoreAllDocuments = false } = params;
   const selfClient = useSelfClient();
   const { useProtocolStore } = selfClient;
   const { trackEvent } = useSelfClient();
@@ -62,7 +71,11 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
   // );
 
   const onRestoreFromCloudNext = useHapticNavigation('AccountVerifiedSuccess');
-  const onEnterRecoveryPress = useHapticNavigation('RecoverWithPhrase');
+  const onEnterRecoveryPress = useHapticNavigation('RecoverWithPhrase', {
+    params: {
+      restoreAllDocuments: restoreAllDocuments,
+    },
+  });
 
   // DISABLED FOR NOW: Turnkey functionality
   // useEffect(() => {
@@ -123,7 +136,7 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
               },
             },
           );
-        if (!isRegistered) {
+        if (!isRegistered && !restoreAllDocuments) {
           console.warn(
             'Secret provided did not match a registered ID. Please try again.',
           );
@@ -146,6 +159,56 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
           csca as string,
         );
         await markCurrentDocumentAsRegistered(selfClient);
+
+        if (restoreAllDocuments) {
+          const catalog = await selfClient.loadDocumentCatalog();
+          for (const document of catalog.documents) {
+            try {
+              if (!document.isRegistered && document.mock === false) {
+                const data = await selfClient.loadDocumentById(document.id);
+                if (data) {
+                  const { isRegistered: docIsRegistered, csca: docCsca } =
+                    await isUserRegisteredWithAlternativeCSCA(
+                      data,
+                      secret as string,
+                      {
+                        getCommitmentTree(docCategory) {
+                          return useProtocolStore.getState()[docCategory]
+                            .commitment_tree;
+                        },
+                        getAltCSCA(docCategory) {
+                          if (docCategory === 'aadhaar') {
+                            const publicKeys =
+                              useProtocolStore.getState().aadhaar.public_keys;
+                            // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                            return publicKeys
+                              ? Object.fromEntries(
+                                  publicKeys.map(key => [key, key]),
+                                )
+                              : {};
+                          }
+
+                          return useProtocolStore.getState()[docCategory]
+                            .alternative_csca;
+                        },
+                      },
+                    );
+
+                  if (docIsRegistered && docCsca && isMRZDocument(data)) {
+                    await reStorePassportDataWithRightCSCA(
+                      data,
+                      docCsca as string,
+                    );
+                  }
+                  await markCurrentDocumentAsRegistered(selfClient);
+                }
+              }
+            } catch (error) {
+              console.error('Error restoring document:', error);
+            }
+          }
+        }
+
         trackEvent(BackupEvents.CLOUD_RESTORE_SUCCESS);
         trackEvent(BackupEvents.ACCOUNT_RECOVERY_COMPLETED);
         onRestoreFromCloudNext();
@@ -167,6 +230,7 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
       toggleCloudBackupEnabled,
       useProtocolStore,
       selfClient,
+      restoreAllDocuments,
     ],
   );
 

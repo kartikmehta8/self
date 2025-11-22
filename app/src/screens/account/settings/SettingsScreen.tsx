@@ -75,6 +75,7 @@ const routes =
         [Data, 'View document info', 'DocumentDataInfo'],
         [Lock, 'Reveal recovery phrase', 'ShowRecoveryPhrase'],
         [Cloud, 'Cloud backup', 'CloudBackupSettings'],
+        [Cloud, 'Restore account', 'AccountRestore'],
         [Feedback, 'Send feedback', 'email_feedback'],
         [ShareIcon, 'Share Self app', 'share'],
         [
