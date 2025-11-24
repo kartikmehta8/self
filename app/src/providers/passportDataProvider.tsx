@@ -54,6 +54,7 @@ import {
   inferDocumentCategory,
 } from '@selfxyz/common/utils';
 import { parseCertificateSimple } from '@selfxyz/common/utils/certificate_parsing/parseCertificateSimple';
+import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
 import type {
   AadhaarData,
   DocumentCatalog,
@@ -886,4 +887,52 @@ export const getAllDocumentsDirectlyFromKeychain = async (): Promise<{
   }
 
   return allDocs;
+};
+
+/**
+ * Verifies if the secret is valid for all documents and marks the status as registered.
+ * This can be used when a document registeration fails mid-process and we want to restore the status of the document,
+ * instead of starting the registration process again (MRZ, NFC, etc).
+ */
+export const restoreSecretForAllDocuments = async (
+  selfClient: SelfClient,
+  secret: string,
+) => {
+  const catalog = await selfClient.loadDocumentCatalog();
+  const { useProtocolStore } = selfClient;
+  for (const document of catalog.documents) {
+    try {
+      if (!document.isRegistered && document.mock === false) {
+        const data = await selfClient.loadDocumentById(document.id);
+        if (data) {
+          const { isRegistered: docIsRegistered, csca: docCsca } =
+            await isUserRegisteredWithAlternativeCSCA(data, secret as string, {
+              getCommitmentTree(docCategory) {
+                return useProtocolStore.getState()[docCategory].commitment_tree;
+              },
+              getAltCSCA(docCategory) {
+                if (docCategory === 'aadhaar') {
+                  const publicKeys =
+                    useProtocolStore.getState().aadhaar.public_keys;
+                  // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                  return publicKeys
+                    ? Object.fromEntries(publicKeys.map(key => [key, key]))
+                    : {};
+                }
+
+                return useProtocolStore.getState()[docCategory]
+                  .alternative_csca;
+              },
+            });
+
+          if (docIsRegistered && docCsca && isMRZDocument(data)) {
+            await reStorePassportDataWithRightCSCA(data, docCsca as string);
+          }
+          await updateDocumentRegistrationState(document.id, true);
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring document:', error);
+    }
+  }
 };

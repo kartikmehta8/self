@@ -37,6 +37,7 @@ import { getPrivateKeyFromMnemonic, useAuth } from '@/providers/authProvider';
 import {
   loadPassportData,
   reStorePassportDataWithRightCSCA,
+  restoreSecretForAllDocuments,
 } from '@/providers/passportDataProvider';
 
 type RecoverWithPhraseScreenProps = StaticScreenProps<{
@@ -139,52 +140,7 @@ const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
       await markCurrentDocumentAsRegistered(selfClient);
 
       if (restoreAllDocuments) {
-        const catalog = await selfClient.loadDocumentCatalog();
-        for (const document of catalog.documents) {
-          try {
-            if (!document.isRegistered && document.mock === false) {
-              const data = await selfClient.loadDocumentById(document.id);
-              if (data) {
-                const { isRegistered: docIsRegistered, csca: docCsca } =
-                  await isUserRegisteredWithAlternativeCSCA(
-                    data,
-                    secret as string,
-                    {
-                      getCommitmentTree(docCategory) {
-                        return useProtocolStore.getState()[docCategory]
-                          .commitment_tree;
-                      },
-                      getAltCSCA(docCategory) {
-                        if (docCategory === 'aadhaar') {
-                          const publicKeys =
-                            useProtocolStore.getState().aadhaar.public_keys;
-                          // Convert string[] to Record<string, string> format expected by AlternativeCSCA
-                          return publicKeys
-                            ? Object.fromEntries(
-                                publicKeys.map(key => [key, key]),
-                              )
-                            : {};
-                        }
-
-                        return useProtocolStore.getState()[docCategory]
-                          .alternative_csca;
-                      },
-                    },
-                  );
-
-                if (docIsRegistered && docCsca && isMRZDocument(data)) {
-                  await reStorePassportDataWithRightCSCA(
-                    data,
-                    docCsca as string,
-                  );
-                }
-                await markCurrentDocumentAsRegistered(selfClient);
-              }
-            }
-          } catch (error) {
-            console.error('Error restoring document:', error);
-          }
-        }
+        await restoreSecretForAllDocuments(selfClient, secret as string);
       }
 
       setRestoring(false);
@@ -202,6 +158,7 @@ const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
     mnemonic,
     navigation,
     restoreAccountFromMnemonic,
+    restoreAllDocuments,
     selfClient,
     trackEvent,
     useProtocolStore,
