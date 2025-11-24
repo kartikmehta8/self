@@ -12,6 +12,7 @@ import {
 
 import AccountRecoveryChoiceScreen from '@/screens/account/recovery/AccountRecoveryChoiceScreen';
 import AccountRecoveryScreen from '@/screens/account/recovery/AccountRecoveryScreen';
+import AccountRestoreScreen from '@/screens/account/recovery/AccountRestoreScreen';
 import DocumentDataNotFoundScreen from '@/screens/account/recovery/DocumentDataNotFoundScreen';
 import RecoverWithPhraseScreen from '@/screens/account/recovery/RecoverWithPhraseScreen';
 import CloudBackupScreen from '@/screens/account/settings/CloudBackupScreen';
@@ -78,6 +79,18 @@ const accountScreens = {
     config: {
       screens: {},
     },
+  },
+  AccountRestore: {
+    screen: AccountRestoreScreen,
+    options: {
+      title: 'Restore Account',
+      headerStyle: {
+        backgroundColor: white,
+      },
+      headerTitleStyle: {
+        color: black,
+      },
+    } as NativeStackNavigationOptions,
   },
   ShowRecoveryPhrase: {
     screen: ShowRecoveryPhraseScreen,

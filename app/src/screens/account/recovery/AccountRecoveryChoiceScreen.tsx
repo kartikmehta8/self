@@ -50,8 +50,8 @@ type AccountRecoveryChoiceScreenProps = StaticScreenProps<{
 
 const AccountRecoveryChoiceScreen: React.FC<
   AccountRecoveryChoiceScreenProps
-> = ({ route: { params } }) => {
-  const { restoreAllDocuments = false } = params;
+> = ({ route }) => {
+  const restoreAllDocuments = route.params?.restoreAllDocuments ?? false;
   const selfClient = useSelfClient();
   const { useProtocolStore } = selfClient;
   const { trackEvent } = useSelfClient();
@@ -83,6 +83,19 @@ const AccountRecoveryChoiceScreen: React.FC<
   //   refreshWallets();
   // }, [refreshWallets]);
 
+  const handleRestoreFailed = useCallback(
+    (reason: string, hasCSCA: boolean) => {
+      console.warn('Failed to restore account');
+      trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED, {
+        reason: reason,
+        hasCSCA: hasCSCA,
+      });
+      navigation.navigate({ name: 'Home', params: {} });
+      setRestoring(false);
+    },
+    [trackEvent, navigation],
+  );
+
   const restoreAccountFlow = useCallback(
     async (
       mnemonic: Mnemonic,
@@ -112,57 +125,57 @@ const AccountRecoveryChoiceScreen: React.FC<
           return false;
         }
 
-        const passportDataParsed = JSON.parse(passportData);
-
-        const { isRegistered, csca } =
-          await isUserRegisteredWithAlternativeCSCA(
-            passportDataParsed,
-            secret as string,
-            {
-              getCommitmentTree(docCategory) {
-                return useProtocolStore.getState()[docCategory].commitment_tree;
-              },
-              getAltCSCA(docCategory) {
-                if (docCategory === 'aadhaar') {
-                  const publicKeys =
-                    useProtocolStore.getState().aadhaar.public_keys;
-                  // Convert string[] to Record<string, string> format expected by AlternativeCSCA
-                  return publicKeys
-                    ? Object.fromEntries(publicKeys.map(key => [key, key]))
-                    : {};
-                }
-
-                return useProtocolStore.getState()[docCategory]
-                  .alternative_csca;
-              },
-            },
-          );
-        if (!isRegistered && !restoreAllDocuments) {
-          console.warn(
-            'Secret provided did not match a registered ID. Please try again.',
-          );
-          trackEvent(
-            BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED,
-            {
-              reason: 'document_not_registered',
-              hasCSCA: !!csca,
-            },
-          );
-          navigation.navigate({ name: 'Home', params: {} });
-          setRestoring(false);
-          return false;
-        }
-        if (isCloudRestore && !cloudBackupEnabled) {
-          toggleCloudBackupEnabled();
-        }
-        await reStorePassportDataWithRightCSCA(
-          passportDataParsed,
-          csca as string,
-        );
-        await markCurrentDocumentAsRegistered(selfClient);
-
         if (restoreAllDocuments) {
-          await restoreSecretForAllDocuments(selfClient, secret as string);
+          const successDocuments = await restoreSecretForAllDocuments(
+            selfClient,
+            secret as string,
+          );
+          if (successDocuments.length === 0) {
+            handleRestoreFailed('all_documents_not_registered', false);
+            return false;
+          }
+        } else {
+          const passportDataParsed = JSON.parse(passportData);
+
+          const { isRegistered, csca } =
+            await isUserRegisteredWithAlternativeCSCA(
+              passportDataParsed,
+              secret as string,
+              {
+                getCommitmentTree(docCategory) {
+                  return useProtocolStore.getState()[docCategory]
+                    .commitment_tree;
+                },
+                getAltCSCA(docCategory) {
+                  if (docCategory === 'aadhaar') {
+                    const publicKeys =
+                      useProtocolStore.getState().aadhaar.public_keys;
+                    // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                    return publicKeys
+                      ? Object.fromEntries(publicKeys.map(key => [key, key]))
+                      : {};
+                  }
+
+                  return useProtocolStore.getState()[docCategory]
+                    .alternative_csca;
+                },
+              },
+            );
+          if (!isRegistered) {
+            console.warn(
+              'Secret provided did not match a registered ID. Please try again.',
+            );
+            handleRestoreFailed('document_not_registered', !!csca);
+            return false;
+          }
+          if (isCloudRestore && !cloudBackupEnabled) {
+            toggleCloudBackupEnabled();
+          }
+          await reStorePassportDataWithRightCSCA(
+            passportDataParsed,
+            csca as string,
+          );
+          await markCurrentDocumentAsRegistered(selfClient);
         }
 
         trackEvent(BackupEvents.CLOUD_RESTORE_SUCCESS);
@@ -178,15 +191,16 @@ const AccountRecoveryChoiceScreen: React.FC<
       }
     },
     [
-      trackEvent,
       restoreAccountFromMnemonic,
-      cloudBackupEnabled,
+      restoreAllDocuments,
+      trackEvent,
       onRestoreFromCloudNext,
       navigation,
-      toggleCloudBackupEnabled,
-      useProtocolStore,
       selfClient,
-      restoreAllDocuments,
+      handleRestoreFailed,
+      cloudBackupEnabled,
+      useProtocolStore,
+      toggleCloudBackupEnabled,
     ],
   );
 

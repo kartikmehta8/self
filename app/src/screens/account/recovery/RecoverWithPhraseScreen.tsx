@@ -44,9 +44,9 @@ type RecoverWithPhraseScreenProps = StaticScreenProps<{
   restoreAllDocuments?: boolean;
 }>;
 const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
-  route: { params },
+  route,
 }) => {
-  const { restoreAllDocuments = false } = params;
+  const restoreAllDocuments = route.params?.restoreAllDocuments ?? false;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const selfClient = useSelfClient();
@@ -62,6 +62,19 @@ const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
       Keyboard.dismiss();
     }
   }, []);
+
+  const handleRestoreFailed = useCallback(
+    (reason: string, hasCSCA: boolean) => {
+      console.warn('Failed to restore account');
+      trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED, {
+        reason: reason,
+        hasCSCA,
+      });
+      navigation.navigate({ name: 'Home', params: {} });
+      setRestoring(false);
+    },
+    [trackEvent, navigation],
+  );
 
   const restoreAccount = useCallback(async () => {
     try {
@@ -97,50 +110,55 @@ const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
         setRestoring(false);
         return;
       }
-      const passportDataParsed = JSON.parse(passportData);
-
-      const { isRegistered, csca } = await isUserRegisteredWithAlternativeCSCA(
-        passportDataParsed,
-        secret as string,
-        {
-          getCommitmentTree(docCategory) {
-            return useProtocolStore.getState()[docCategory].commitment_tree;
-          },
-          getAltCSCA(docCategory) {
-            if (docCategory === 'aadhaar') {
-              const publicKeys =
-                useProtocolStore.getState().aadhaar.public_keys;
-              // Convert string[] to Record<string, string> format expected by AlternativeCSCA
-              return publicKeys
-                ? Object.fromEntries(publicKeys.map(key => [key, key]))
-                : {};
-            }
-
-            return useProtocolStore.getState()[docCategory].alternative_csca;
-          },
-        },
-      );
-      if (!isRegistered && !restoreAllDocuments) {
-        console.warn(
-          'Secret provided did not match a registered passport. Please try again.',
-        );
-        trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED, {
-          reason: 'document_not_registered',
-          hasCSCA: !!csca,
-        });
-        navigation.navigate({ name: 'Home', params: {} });
-        setRestoring(false);
-        return;
-      }
-
-      if (csca) {
-        await reStorePassportDataWithRightCSCA(passportDataParsed, csca);
-      }
-
-      await markCurrentDocumentAsRegistered(selfClient);
 
       if (restoreAllDocuments) {
-        await restoreSecretForAllDocuments(selfClient, secret as string);
+        const successDocuments = await restoreSecretForAllDocuments(
+          selfClient,
+          secret as string,
+        );
+        if (successDocuments.length === 0) {
+          handleRestoreFailed('all_documents_not_registered', false);
+          return;
+        }
+      } else {
+        const passportDataParsed = JSON.parse(passportData);
+
+        const { isRegistered, csca } =
+          await isUserRegisteredWithAlternativeCSCA(
+            passportDataParsed,
+            secret as string,
+            {
+              getCommitmentTree(docCategory) {
+                return useProtocolStore.getState()[docCategory].commitment_tree;
+              },
+              getAltCSCA(docCategory) {
+                if (docCategory === 'aadhaar') {
+                  const publicKeys =
+                    useProtocolStore.getState().aadhaar.public_keys;
+                  // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                  return publicKeys
+                    ? Object.fromEntries(publicKeys.map(key => [key, key]))
+                    : {};
+                }
+
+                return useProtocolStore.getState()[docCategory]
+                  .alternative_csca;
+              },
+            },
+          );
+        if (!isRegistered) {
+          console.warn(
+            'Secret provided did not match a registered passport. Please try again.',
+          );
+          handleRestoreFailed('document_not_registered', !!csca);
+          return;
+        }
+
+        if (csca) {
+          await reStorePassportDataWithRightCSCA(passportDataParsed, csca);
+        }
+
+        await markCurrentDocumentAsRegistered(selfClient);
       }
 
       setRestoring(false);
@@ -155,6 +173,7 @@ const RecoverWithPhraseScreen: React.FC<RecoverWithPhraseScreenProps> = ({
       navigation.navigate({ name: 'Home', params: {} });
     }
   }, [
+    handleRestoreFailed,
     mnemonic,
     navigation,
     restoreAccountFromMnemonic,

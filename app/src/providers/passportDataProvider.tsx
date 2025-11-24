@@ -897,9 +897,13 @@ export const getAllDocumentsDirectlyFromKeychain = async (): Promise<{
 export const restoreSecretForAllDocuments = async (
   selfClient: SelfClient,
   secret: string,
-) => {
+): Promise<string[]> => {
   const catalog = await selfClient.loadDocumentCatalog();
-  const { useProtocolStore } = selfClient;
+  const useProtocolStore = selfClient.useProtocolStore;
+  const successDocuments: string[] = [];
+  if (!useProtocolStore.getState().aadhaar.public_keys) {
+    await useProtocolStore.getState().aadhaar.fetch_all('prod');
+  }
   for (const document of catalog.documents) {
     try {
       if (!document.isRegistered && document.mock === false) {
@@ -925,14 +929,20 @@ export const restoreSecretForAllDocuments = async (
               },
             });
 
+          if (!docIsRegistered) {
+            continue;
+          }
+
           if (docIsRegistered && docCsca && isMRZDocument(data)) {
             await reStorePassportDataWithRightCSCA(data, docCsca as string);
           }
           await updateDocumentRegistrationState(document.id, true);
+          successDocuments.push(document.id);
         }
       }
     } catch (error) {
       console.error('Error restoring document:', error);
     }
   }
+  return successDocuments;
 };
