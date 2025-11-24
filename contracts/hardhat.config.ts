@@ -18,8 +18,9 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 100000,
+        runs: 200,
       },
+      viaIR: true,
     },
   },
   contractSizer: {
@@ -59,6 +60,11 @@ const config: HardhatUserConfig = {
     "celo-sepolia": {
       chainId: 11142220,
       url: process.env.CELO_SEPOLIA_RPC_URL || "https://rpc.ankr.com/celo_sepolia",
+      accounts: [PRIVATE_KEY],
+    },
+    baseSepolia: {
+      chainId: 84532,
+      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       accounts: [PRIVATE_KEY],
     },
   },

@@ -18,8 +18,13 @@ import {IAadhaarRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVeri
 import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
 import {CircuitConstantsV2} from "./constants/CircuitConstantsV2.sol";
 import {Formatter} from "./libraries/Formatter.sol";
+import {IMailboxV3} from "./interfaces/hyperlane/IMailboxV3.sol";
+import {TypeCasts} from "./libraries/TypeCasts.sol";
 
 contract IdentityVerificationHubImplV2 is ImplRoot {
+    using TypeCasts for address;
+    using TypeCasts for bytes32;
+
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub
     struct IdentityVerificationHubStorage {
         uint256 _circuitVersion;
@@ -33,8 +38,17 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     struct IdentityVerificationHubV2Storage {
         mapping(bytes32 configId => SelfStructs.VerificationConfigV2) _v2VerificationConfigs;
     }
-    // We should consider to add bridge address
-    // address bridgeAddress;
+
+    /// @custom:storage-location erc7201:self.storage.IdentityVerificationHubCrossChain
+    struct IdentityVerificationHubCrossChainStorage {
+        // Hyperlane Mailbox address
+        address _mailbox;
+        // Mapping from blockchain chainId to Hyperlane domainId
+        mapping(uint256 chainId => uint32 domainId) _chainIdToDomainId;
+        // Mapping from chainId to receiver contract address (as bytes32) on that chain
+        // Using bytes32 supports both EVM (20 bytes) and non-EVM chains (e.g., Solana: 32 bytes)
+        mapping(uint256 chainId => bytes32 receiver) _chainIdToReceiver;
+    }
 
     /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.IdentityVerificationHub")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant IDENTITYVERIFICATIONHUB_STORAGE_LOCATION =
@@ -43,6 +57,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.IdentityVerificationHubV2")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant IDENTITYVERIFICATIONHUBV2_STORAGE_LOCATION =
         0xf9b5980dcec1a8b0609576a1f453bb2cad4732a0ea02bb89154d44b14a306c00;
+
+    /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.IdentityVerificationHubCrossChain")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant IDENTITYVERIFICATIONHUBCROSSCHAIN_STORAGE_LOCATION =
+        0x8f5e9d7e6c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a00;
 
     /// @notice The AADHAAR registration window around the current block timestamp.
     uint256 public AADHAAR_REGISTRATION_WINDOW = 20;
@@ -66,6 +84,21 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function _getIdentityVerificationHubV2Storage() private pure returns (IdentityVerificationHubV2Storage storage $) {
         assembly {
             $.slot := IDENTITYVERIFICATIONHUBV2_STORAGE_LOCATION
+        }
+    }
+
+    /**
+     * @notice Returns the storage struct for cross-chain functionality.
+     * @dev Uses ERC-7201 storage pattern for upgradeable contracts.
+     * @return $ The cross-chain storage struct reference.
+     */
+    function _getIdentityVerificationHubCrossChainStorage()
+        private
+        pure
+        returns (IdentityVerificationHubCrossChainStorage storage $)
+    {
+        assembly {
+            $.slot := IDENTITYVERIFICATIONHUBCROSSCHAIN_STORAGE_LOCATION
         }
     }
 
@@ -126,6 +159,40 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes userDataToPass
     );
 
+    /**
+     * @notice Emitted when the Hyperlane Mailbox address is updated.
+     * @param mailbox The new Hyperlane Mailbox address.
+     */
+    event MailboxUpdated(address indexed mailbox);
+
+    /**
+     * @notice Emitted when a chain domain mapping is set.
+     * @param chainId The Ethereum chain ID.
+     * @param domainId The Hyperlane domain ID.
+     */
+    event ChainDomainSet(uint256 indexed chainId, uint32 domainId);
+
+    /**
+     * @notice Emitted when a receiver address is set for a chain.
+     * @param chainId The chain ID.
+     * @param receiver The receiver contract address on that chain (bytes32 format supports all chains).
+     */
+    event ReceiverSet(uint256 indexed chainId, bytes32 indexed receiver);
+
+    /**
+     * @notice Emitted when a message is dispatched via Hyperlane.
+     * @param messageId The Hyperlane message ID.
+     * @param destChainId The destination chain ID.
+     * @param receiver The receiver contract address (bytes32 format).
+     * @param targetContract The target contract on destination chain (bytes32 format).
+     */
+    event MessageDispatched(
+        bytes32 indexed messageId,
+        uint256 indexed destChainId,
+        bytes32 indexed receiver,
+        bytes32 targetContract
+    );
+
     // ====================================================
     // Errors
     // ====================================================
@@ -174,9 +241,21 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @dev Ensures that the scope value in the header matches the scope value in the proof.
     error ScopeMismatch();
 
-    /// @notice Thrown when cross-chain verification is attempted but not yet supported.
-    /// @dev Cross-chain bridging functionality is not implemented yet.
-    error CrossChainIsNotSupportedYet();
+    /// @notice Thrown when the Hyperlane Mailbox is not configured.
+    /// @dev Mailbox must be set before cross-chain operations can be performed.
+    error MailboxNotSet();
+
+    /// @notice Thrown when a domain mapping is not configured for a chain.
+    /// @dev Each destination chain must have a corresponding Hyperlane domain ID set.
+    error DomainNotSet(uint256 chainId);
+
+    /// @notice Thrown when a receiver address is not configured for a chain.
+    /// @dev Each destination chain must have a receiver contract address set.
+    error ReceiverNotSet(uint256 chainId);
+
+    /// @notice Thrown when attempting to set zero address.
+    /// @dev Prevents setting critical addresses to zero.
+    error ZeroAddress();
 
     /// @notice Thrown when the input data is too short for decoding.
     /// @dev The input data must be at least 97 bytes (1 + 31 + 32 + 32 + 1 minimum).
@@ -332,6 +411,90 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyOwner {
         AADHAAR_REGISTRATION_WINDOW = window;
     }
+
+    // ====================================================
+    // Cross-Chain Configuration Functions
+    // ====================================================
+
+    /**
+     * @notice Sets the Hyperlane Mailbox address.
+     * @dev Can only be called by the proxy contract owner.
+     * @param mailbox The Hyperlane Mailbox address.
+     */
+    function setMailbox(address mailbox) external virtual onlyProxy onlyOwner {
+        if (mailbox == address(0)) {
+            revert ZeroAddress();
+        }
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        $._mailbox = mailbox;
+        emit MailboxUpdated(mailbox);
+    }
+
+    /**
+     * @notice Sets the Hyperlane domain ID for a given chain ID.
+     * @dev Can only be called by the proxy contract owner.
+     * @param chainId The Ethereum chain ID.
+     * @param domainId The Hyperlane domain ID.
+     */
+    function setChainDomain(uint256 chainId, uint32 domainId) external virtual onlyProxy onlyOwner {
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        $._chainIdToDomainId[chainId] = domainId;
+        emit ChainDomainSet(chainId, domainId);
+    }
+
+    /**
+     * @notice Sets the receiver contract address for a given chain ID.
+     * @dev Can only be called by the proxy contract owner.
+     * @param chainId The Ethereum chain ID.
+     * @param receiver The receiver contract address on that chain.
+     */
+    function setReceiver(uint256 chainId, bytes32 receiver) external virtual onlyProxy onlyOwner {
+        if (receiver == bytes32(0)) {
+            revert ZeroAddress();
+        }
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        $._chainIdToReceiver[chainId] = receiver;
+        emit ReceiverSet(chainId, receiver);
+    }
+
+    /**
+     * @notice Gets the Hyperlane Mailbox address.
+     * @return The Hyperlane Mailbox address.
+     */
+    function getMailbox() external view returns (address) {
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        return $._mailbox;
+    }
+
+    /**
+     * @notice Gets the Hyperlane domain ID for a given chain ID.
+     * @param chainId The Ethereum chain ID.
+     * @return The Hyperlane domain ID.
+     */
+    function getChainDomain(uint256 chainId) external view returns (uint32) {
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        return $._chainIdToDomainId[chainId];
+    }
+
+    /**
+     * @notice Gets the receiver contract address for a given chain ID.
+     * @param chainId The Ethereum chain ID.
+     * @return The receiver contract address on that chain.
+     */
+    function getReceiver(uint256 chainId) external view returns (bytes32) {
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+        return $._chainIdToReceiver[chainId];
+    }
+
+    /**
+     * @notice Allows the contract to receive native tokens for pre-funding cross-chain operations.
+     * @dev These funds are used to pay Hyperlane hook fees when dispatching messages.
+     */
+    receive() external payable {}
+
+    // ====================================================
+    // Main Verification Functions
+    // ====================================================
 
     /**
      * @notice Main verification function with new structured input format.
@@ -648,10 +811,58 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         if (destChainId == block.chainid) {
             ISelfVerificationRoot(msg.sender).onVerificationSuccess(output, userDataToPass);
         } else {
-            // Call external bridge
-            // _handleBridge()
-            revert CrossChainIsNotSupportedYet();
+            _handleBridge(destChainId, msg.sender, output, userDataToPass);
         }
+    }
+
+    /**
+     * @notice Handles cross-chain bridging of verification results via Hyperlane.
+     * @dev Encodes the message and dispatches it to the destination chain via Hyperlane Mailbox.
+     * @param destChainId The destination chain identifier.
+     * @param targetContract The target contract that initiated the verification.
+     * @param output The verification output data.
+     * @param userDataToPass The user data to pass to the result handler.
+     */
+    function _handleBridge(
+        uint256 destChainId,
+        address targetContract,
+        bytes memory output,
+        bytes memory userDataToPass
+    ) internal {
+        IdentityVerificationHubCrossChainStorage storage $ = _getIdentityVerificationHubCrossChainStorage();
+
+        // Validate mailbox is set
+        if ($._mailbox == address(0)) {
+            revert MailboxNotSet();
+        }
+
+        // Get domain ID for destination chain
+        uint32 domainId = $._chainIdToDomainId[destChainId];
+        if (domainId == 0) {
+            revert DomainNotSet(destChainId);
+        }
+
+        // Get receiver address for destination chain (as bytes32)
+        bytes32 receiver = $._chainIdToReceiver[destChainId];
+        if (receiver == bytes32(0)) {
+            revert ReceiverNotSet(destChainId);
+        }
+
+        // Convert targetContract to bytes32 for cross-chain compatibility
+        bytes32 targetContractBytes32 = targetContract.addressToBytes32();
+
+        // Encode the message: targetContract (as bytes32), output, userDataToPass
+        bytes memory message = abi.encode(targetContractBytes32, output, userDataToPass);
+
+        // Dispatch message via Hyperlane Mailbox
+        // The contract should be pre-funded with native tokens to pay for hook fees
+        bytes32 messageId = IMailboxV3($._mailbox).dispatch{value: address(this).balance}(
+            domainId,
+            receiver,
+            message
+        );
+
+        emit MessageDispatched(messageId, destChainId, receiver, targetContractBytes32);
     }
 
     /**

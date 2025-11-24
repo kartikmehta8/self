@@ -38,3 +38,4 @@ contracts/verifiers/local/*
 
 .yarn
 .yarnrc.yml
+demo-frontend/
