@@ -49,6 +49,7 @@ template DISCLOSE(
     signal input ofac_nameyob_smt_siblings[nameyobTreeLevels];
 
     signal input selector_ofac;
+    signal input should_be_included;
 
     // assert selectors are 0 or 1
     for (var i = 0; i < 88; i++) {
@@ -118,10 +119,11 @@ template DISCLOSE(
     signal output revealedData_packed[3] <== PackBytes(95)(revealedData);
 
     var chunkLength = computeIntChunkLength(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3);
-    component proveCountryIsNotInList = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);
+    component proveCountryIsNotInList = ProveCountryIsInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);
     proveCountryIsNotInList.country[0] <== dg1[7];
     proveCountryIsNotInList.country[1] <== dg1[8];
     proveCountryIsNotInList.country[2] <== dg1[9];
     proveCountryIsNotInList.forbidden_countries_list <== forbidden_countries_list;
+    proveCountryIsNotInList.should_be_included <== should_be_included;
     signal output forbidden_countries_list_packed[chunkLength] <== proveCountryIsNotInList.forbidden_countries_list_packed;
 }

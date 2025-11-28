@@ -9,18 +9,25 @@ include "@openpassport/zk-email-circuits/utils/bytes.circom";
 /// @input forbidden_countries_list Forbidden countries list user wants to prove he is not from
 /// @output forbidden_countries_list_packed Packed forbidden countries list — gas optimized
 
-template ProveCountryIsNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH) {
+template ProveCountryIsInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH) {
     signal input dg1[93];
-    signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3]; 
+    signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3];
+    signal input should_be_included;
+
+    should_be_included * (should_be_included - 1) === 0;
+    signal accumulator <== 0;
 
     signal equality_results[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH][4];
     for (var i = 0; i < MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH; i++) {
         equality_results[i][0] <== IsEqual()([dg1[7], forbidden_countries_list[i * 3]]);
-            equality_results[i][1] <== IsEqual()([dg1[8], forbidden_countries_list[i * 3 + 1]]); 
+            equality_results[i][1] <== IsEqual()([dg1[8], forbidden_countries_list[i * 3 + 1]]);
             equality_results[i][2] <== IsEqual()([dg1[9], forbidden_countries_list[i * 3 + 2]]);
             equality_results[i][3] <==  equality_results[i][0] * equality_results[i][1];
-            0 ===  equality_results[i][3] * equality_results[i][2];
+            accumulator <== accumulator + equality_results[i][3] * equality_results[i][2];
     }
+    accumulator * (1 - should_be_included) === 0;
+    signal is_zero <== IsZero()(accumulator);
+    is_zero * should_be_included === 0;
 
     var chunkLength = computeIntChunkLength(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3);
     signal output forbidden_countries_list_packed[chunkLength]  <== PackBytes(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3)(forbidden_countries_list);
@@ -28,12 +35,12 @@ template ProveCountryIsNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH) {
 
 template ProveCountryIsNotInList_ID(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH) {
     signal input dg1[95];
-    signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3]; 
+    signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3];
 
     signal equality_results[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH][4];
     for (var i = 0; i < MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH; i++) {
         equality_results[i][0] <== IsEqual()([dg1[7], forbidden_countries_list[i * 3]]);
-            equality_results[i][1] <== IsEqual()([dg1[8], forbidden_countries_list[i * 3 + 1]]); 
+            equality_results[i][1] <== IsEqual()([dg1[8], forbidden_countries_list[i * 3 + 1]]);
             equality_results[i][2] <== IsEqual()([dg1[9], forbidden_countries_list[i * 3 + 2]]);
             equality_results[i][3] <==  equality_results[i][0] * equality_results[i][1];
             0 ===  equality_results[i][3] * equality_results[i][2];

@@ -362,6 +362,7 @@ export function generateCircuitInputsVCandDisclose(
   user_identifier: string,
   upper_age_limit: string = '00',
   selector_younger_than: string | number = '0',
+  should_be_included: string | number = '0',
 ) {
   const { mrz, eContent, signedAttr, documentType } = passportData;
   const passportMetadata = passportData.passportMetadata;
@@ -452,6 +453,7 @@ export function generateCircuitInputsVCandDisclose(
     user_identifier: formatInput(user_identifier),
     selector_ofac: formatInput(selector_ofac),
     forbidden_countries_list: formatInput(formatCountriesList(forbidden_countries_list)),
+    should_be_included: formatInput(should_be_included),
   };
 
   const ofacNameInputs = {

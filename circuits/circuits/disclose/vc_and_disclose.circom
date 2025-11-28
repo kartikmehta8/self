@@ -82,6 +82,8 @@ template VC_AND_DISCLOSE(
     signal input scope;
     signal input user_identifier;
 
+    signal input should_be_included;
+
     // verify commitment is part of the merkle tree
     VERIFY_COMMITMENT(nLevels, DG1_LEN)(
         secret,
