@@ -126,7 +126,7 @@ export const MAX_CERT_BYTES: Partial<Record<keyof typeof SignatureAlgorithmIndex
  */
 export const MAX_DATAHASHES_LEN = 320;
 
-export const MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH = 40;
+export const MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH = 21;
 
 export const MAX_PADDED_ECONTENT_LEN: Partial<Record<(typeof hashAlgos)[number], number>> = {
   sha1: 384,
