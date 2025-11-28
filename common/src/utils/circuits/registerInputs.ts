@@ -182,7 +182,7 @@ export function generateTEEInputsDiscloseStateless(
 
   const selector_dg1 = getSelectorDg1(document, disclosures);
 
-  const majority = disclosures.minimumAge ? disclosures.minimumAge.toString() : DEFAULT_MAJORITY;
+  const lower_age_limit = disclosures.minimumAge ? disclosures.minimumAge.toString() : DEFAULT_MAJORITY;
   const selector_older_than = disclosures.minimumAge ? '1' : '0';
 
   const selector_ofac = disclosures.ofac ? 1 : 0;
@@ -220,13 +220,13 @@ export function generateTEEInputsDiscloseStateless(
     selector_dg1,
     selector_older_than,
     tree,
-    majority,
+    lower_age_limit,
     passportNoAndNationalitySMT,
     nameAndDobSMT,
     nameAndYobSMT,
     selector_ofac,
     disclosures.excludedCountries ?? [],
-    userIdentifierHash.toString()
+    userIdentifierHash.toString(),
   );
   return {
     inputs,

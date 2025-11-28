@@ -57,9 +57,11 @@ template VC_AND_DISCLOSE(
 
     signal input selector_dg1[88];
 
-    signal input majority[2];
+    signal input lower_age_limit[2];
+    signal input upper_age_limit[2];
     signal input current_date[6];
     signal input selector_older_than;
+    signal input selector_younger_than;
 
     signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3];
 
@@ -98,9 +100,9 @@ template VC_AND_DISCLOSE(
     for (var i = 0; i < 6; i++) {
         validity_ASCII[i] <== dg1[70 +i];
     }
-    
+
     IsValid()(current_date,validity_ASCII);
-    
+
     // disclose optional data
     component disclose = DISCLOSE(
         MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH,
@@ -111,8 +113,10 @@ template VC_AND_DISCLOSE(
     disclose.dg1 <== dg1;
     disclose.selector_dg1 <== selector_dg1;
     disclose.selector_older_than <== selector_older_than;
+    disclose.selector_younger_than <== selector_younger_than;
     disclose.current_date <== current_date;
-    disclose.majority <== majority;
+    disclose.lower_age_limit <== lower_age_limit;
+    disclose.upper_age_limit <== upper_age_limit;
     disclose.ofac_passportno_smt_leaf_key <== ofac_passportno_smt_leaf_key;
     disclose.ofac_passportno_smt_root <== ofac_passportno_smt_root;
     disclose.ofac_passportno_smt_siblings <== ofac_passportno_smt_siblings;

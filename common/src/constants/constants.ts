@@ -283,6 +283,7 @@ export const attributeToPosition = {
   expiry_date: [65, 70],
   older_than: [88, 89],
   ofac: [90, 90],
+  younger_than: [93, 94],
 };
 export const attributeToPosition_ID = {
   issuing_state: [2, 4],

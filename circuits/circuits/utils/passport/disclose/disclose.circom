@@ -8,9 +8,9 @@ include "../../aadhaar/disclose/country_not_in_list.circom";
 /// @param MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH Maximum number of countries present in the forbidden countries list
 /// @input dg1 Data group 1 of the passport
 /// @input selector_dg1 bitmap used which bytes from the dg1 are revealed
-/// @input majority Majority user wants to prove he is older than: YY — ASCII
+/// @input lower_age_limit lower_age_limit user wants to prove he is older than: YY — ASCII
 /// @input current_date Current date: YYMMDD — number
-/// @input selector_older_than bitmap used to reveal the majority
+/// @input selector_older_than bitmap used to reveal the lower_age_limit
 /// @input forbidden_countries_list Forbidden countries list user wants to prove he is not from
 /// @input smt_leaf_key value of the leaf of the smt corresponding to his path
 /// @input smt_root root of the smt
@@ -28,9 +28,11 @@ template DISCLOSE(
     signal input dg1[93];
     signal input selector_dg1[88];
 
-    signal input majority[2];
+    signal input lower_age_limit[2];
+    signal input upper_age_limit[2];
     signal input current_date[6];
     signal input selector_older_than;
+    signal input selector_younger_than;
 
     signal input forbidden_countries_list[MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3];
 
@@ -57,15 +59,27 @@ template DISCLOSE(
 
     // Older than
     component isOlderThan = IsOlderThan();
-    isOlderThan.majorityASCII <== majority;
+    isOlderThan.majorityASCII <== lower_age_limit;
     for (var i = 0; i < 6; i++) {
         isOlderThan.currDate[i] <== current_date[i];
         isOlderThan.birthDateASCII[i] <== dg1[62 + i];
     }
 
     signal older_than_verified[2];
-    older_than_verified[0] <== isOlderThan.out * majority[0];
-    older_than_verified[1] <== isOlderThan.out * majority[1];
+    older_than_verified[0] <== isOlderThan.out * lower_age_limit[0];
+    older_than_verified[1] <== isOlderThan.out * lower_age_limit[1];
+
+    // Younger than
+    component isYoungerThan = IsYoungerThan();
+    isYoungerThan.majorityASCII <== upper_age_limit;
+    for (var i = 0; i < 6; i++) {
+        isYoungerThan.currDate[i] <== current_date[i];
+        isYoungerThan.birthDateASCII[i] <== dg1[62 + i];
+    }
+
+    signal younger_than_verified[2];
+    younger_than_verified[0] <== (1 - isYoungerThan.out) * upper_age_limit[0];
+    younger_than_verified[1] <== (1 - isYoungerThan.out) * upper_age_limit[1];
 
     signal revealedData[93]; // mrz: 88 bytes | older_than: 2 bytes | ofac: 3 byte
     for (var i = 0; i < 88; i++) {
@@ -99,7 +113,9 @@ template DISCLOSE(
     revealedData[90] <== ofacCheckResultPassportNo * selector_ofac;
     revealedData[91] <== ofacCheckResultNameDob * selector_ofac;
     revealedData[92] <== ofacCheckResultNameYob * selector_ofac;
-    signal output revealedData_packed[3] <== PackBytes(93)(revealedData);
+    revealedData[93] <== younger_than_verified[0] * selector_younger_than;
+    revealedData[94] <== younger_than_verified[1] * selector_younger_than;
+    signal output revealedData_packed[3] <== PackBytes(95)(revealedData);
 
     var chunkLength = computeIntChunkLength(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * 3);
     component proveCountryIsNotInList = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);

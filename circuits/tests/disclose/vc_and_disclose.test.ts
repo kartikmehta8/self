@@ -40,7 +40,8 @@ describe('Disclose', function () {
   const forbidden_countries_list = ['ALG', 'DZA'];
 
   const secret = BigInt(Math.floor(Math.random() * Math.pow(2, 254))).toString();
-  const majority = '18';
+  const lower_age_limit = '18';
+  const upper_age_limit = '99';
   const user_identifier = castFromUUID(crypto.randomUUID());
   const selector_dg1 = Array(88).fill('1');
   const selector_older_than = '1';
@@ -86,13 +87,14 @@ describe('Disclose', function () {
       selector_dg1,
       selector_older_than,
       tree,
-      majority,
+      lower_age_limit,
       passportNo_smt,
       nameAndDob_smt,
       nameAndYob_smt,
       selector_ofac,
       forbidden_countries_list,
-      user_identifier
+      user_identifier,
+      
     );
   });
 
@@ -179,7 +181,7 @@ describe('Disclose', function () {
     });
   });
 
-  it('should allow disclosing majority', async function () {
+  it('should allow disclosing lower age limit', async function () {
     const selector_dg1 = Array(88).fill('0');
 
     w = await circuit.calculateWitness({
@@ -192,13 +194,23 @@ describe('Disclose', function () {
     const older_than = getAttributeFromUnpackedReveal(reveal_unpacked, 'older_than', 'passport');
     expect(older_than).to.equal('18');
   });
-
-  it("shouldn't allow disclosing wrong majority", async function () {
+  it('should allow disclosing upper age limit', async function () {
+    w = await circuit.calculateWitness({
+      ...inputs,
+      upper_age_limit: '99',
+      selector_younger_than: '1',
+    });
+    const revealedData_packed = await circuit.getOutput(w, ['revealedData_packed[3]']);
+    const reveal_unpacked = formatAndUnpackReveal(revealedData_packed, 'passport');
+    const younger_than = getAttributeFromUnpackedReveal(reveal_unpacked, 'younger_than', 'passport');
+    expect(younger_than).to.equal('99');
+  });
+  it("shouldn't allow disclosing wrong lower age limit", async function () {
     const selector_dg1 = Array(88).fill('0');
 
     w = await circuit.calculateWitness({
       ...inputs,
-      majority: ['5', '0'].map((char) => BigInt(char.charCodeAt(0)).toString()),
+      lower_age_limit: '18',
       selector_dg1: selector_dg1.map(String),
     });
 
@@ -207,6 +219,18 @@ describe('Disclose', function () {
     const reveal_unpacked = formatAndUnpackReveal(revealedData_packed, 'passport');
     expect(reveal_unpacked[88]).to.equal('\x00');
     expect(reveal_unpacked[89]).to.equal('\x00');
+  });
+  it("shouldn't allow disclosing wrong upper age limit", async function () {
+    w = await circuit.calculateWitness({
+      ...inputs,
+      upper_age_limit: '5',
+      selector_younger_than: '1',
+    });
+    const revealedData_packed = await circuit.getOutput(w, ['revealedData_packed[3]']);
+    const reveal_unpacked = formatAndUnpackReveal(revealedData_packed, 'passport');
+    const younger_than = getAttributeFromUnpackedReveal(reveal_unpacked, 'younger_than', 'passport');
+
+    expect(younger_than).to.equal('0');
   });
 
   describe('OFAC disclosure', function () {
@@ -372,7 +396,7 @@ describe('Disclose', function () {
           Array(88).fill('0'), // selector_dg1
           selector_older_than,
           tree,
-          majority,
+          lower_age_limit,
           passportNo_smt,
           nameAndDob_smt,
           nameAndYob_smt,

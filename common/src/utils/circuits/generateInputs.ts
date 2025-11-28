@@ -353,13 +353,15 @@ export function generateCircuitInputsVCandDisclose(
   selector_dg1: string[],
   selector_older_than: string | number,
   merkletree: LeanIMT,
-  majority: string,
+  lower_age_limit: string,
   passportNo_smt: SMT | null,
   nameAndDob_smt: SMT,
   nameAndYob_smt: SMT,
   selector_ofac: string | number,
   forbidden_countries_list: string[],
-  user_identifier: string
+  user_identifier: string,
+  upper_age_limit: string = '00',
+  selector_younger_than: string | number = '0',
 ) {
   const { mrz, eContent, signedAttr, documentType } = passportData;
   const passportMetadata = passportData.passportMetadata;
@@ -385,8 +387,10 @@ export function generateCircuitInputsVCandDisclose(
     index,
     COMMITMENT_TREE_DEPTH
   );
-  const formattedMajority = majority.length === 1 ? `0${majority}` : majority;
-  const majority_ascii = formattedMajority.split('').map((char) => char.charCodeAt(0));
+  const formattedMajority = lower_age_limit.length === 1 ? `0${lower_age_limit}` : lower_age_limit;
+  const lower_age_limit_ascii = formattedMajority.split('').map((char) => char.charCodeAt(0));
+  const formattedUpperAgeLimit = upper_age_limit.length === 1 ? `0${upper_age_limit}` : upper_age_limit;
+  const upper_age_limit_ascii = formattedUpperAgeLimit.split('').map((char) => char.charCodeAt(0));
 
   // Define default values for SMT proofs (BigInt(0) for roots/keys, array of 0s for siblings)
   const defaultSiblings = Array(OFAC_TREE_LEVELS).fill(BigInt(0));
@@ -442,7 +446,9 @@ export function generateCircuitInputsVCandDisclose(
     selector_older_than: formatInput(selector_older_than),
     scope: formatInput(scope),
     current_date: formatInput(getCurrentDateYYMMDD()),
-    majority: formatInput(majority_ascii),
+    lower_age_limit: formatInput(lower_age_limit_ascii),
+    upper_age_limit: formatInput(upper_age_limit_ascii),
+    selector_younger_than: formatInput(selector_younger_than),
     user_identifier: formatInput(user_identifier),
     selector_ofac: formatInput(selector_ofac),
     forbidden_countries_list: formatInput(formatCountriesList(forbidden_countries_list)),
