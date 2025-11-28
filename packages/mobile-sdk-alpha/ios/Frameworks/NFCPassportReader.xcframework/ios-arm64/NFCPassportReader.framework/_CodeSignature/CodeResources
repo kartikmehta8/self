@@ -6,27 +6,27 @@
 	<dict>
 		<key>Info.plist</key>
 		<data>
-		VdUxApJBniYT/1b0pZnIs4NBKXs=
+		jp06EMAN7mebik4ew3g9Z0vsaI4=
 		</data>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.abi.json</key>
 		<data>
-		d4OFy2Mr7tioWVKoj/PzbMQRg9U=
+		77g6wFVYOWqIR/BJfayeWHAbDLk=
 		</data>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<data>
-		j1ws4zGWszrVEQViUa5MEm5+Zl4=
+		1ADFEiBh/yVYbmIFITm2OAQPKaY=
 		</data>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftdoc</key>
 		<data>
-		orgPk4RB2uB1zpELlVehugDC9Hc=
+		H6O4y8I5AZEh+UXXSfHkZG5KKug=
 		</data>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftinterface</key>
 		<data>
-		j1ws4zGWszrVEQViUa5MEm5+Zl4=
+		1ADFEiBh/yVYbmIFITm2OAQPKaY=
 		</data>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<data>
-		tuFYHDYQ33H3SEdhr5gaORkLlKY=
+		56mhUgBhjbD5ekEiLxu5eZHJOw8=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -35,35 +35,35 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			vaKnbMwiHii73KmkiH1sK6uXjHlR/7tYD5JLsENfwmk=
+			jOkkvITiFqWGWIlOEXZYhNhzq/D2gooa2TxE3Zzs16E=
 			</data>
 		</dict>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			xstB2mLwmgsIlkMq+j6CdNz0gHSYLaW3nKL5jNjPxFA=
+			wsnYVrOfxoHFQqSyvwGa9Ae0JvOJBmiw1p8gJl2ZGeo=
 			</data>
 		</dict>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			S1GdEZvN6c694LB/IzJJR6N1Fp+33KJiEkFKkNfF7kM=
+			3aTXE+yCvEx9HrK+olSzpcX0IJJohyGOpO8yAMPiowo=
 			</data>
 		</dict>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			xstB2mLwmgsIlkMq+j6CdNz0gHSYLaW3nKL5jNjPxFA=
+			wsnYVrOfxoHFQqSyvwGa9Ae0JvOJBmiw1p8gJl2ZGeo=
 			</data>
 		</dict>
 		<key>Modules/NFCPassportReader.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			VJr1s3TZO+fzFzRdLYfpKiugM6oqU5FCDBVejFo9slM=
+			38H/5jAfhLounSbtbThn9wX3PgX/i6OWDBXnpYsd4+Y=
 			</data>
 		</dict>
 	</dict>
