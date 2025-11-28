@@ -17,7 +17,7 @@ cd "$SDK_DIR"
 mkdir -p dist/android
 
 # Check if native modules source is available
-MOBILE_SDK_NATIVE="mobile-sdk-native"
+MOBILE_SDK_NATIVE="mobile-sdk-native/android"
 
 echo "🔍 Checking for Android build options..."
 
