@@ -16,10 +16,10 @@ template IsOlderThan() {
     signal input majorityASCII[2];
     signal input currDate[6];
     signal input birthDateASCII[6];
-    
+
     signal birthdateNum[6];
     signal ASCII_rotation <== 48;
-    
+
     for (var i=0; i<6; i++) {
         birthdateNum[i] <== birthDateASCII[i] - ASCII_rotation;
     }
@@ -29,6 +29,10 @@ template IsOlderThan() {
 
     signal currDateYear <== currDate[0] * TEN + currDate[1];
     signal birthYear <== birthdateNum[0] * TEN + birthdateNum[1];
+
+    component rangeCheckMajority[2] = Num2Bits(8);
+    rangeCheckMajority[0].in <== majorityASCII[0];
+    rangeCheckMajority[1].in <== majorityASCII[1];
 
     // assert majority is between 0 and 99 (48-57 in ASCII)
     component lessThan[4];
