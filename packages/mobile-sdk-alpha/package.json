@@ -1,6 +1,6 @@
 {
   "name": "@selfxyz/mobile-sdk-alpha",
-  "version": "0.0.1-alpha.0",
+  "version": "0.0.1-alpha.1",
   "description": "Self SDK (alpha) for registering and proving",
   "keywords": [
     "self",
@@ -57,6 +57,12 @@
       "import": "./dist/esm/constants/colors.js",
       "require": "./dist/cjs/constants/colors.cjs"
     },
+    "./constants/fonts": {
+      "types": "./dist/esm/constants/fonts.d.ts",
+      "react-native": "./dist/esm/constants/fonts.js",
+      "import": "./dist/esm/constants/fonts.js",
+      "require": "./dist/cjs/constants/fonts.cjs"
+    },
     "./components": {
       "types": "./dist/esm/components/index.d.ts",
       "react-native": "./dist/esm/components/index.js",
@@ -68,6 +74,18 @@
       "react-native": "./dist/esm/hooks/index.js",
       "import": "./dist/esm/hooks/index.js",
       "require": "./dist/cjs/hooks/index.cjs"
+    },
+    "./hooks/useSafeBottomPadding": {
+      "types": "./dist/esm/hooks/useSafeBottomPadding.d.ts",
+      "react-native": "./dist/esm/hooks/useSafeBottomPadding.js",
+      "import": "./dist/esm/hooks/useSafeBottomPadding.js",
+      "require": "./dist/cjs/hooks/useSafeBottomPadding.cjs"
+    },
+    "./utils/utils": {
+      "types": "./dist/esm/utils/utils.d.ts",
+      "react-native": "./dist/esm/utils/utils.js",
+      "import": "./dist/esm/utils/utils.js",
+      "require": "./dist/cjs/utils/utils.cjs"
     },
     "./svgs/*.svg": {
       "react-native": "./dist/svgs/*.svg",
@@ -110,10 +128,10 @@
   ],
   "scripts": {
     "build": "yarn build:android && yarn build:ios && tsup && yarn postbuild",
-    "build:ts-only": "tsup && yarn postbuild",
+    "postbuild": "node ./scripts/postBuild.mjs",
     "build:android": "sh ./scripts/build-android.sh",
     "build:ios": "sh ./scripts/build-ios.sh",
-    "postbuild": "node ./scripts/postBuild.mjs",
+    "build:ts-only": "tsup && yarn postbuild",
     "fmt": "prettier --check .",
     "fmt:fix": "prettier --write .",
     "format": "sh -c 'if [ -z \"$SKIP_BUILD_DEPS\" ]; then yarn nice; else yarn fmt:fix; fi'",
@@ -127,7 +145,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "types": "tsc -p tsconfig.json --noEmit",
     "validate:exports": "node ./scripts/validate-exports.mjs",
-    "validate:pkg": "node ./scripts/verify-conditions.mjs"
+    "validate:pkg": "node ./scripts/verify-conditions.mjs",
+    "watch": "pkill -f 'tsup.*--watch' 2>/dev/null || true && tsup && yarn postbuild && tsup --watch"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.3",
