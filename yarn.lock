@@ -14132,9 +14132,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@zk-kit/binary-merkle-root.circom@https://gitpkg.vercel.app/Vishalkulkarni45/zk-kit.circom/packages/binary-merkle-root?fix/bin-merkle-tree":
-  version: 1.0.0
-  resolution: "@zk-kit/binary-merkle-root.circom@https://gitpkg.vercel.app/Vishalkulkarni45/zk-kit.circom/packages/binary-merkle-root?fix/bin-merkle-tree"
+"@zk-kit/binary-merkle-root.circom@npm:2.0.0":
+  version: 2.0.0
+  resolution: "@zk-kit/binary-merkle-root.circom@npm:2.0.0"
   dependencies:
     circomlib: "npm:^2.0.5"
   checksum: 10c0/1f6145a6c70334138cdb5c48f7851e306f728abc71760f7ce6ae81bdfb8dd2e4158a70b4b6df09073edde805a6653f96d49d583d92e249aeba3607060be97023
