@@ -70,5 +70,3 @@ template REGISTER_KYC() {
     signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
 
 }
-
-component main {public [attestation_id]} = REGISTER_KYC();

@@ -136,15 +136,3 @@ template VC_AND_DISCLOSE_KYC(
     signal output forbidden_countries_list_packed[forbidden_countries_list_packed_chunk_length] <== disclose_circuit.forbidden_countries_list_packed;
     signal output nullifier <== Poseidon(2)([secret, scope]);
 }
-
-component main {
-    public [
-        scope,
-        merkle_root,
-        ofac_name_dob_smt_root,
-        ofac_name_yob_smt_root,
-        user_identifier,
-        current_date,
-        attestation_id
-    ]
-} = VC_AND_DISCLOSE_KYC(40, 64, 64, 33);

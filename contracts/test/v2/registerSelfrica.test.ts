@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 import { deploySystemFixturesV2 } from "../utils/deploymentV2";
 import { DeployedActorsV2 } from "../utils/types";
-import { SELFRICA_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
-import { generateMockSelfricaRegisterInput, OFAC_DUMMY_INPUT } from '@selfxyz/common';
+import { KYC_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
+import { generateMockKycRegisterInput, OFAC_DUMMY_INPUT } from '@selfxyz/common';
 import { generateRegisterSelfricaProof } from "../utils/generateProof";
 import { expect } from "chai";
 
@@ -15,7 +15,7 @@ describe("Selfrica Registration test", function () {
 
   before(async () => {
     deployedActors = await deploySystemFixturesV2();
-    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
     console.log("🎉 System deployment and initial setup completed!");
   });
@@ -35,8 +35,7 @@ describe("Selfrica Registration test", function () {
 
     before(async () => {
       registerSecret = "12345";
-      let data = generateMockSelfricaRegisterInput(undefined, true, registerSecret);
-      selfricaData = data.inputs;
+      selfricaData = generateMockKycRegisterInput(undefined, true, registerSecret);
       registerProof = await generateRegisterSelfricaProof(registerSecret, selfricaData);
 
       //register the pubkey commitment
