@@ -116,7 +116,7 @@ describe("GCPJWTHelper", function () {
     });
   });
 
-  describe("extractPubkeyCommitment", function () {
+  describe("unpackPubkeyString", function () {
     // Known test vectors from TypeScript implementation
     // These values pack to the base64url string: "AmtPnrcj3vuhOo10QXjKfsQ2JZsLt7DqeeTHyLlicfUe"
     const testPubkey = {
@@ -125,34 +125,34 @@ describe("GCPJWTHelper", function () {
       p2: 0n,
     };
 
-    // Expected pubkey commitment (from TypeScript verification)
-    const expectedCommitment = 1094227850017695624326559586424504982480957966087397748000597471445507011061n;
+    // Expected pubkey string (base64url encoded)
+    const expectedPubkeyString = "AmtPnrcj3vuhOo10QXjKfsQ2JZsLt7DqeeTHyLlicfUe";
 
-    it("should correctly decode base64url and extract commitment", async function () {
-      const result = await testHelper.testExtractPubkeyCommitment(
+    it("should correctly unpack to the expected string", async function () {
+      const result = await testHelper.testUnpackPubkeyString(
         testPubkey.p0,
         testPubkey.p1,
         testPubkey.p2,
       );
 
-      expect(result).to.equal(expectedCommitment);
+      expect(result).to.equal(expectedPubkeyString);
     });
 
     it("should handle zeros correctly", async function () {
-      // All zeros should produce zero output
-      const result = await testHelper.testExtractPubkeyCommitment(0n, 0n, 0n);
-      expect(result).to.equal(0n);
+      // All zeros should produce empty string
+      const result = await testHelper.testUnpackPubkeyString(0n, 0n, 0n);
+      expect(result).to.equal("");
     });
 
     it("should produce consistent results", async function () {
       // Call multiple times to ensure deterministic behavior
-      const result1 = await testHelper.testExtractPubkeyCommitment(
+      const result1 = await testHelper.testUnpackPubkeyString(
         testPubkey.p0,
         testPubkey.p1,
         testPubkey.p2,
       );
 
-      const result2 = await testHelper.testExtractPubkeyCommitment(
+      const result2 = await testHelper.testUnpackPubkeyString(
         testPubkey.p0,
         testPubkey.p1,
         testPubkey.p2,
@@ -166,15 +166,24 @@ describe("GCPJWTHelper", function () {
       // Uppercase: A-Z
       // Lowercase: a-z
       // Numbers: 0-9
-      // Special: - and _ (though not in this particular test string)
-      // The fact that we get the correct commitment proves all chars are decoded correctly
-      const result = await testHelper.testExtractPubkeyCommitment(
+      // The fact that we get the correct string proves all chars are unpacked correctly
+      const result = await testHelper.testUnpackPubkeyString(
         testPubkey.p0,
         testPubkey.p1,
         testPubkey.p2,
       );
 
-      expect(result).to.equal(expectedCommitment);
+      expect(result).to.equal(expectedPubkeyString);
+    });
+
+    it("should return correct length string", async function () {
+      const result = await testHelper.testUnpackPubkeyString(
+        testPubkey.p0,
+        testPubkey.p1,
+        testPubkey.p2,
+      );
+
+      expect(result.length).to.equal(expectedPubkeyString.length);
     });
   });
 

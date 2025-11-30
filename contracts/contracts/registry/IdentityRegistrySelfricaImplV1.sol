@@ -67,6 +67,9 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
 
     /// @notice Address of the GCP JWT verifier contract.
     address internal _gcpJwtVerifier;
+
+    /// @notice Pubkey strings registered for Selfrica (via GCP JWT proof).
+    mapping(string => bool) internal _isRegisteredPubkey;
 }
 
 interface IGCPJWTVerifier {
@@ -110,10 +113,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256 imtRoot,
         uint256 imtIndex
     );
-    /// @notice Emitted when a public key commitment is successfully registered.
-    event PubkeyRegistered(uint256 indexed commitment);
-    /// @notice Emitted when a public key commitment is removed.
-    event PubkeyRemoved(uint256 indexed commitment);
+    /// @notice Emitted when a public key commitment is successfully registered (owner).
+    event PubkeyCommitmentRegistered(uint256 indexed commitment);
+    /// @notice Emitted when a public key is successfully registered (via GCP JWT proof).
+    event PubkeyRegistered(string pubkey);
 
     /// @notice Emitted when a identity commitment is added by dev team.
     event DevCommitmentRegistered(
@@ -222,11 +225,18 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         return _rootTimestamps[root];
     }
 
-    /// @notice Checks if the pubkey commitment is registered.
+    /// @notice Checks if the pubkey commitment is registered (owner-registered).
     /// @param pubkeyCommitment The pubkey commitment to check.
     /// @return True if the pubkey commitment is registered, false otherwise.
     function isRegisteredPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
         return _isRegisteredPubkeyCommitment[pubkeyCommitment];
+    }
+
+    /// @notice Checks if the pubkey string is registered (via GCP JWT proof).
+    /// @param pubkey The pubkey string to check.
+    /// @return True if the pubkey is registered, false otherwise.
+    function isRegisteredPubkey(string calldata pubkey) external view onlyProxy returns (bool) {
+        return _isRegisteredPubkey[pubkey];
     }
 
     /// @notice Retrieves the total number of identity commitments in the Merkle tree.
@@ -273,12 +283,21 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
-     * @notice Checks if the provided pubkey commitment is stored in the registry.
+     * @notice Checks if the provided pubkey commitment is stored in the registry (owner-registered).
      * @param pubkeyCommitment The pubkey commitment to verify.
      * @return True if the pubkey commitment is stored in the registry, false otherwise.
      */
     function checkPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
         return _isRegisteredPubkeyCommitment[pubkeyCommitment];
+    }
+
+    /**
+     * @notice Checks if the provided pubkey string is stored in the registry (via GCP JWT proof).
+     * @param pubkey The pubkey string to verify.
+     * @return True if the pubkey is stored in the registry, false otherwise.
+     */
+    function checkPubkey(string calldata pubkey) external view onlyProxy returns (bool) {
+        return _isRegisteredPubkey[pubkey];
     }
 
     // ====================================================
@@ -348,10 +367,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
      */
     function registerPubkeyCommitment(uint256 pubkeyCommitment) external virtual onlyProxy onlyOwner {
         _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
-        emit PubkeyRegistered(pubkeyCommitment);
+        emit PubkeyCommitmentRegistered(pubkeyCommitment);
     }
 
-    /// @notice Registers a pubkey commitment via GCP JWT proof.
+    /// @notice Registers a pubkey via GCP JWT proof.
     /// @dev Verifies the proof, checks root CA hash matches constant, validates image hash against PCR0Manager.
     /// @param pA Groth16 proof element A.
     /// @param pB Groth16 proof element B.
@@ -363,15 +382,20 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256[2] calldata pC,
         uint256[7] calldata pubSignals
     ) external onlyProxy {
+        // Check if the proof is valid
         if (!IGCPJWTVerifier(_gcpJwtVerifier).verifyProof(pA, pB, pC, pubSignals)) revert INVALID_PROOF();
+
+        // Check if the root CA pubkey hash is valid
         if (pubSignals[0] != GCP_ROOT_CA_PUBKEY_HASH) revert INVALID_ROOT_CA();
 
+        // Check if the TEE image hash is valid
         bytes memory imageHash = GCPJWTHelper.unpackAndConvertImageHash(pubSignals[4], pubSignals[5], pubSignals[6]);
         if (!IPCR0Manager(_PCR0Manager).isPCR0Set(imageHash)) revert INVALID_IMAGE();
 
-        uint256 pubkeyCommitment = GCPJWTHelper.extractPubkeyCommitment(pubSignals[1], pubSignals[2], pubSignals[3]);
-        _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
-        emit PubkeyRegistered(pubkeyCommitment);
+        // Unpack the pubkey and register it
+        string memory pubkey = GCPJWTHelper.unpackPubkeyString(pubSignals[1], pubSignals[2], pubSignals[3]);
+        _isRegisteredPubkey[pubkey] = true;
+        emit PubkeyRegistered(pubkey);
     }
 
     /// @notice Updates the GCP JWT verifier contract address.
