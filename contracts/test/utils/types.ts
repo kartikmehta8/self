@@ -10,6 +10,7 @@ import {
   IdentityRegistry,
   IdentityRegistryImplV1,
   IdentityRegistryIdCardImplV1,
+  IdentityRegistrySelfricaImplV1,
   TestSelfVerificationRoot,
   Verifier_vc_and_disclose_staging as LocalVerifier,
   Verifier_vc_and_disclose_id_staging as LocalIdCardVerifier,
@@ -33,6 +34,7 @@ import {
   IDscCircuitVerifier,
   IVcAndDiscloseCircuitVerifier,
   IdentityRegistryAadhaarImplV1,
+  PCR0Manager,
 } from "../../typechain-types";
 
 import { DscVerifierId, RegisterVerifierId } from "@selfxyz/common";
@@ -93,6 +95,9 @@ export interface DeployedActorsV2 {
   dscId: DscVerifierId;
   testSelfVerificationRoot: TestSelfVerificationRoot;
   customVerifier: any;
+  poseidonT3: any;
+  gcpJwtVerifier: any;
+  pcr0Manager: PCR0Manager;
   owner: Signer;
   user1: Signer;
   user2: Signer;

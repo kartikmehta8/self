@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { DscVerifierId, PCR0_MANAGER_ADDRESS, RegisterVerifierId } from "@selfxyz/common/constants";
+import { DscVerifierId, RegisterVerifierId } from "@selfxyz/common/constants";
 import { genAndInitMockPassportData } from "@selfxyz/common/utils/passports/genMockPassportData";
 import { getCscaTreeRoot } from "@selfxyz/common/utils/trees";
 import { PassportData } from "@selfxyz/common/utils/types";
@@ -17,6 +17,7 @@ import RegisterIdVerifierArtifactLocal from "../../artifacts/contracts/verifiers
 import RegisterAadhaarVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_aadhaar_staging.sol/Verifier_register_aadhaar_staging.json";
 import DscVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/dsc/Verifier_dsc_sha256_rsa_65537_4096_staging.sol/Verifier_dsc_sha256_rsa_65537_4096_staging.json";
 import RegisterSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_selfrica_staging.sol/Verifier_register_selfrica_staging.json";
+import GCPJWTVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/gcp_jwt_verifier/Verifier_gcp_jwt_verifier_staging.sol/Verifier_gcp_jwt_verifier_staging.json";
 import VcAndDiscloseSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/disclose/Verifier_vc_and_disclose_selfrica_staging.sol/Verifier_vc_and_disclose_selfrica_staging.json";
 
 export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
@@ -161,6 +162,13 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   let poseidonT3Factory, poseidonT3, CustomVerifierFactory, customVerifier, GenericFormatterFactory, genericFormatter;
+  let gcpJwtVerifier: any, pcr0Manager: any;
+  let dscProofVerifierLib: any,
+    ofacCheckLib: any,
+    outputFormatterLib: any,
+    proofVerifierLib: any,
+    registerProofVerifierLib: any,
+    rootCheckLib: any;
   {
     // Deploy PoseidonT3
     poseidonT3Factory = await ethers.getContractFactory("PoseidonT3");
@@ -176,6 +184,44 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     GenericFormatterFactory = await ethers.getContractFactory("GenericFormatter");
     genericFormatter = await GenericFormatterFactory.connect(owner).deploy();
     await genericFormatter.waitForDeployment();
+
+    // Deploy GCP JWT Verifier
+    const gcpJwtVerifierFactory = await ethers.getContractFactory(
+      GCPJWTVerifierArtifactLocal.abi,
+      GCPJWTVerifierArtifactLocal.bytecode,
+    );
+    gcpJwtVerifier = await gcpJwtVerifierFactory.connect(owner).deploy();
+    await gcpJwtVerifier.waitForDeployment();
+
+    // Deploy PCR0Manager for testing
+    const PCR0ManagerFactory = await ethers.getContractFactory("PCR0Manager");
+    pcr0Manager = await PCR0ManagerFactory.connect(owner).deploy();
+    await pcr0Manager.waitForDeployment();
+
+    // Deploy required libraries for IdentityVerificationHubImplV2
+    const DscProofVerifierLibFactory = await ethers.getContractFactory("DscProofVerifierLib");
+    dscProofVerifierLib = await DscProofVerifierLibFactory.connect(owner).deploy();
+    await dscProofVerifierLib.waitForDeployment();
+
+    const OfacCheckLibFactory = await ethers.getContractFactory("OfacCheckLib");
+    ofacCheckLib = await OfacCheckLibFactory.connect(owner).deploy();
+    await ofacCheckLib.waitForDeployment();
+
+    const OutputFormatterLibFactory = await ethers.getContractFactory("OutputFormatterLib");
+    outputFormatterLib = await OutputFormatterLibFactory.connect(owner).deploy();
+    await outputFormatterLib.waitForDeployment();
+
+    const ProofVerifierLibFactory = await ethers.getContractFactory("ProofVerifierLib");
+    proofVerifierLib = await ProofVerifierLibFactory.connect(owner).deploy();
+    await proofVerifierLib.waitForDeployment();
+
+    const RegisterProofVerifierLibFactory = await ethers.getContractFactory("RegisterProofVerifierLib");
+    registerProofVerifierLib = await RegisterProofVerifierLibFactory.connect(owner).deploy();
+    await registerProofVerifierLib.waitForDeployment();
+
+    const RootCheckLibFactory = await ethers.getContractFactory("RootCheckLib");
+    rootCheckLib = await RootCheckLibFactory.connect(owner).deploy();
+    await rootCheckLib.waitForDeployment();
   }
 
   // Deploy IdentityRegistryImplV1 (same registry as V1)
@@ -231,6 +277,12 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     IdentityVerificationHubImplV2Factory = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
       libraries: {
         CustomVerifier: customVerifier.target,
+        DscProofVerifierLib: dscProofVerifierLib.target,
+        OfacCheckLib: ofacCheckLib.target,
+        OutputFormatterLib: outputFormatterLib.target,
+        ProofVerifierLib: proofVerifierLib.target,
+        RegisterProofVerifierLib: registerProofVerifierLib.target,
+        RootCheckLib: rootCheckLib.target,
       },
     });
     identityVerificationHubImplV2 = await IdentityVerificationHubImplV2Factory.connect(owner).deploy();
@@ -274,10 +326,10 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await identityRegistryAadhaarProxy.waitForDeployment();
   }
 
-  // Deploy Selfrica registry with temporary hub address
+  // Deploy Selfrica registry with temporary hub address and local PCR0Manager
   let registrySelfricaInitData, registrySelfricaProxyFactory;
   {
-    registrySelfricaInitData = identityRegistrySelfricaImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress, PCR0_MANAGER_ADDRESS]);
+    registrySelfricaInitData = identityRegistrySelfricaImpl.interface.encodeFunctionData("initialize", [temporaryHubAddress, pcr0Manager.target]);
     registrySelfricaProxyFactory = await ethers.getContractFactory("IdentityRegistry");
     identityRegistrySelfricaProxy = await registrySelfricaProxyFactory
       .connect(owner)
@@ -326,6 +378,9 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     registrySelfricaContract = await ethers.getContractAt("IdentityRegistrySelfricaImplV1", identityRegistrySelfricaProxy.target);
     updateSelfricaHubTx = await registrySelfricaContract.updateHub(identityVerificationHubV2.target);
     await updateSelfricaHubTx.wait();
+
+    // Configure GCP JWT verifier for Selfrica
+    await registrySelfricaContract.updateGCPJWTVerifier(gcpJwtVerifier.target);
   }
 
   let hubContract;
@@ -433,6 +488,9 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     dscId: DscVerifierId.dsc_sha256_rsa_65537_4096,
     testSelfVerificationRoot: testSelfVerificationRoot,
     customVerifier: customVerifier,
+    poseidonT3: poseidonT3,
+    gcpJwtVerifier: gcpJwtVerifier,
+    pcr0Manager: pcr0Manager,
     owner: owner as any,
     user1: user1 as any,
     user2: user2 as any,
