@@ -360,16 +360,6 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         emit NameAndYobOfacRootUpdated(nameAndYobOfacRoot);
     }
 
-    /**
-     * @notice Registers a new public key commitment.
-     * @dev Callable only via a proxy and restricted to the contract owner.
-     * @param pubkeyCommitment The public key commitment to register.
-     */
-    function registerPubkeyCommitment(uint256 pubkeyCommitment) external virtual onlyProxy onlyOwner {
-        _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
-        emit PubkeyCommitmentRegistered(pubkeyCommitment);
-    }
-
     /// @notice Registers a pubkey via GCP JWT proof.
     /// @dev Verifies the proof, checks root CA hash matches constant, validates image hash against PCR0Manager.
     /// @param pA Groth16 proof element A.
