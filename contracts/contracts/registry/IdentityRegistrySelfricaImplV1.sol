@@ -310,8 +310,6 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /// @param commitment The identity commitment to register.
     function registerCommitment(uint256 nullifier, uint256 commitment) external onlyProxy onlyHub {
         if (_nullifiers[nullifier]) revert REGISTERED_COMMITMENT();
-        console.log("nullifier", nullifier);
-        console.log("commitment", commitment);
         _nullifiers[nullifier] = true;
         uint256 index = _identityCommitmentIMT.size;
         uint256 imt_root = _identityCommitmentIMT._insert(commitment);
@@ -366,7 +364,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /// @param pB Groth16 proof element B.
     /// @param pC Groth16 proof element C.
     /// @param pubSignals Circuit public signals: [rootCAHash, eatNonce[0-2], imageHash[0-2]].
-    function registerPubkey(
+    function registerPubkeyCommitment(
         uint256[2] calldata pA,
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
@@ -383,9 +381,9 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         if (!IPCR0Manager(_PCR0Manager).isPCR0Set(imageHash)) revert INVALID_IMAGE();
 
         // Unpack the pubkey and register it
-        string memory pubkey = GCPJWTHelper.unpackPubkeyString(pubSignals[1], pubSignals[2], pubSignals[3]);
-        _isRegisteredPubkey[pubkey] = true;
-        emit PubkeyRegistered(pubkey);
+        uint256 memory pubkeyCommitment = GCPJWTHelper.unpackPubkeyString(pubSignals[1], pubSignals[2], pubSignals[3]);
+        _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
+        emit PubkeyCommitmentRegistered(pubkeyCommitment);
     }
 
     /// @notice Updates the GCP JWT verifier contract address.

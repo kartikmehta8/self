@@ -25,7 +25,7 @@ library GCPJWTHelper {
         return 0;
     }
 
-    function unpackPubkeyString(uint256 p0, uint256 p1, uint256 p2) internal pure returns (string memory) {
+    function unpackPubkeyString(uint256 p0, uint256 p1, uint256 p2) internal pure returns (uint256) {
         bytes memory b64 = new bytes(93);
         uint256 idx;
         for (; p0 > 0 && idx < 31; idx++) { b64[idx] = bytes1(uint8(p0 & 0xff)); p0 >>= 8; }
@@ -33,10 +33,25 @@ library GCPJWTHelper {
         for (; p2 > 0 && idx < 93; idx++) { b64[idx] = bytes1(uint8(p2 & 0xff)); p2 >>= 8; }
 
         // Trim to actual length
-        bytes memory result = new bytes(idx);
-        for (uint256 i; i < idx; i++) {
-            result[i] = b64[i];
+        bytes memory b = new bytes(idx);
+        uint256 result = 0;
+
+        for (uint256 i = 0; i < b.length; i++) {
+            uint8 c = uint8(b[i]);
+
+            if (c >= 48 && c <= 57) {
+                // '0' - '9'
+                result = result * 16 + (c - 48);
+            } else if (c >= 65 && c <= 70) {
+                // 'A' - 'F'
+                result = result * 16 + (c - 55);
+            } else if (c >= 97 && c <= 102) {
+                // 'a' - 'f'
+                result = result * 16 + (c - 87);
+            } else {
+                revert("Invalid hex character");
+            }
         }
-        return string(result);
+        return result;
     }
 }
