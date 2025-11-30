@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+library GCPJWTHelper {
+    function unpackAndConvertImageHash(uint256 p0, uint256 p1, uint256 p2) internal pure returns (bytes memory) {
+        bytes memory hex64 = new bytes(64);
+        uint256 idx;
+        for (; p0 > 0 && idx < 31; idx++) { hex64[idx] = bytes1(uint8(p0 & 0xff)); p0 >>= 8; }
+        for (; p1 > 0 && idx < 62; idx++) { hex64[idx] = bytes1(uint8(p1 & 0xff)); p1 >>= 8; }
+        for (; p2 > 0 && idx < 64; idx++) { hex64[idx] = bytes1(uint8(p2 & 0xff)); p2 >>= 8; }
+
+        bytes memory result = new bytes(48);
+        for (uint256 i; i < 32; i++) {
+            uint8 hi = _hexToNibble(uint8(hex64[i * 2]));
+            uint8 lo = _hexToNibble(uint8(hex64[i * 2 + 1]));
+            result[16 + i] = bytes1((hi << 4) | lo);
+        }
+        return result;
+    }
+
+    function _hexToNibble(uint8 c) private pure returns (uint8) {
+        if (c >= 48 && c <= 57) return c - 48;
+        if (c >= 97 && c <= 102) return c - 87;
+        if (c >= 65 && c <= 70) return c - 55;
+        return 0;
+    }
+
+    function extractPubkeyCommitment(uint256 p0, uint256 p1, uint256 p2) internal pure returns (uint256) {
+        bytes memory b64 = new bytes(93);
+        uint256 idx;
+        for (; p0 > 0 && idx < 31; idx++) { b64[idx] = bytes1(uint8(p0 & 0xff)); p0 >>= 8; }
+        for (; p1 > 0 && idx < 62; idx++) { b64[idx] = bytes1(uint8(p1 & 0xff)); p1 >>= 8; }
+        for (; p2 > 0 && idx < 93; idx++) { b64[idx] = bytes1(uint8(p2 & 0xff)); p2 >>= 8; }
+
+        bytes memory decoded = _decodeBase64Url(b64, idx);
+        uint256 result;
+        for (uint256 i; i < decoded.length && i < 32; i++) {
+            result = (result << 8) | uint8(decoded[i]);
+        }
+        return result;
+    }
+
+    function _decodeBase64Url(bytes memory data, uint256 len) private pure returns (bytes memory) {
+        if (len == 0) return new bytes(0);
+        uint256 outLen = (len * 3) / 4;
+        bytes memory result = new bytes(outLen);
+        uint256 j;
+        for (uint256 i; i < len; i += 4) {
+            uint8 a = _b64(uint8(data[i]));
+            uint8 b = i + 1 < len ? _b64(uint8(data[i + 1])) : 0;
+            uint8 c = i + 2 < len ? _b64(uint8(data[i + 2])) : 0;
+            uint8 d = i + 3 < len ? _b64(uint8(data[i + 3])) : 0;
+            if (j < outLen) result[j++] = bytes1((a << 2) | (b >> 4));
+            if (j < outLen && i + 2 < len) result[j++] = bytes1((b << 4) | (c >> 2));
+            if (j < outLen && i + 3 < len) result[j++] = bytes1((c << 6) | d);
+        }
+        return result;
+    }
+
+    function _b64(uint8 c) private pure returns (uint8) {
+        if (c >= 65 && c <= 90) return c - 65;
+        if (c >= 97 && c <= 122) return c - 71;
+        if (c >= 48 && c <= 57) return c + 4;
+        if (c == 45) return 62;
+        if (c == 95) return 63;
+        return 0;
+    }
+}

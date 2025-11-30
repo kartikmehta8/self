@@ -5,6 +5,7 @@ import {InternalLeanIMT, LeanIMTData} from "@zk-kit/imt.sol/internal/InternalLea
 import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
 import {AttestationId} from "../constants/AttestationId.sol";
 import {ImplRoot} from "../upgradeable/ImplRoot.sol";
+import {GCPJWTHelper} from "../libraries/GCPJWTHelper.sol";
 
 import {console} from "hardhat/console.sol";
 /**
@@ -63,6 +64,17 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
 
     /// @notice Current name and year of birth OFAC root.
     uint256 internal _nameAndYobOfacRoot;
+
+    /// @notice Address of the GCP JWT verifier contract.
+    address internal _gcpJwtVerifier;
+}
+
+interface IGCPJWTVerifier {
+    function verifyProof(uint256[2] calldata pA, uint256[2][2] calldata pB, uint256[2] calldata pC, uint256[7] calldata pubSignals) external view returns (bool);
+}
+
+interface IPCR0Manager {
+    function isPCR0Set(bytes calldata pcr0) external view returns (bool);
 }
 
 /**
@@ -72,6 +84,8 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
  */
 contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistrySelfricaV1 {
     using InternalLeanIMT for LeanIMTData;
+
+    uint256 public constant GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501;
 
     // ====================================================
     // Events
@@ -127,6 +141,9 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     error REGISTERED_COMMITMENT();
     /// @notice Thrown when the hub address is set to the zero address.
     error HUB_ADDRESS_ZERO();
+    error INVALID_PROOF();
+    error INVALID_ROOT_CA();
+    error INVALID_IMAGE();
 
     // ====================================================
     // Modifiers
@@ -161,14 +178,14 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /**
      * @notice Initializes the registry implementation.
      * @dev Sets the hub address and initializes the UUPS upgradeable feature.
-     * @param _hub The address of the identity verification hub.
-     * @param _PCR0Manager The address of the PCR0Manager.
+     * @param hubAddress The address of the identity verification hub.
+     * @param pcr0ManagerAddress The address of the PCR0Manager.
      */
-    function initialize(address _hub, address _PCR0Manager) external initializer {
+    function initialize(address hubAddress, address pcr0ManagerAddress) external initializer {
         __ImplRoot_init();
-        _hub = _hub;
-        _PCR0Manager = _PCR0Manager;
-        emit RegistryInitialized(_hub, _PCR0Manager);
+        _hub = hubAddress;
+        _PCR0Manager = pcr0ManagerAddress;
+        emit RegistryInitialized(hubAddress, pcr0ManagerAddress);
     }
 
     // ====================================================
@@ -332,6 +349,36 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     function registerPubkeyCommitment(uint256 pubkeyCommitment) external virtual onlyProxy onlyOwner {
         _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
         emit PubkeyRegistered(pubkeyCommitment);
+    }
+
+    /// @notice Registers a pubkey commitment via GCP JWT proof.
+    /// @dev Verifies the proof, checks root CA hash matches constant, validates image hash against PCR0Manager.
+    /// @param pA Groth16 proof element A.
+    /// @param pB Groth16 proof element B.
+    /// @param pC Groth16 proof element C.
+    /// @param pubSignals Circuit public signals: [rootCAHash, eatNonce[0-2], imageHash[0-2]].
+    function registerPubkey(
+        uint256[2] calldata pA,
+        uint256[2][2] calldata pB,
+        uint256[2] calldata pC,
+        uint256[7] calldata pubSignals
+    ) external onlyProxy {
+        if (!IGCPJWTVerifier(_gcpJwtVerifier).verifyProof(pA, pB, pC, pubSignals)) revert INVALID_PROOF();
+        if (pubSignals[0] != GCP_ROOT_CA_PUBKEY_HASH) revert INVALID_ROOT_CA();
+
+        bytes memory imageHash = GCPJWTHelper.unpackAndConvertImageHash(pubSignals[4], pubSignals[5], pubSignals[6]);
+        if (!IPCR0Manager(_PCR0Manager).isPCR0Set(imageHash)) revert INVALID_IMAGE();
+
+        uint256 pubkeyCommitment = GCPJWTHelper.extractPubkeyCommitment(pubSignals[1], pubSignals[2], pubSignals[3]);
+        _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
+        emit PubkeyRegistered(pubkeyCommitment);
+    }
+
+    /// @notice Updates the GCP JWT verifier contract address.
+    /// @dev Callable only by the contract owner.
+    /// @param verifier The new GCP JWT verifier address.
+    function updateGCPJWTVerifier(address verifier) external onlyProxy onlyOwner {
+        _gcpJwtVerifier = verifier;
     }
 
     /// @notice (DEV) Force-adds an identity commitment.
