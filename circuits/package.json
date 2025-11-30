@@ -11,6 +11,7 @@
     "build-gcp-jwt-verifier": "bash scripts/build/build_gcp_jwt_verifier.sh",
     "build-register": "bash scripts/build/build_register_circuits.sh",
     "build-register-id": "bash scripts/build/build_register_circuits_id.sh",
+    "build-register-selfrica": "bash scripts/build/build_register_selfrica.sh",
     "build:deps": "yarn workspaces foreach --from @selfxyz/circuits --topological-dev --recursive run build",
     "download": "bash scripts/server/download_circuits_from_AWS.sh",
     "format": "prettier --write .",
