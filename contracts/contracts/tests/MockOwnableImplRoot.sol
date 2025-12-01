@@ -19,7 +19,6 @@ abstract contract MockOwnableImplRoot is UUPSUpgradeable, Ownable2StepUpgradeabl
      */
     function __MockOwnableImplRoot_init() internal virtual onlyInitializing {
         __Ownable_init(msg.sender);
-        __UUPSUpgradeable_init();
     }
 
     /**

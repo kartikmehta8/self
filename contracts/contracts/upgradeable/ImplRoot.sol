@@ -32,7 +32,6 @@ abstract contract ImplRoot is UUPSUpgradeable, AccessControlUpgradeable {
      */
     function __ImplRoot_init() internal virtual onlyInitializing {
         __AccessControl_init();
-        __UUPSUpgradeable_init();
 
         _grantRole(SECURITY_ROLE, msg.sender);
         _grantRole(OPERATIONS_ROLE, msg.sender);
