@@ -13,8 +13,8 @@ import {
 
 describe("Governance Upgrade Tests", function () {
   let deployer: SignerWithAddress;
-  let criticalMultisig: SignerWithAddress;
-  let standardMultisig: SignerWithAddress;
+  let securityMultisig: SignerWithAddress;
+  let operationsMultisig: SignerWithAddress;
   let user: SignerWithAddress;
 
   // Contract instances for testing
@@ -29,13 +29,13 @@ describe("Governance Upgrade Tests", function () {
   let poseidonT3: PoseidonT3;
 
   // Test constants
-  const CRITICAL_ROLE = ethers.keccak256(ethers.toUtf8Bytes("CRITICAL_ROLE"));
-  const STANDARD_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STANDARD_ROLE"));
+  const SECURITY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("SECURITY_ROLE"));
+  const OPERATIONS_ROLE = ethers.keccak256(ethers.toUtf8Bytes("OPERATIONS_ROLE"));
   const DEFAULT_ADMIN_ROLE = ethers.ZeroHash;
 
   beforeEach(async function () {
     // Set up test signers representing different roles in the governance system
-    [deployer, criticalMultisig, standardMultisig, user] = await ethers.getSigners();
+    [deployer, securityMultisig, operationsMultisig, user] = await ethers.getSigners();
 
     // Deploy CustomVerifier library once for reuse across tests
     const CustomVerifierFactory = await ethers.getContractFactory("CustomVerifier");
@@ -87,7 +87,7 @@ describe("Governance Upgrade Tests", function () {
       // This simulates upgrading a production contract to the new governance system
 
       // Verify initial state - deployer should have roles after initialization
-      expect(await hubProxy.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
+      expect(await hubProxy.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
 
       // Deploy new implementation with governance using the same library instance
       const IdentityVerificationHubV3 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
@@ -114,16 +114,16 @@ describe("Governance Upgrade Tests", function () {
       // For this test, we'll simulate that the migration script has already run
       // In production, this would be done by a separate migration transaction
       try {
-        await hubWithGovernance.grantRole(CRITICAL_ROLE, deployer.address);
-        await hubWithGovernance.grantRole(STANDARD_ROLE, deployer.address);
+        await hubWithGovernance.grantRole(SECURITY_ROLE, deployer.address);
+        await hubWithGovernance.grantRole(OPERATIONS_ROLE, deployer.address);
 
         // Verify governance roles are set correctly
-        expect(await hubWithGovernance.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-        expect(await hubWithGovernance.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+        expect(await hubWithGovernance.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+        expect(await hubWithGovernance.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
 
         // Verify role hierarchy (set up during __ImplRoot_init)
-        expect(await hubWithGovernance.getRoleAdmin(CRITICAL_ROLE)).to.equal(CRITICAL_ROLE);
-        expect(await hubWithGovernance.getRoleAdmin(STANDARD_ROLE)).to.equal(CRITICAL_ROLE);
+        expect(await hubWithGovernance.getRoleAdmin(SECURITY_ROLE)).to.equal(SECURITY_ROLE);
+        expect(await hubWithGovernance.getRoleAdmin(OPERATIONS_ROLE)).to.equal(SECURITY_ROLE);
       } catch (error) {
         // If role setup fails, it might mean the roles are already set up or the contract doesn't support it yet
         console.log("Role setup skipped:", (error as Error).message);
@@ -163,7 +163,7 @@ describe("Governance Upgrade Tests", function () {
       // This is critical for production upgrades to maintain existing permissions and data
 
       // Verify initial state - check that roles are preserved
-      const initialHasCriticalRole = await hubProxy.hasRole(CRITICAL_ROLE, deployer.address);
+      const initialHasCriticalRole = await hubProxy.hasRole(SECURITY_ROLE, deployer.address);
 
       // Upgrade using the same library instance to avoid redeployment
       const IdentityVerificationHubV3 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
@@ -184,7 +184,7 @@ describe("Governance Upgrade Tests", function () {
       );
 
       // Verify state is preserved - roles should still exist
-      const finalHasCriticalRole = await hubProxy.hasRole(CRITICAL_ROLE, deployer.address);
+      const finalHasCriticalRole = await hubProxy.hasRole(SECURITY_ROLE, deployer.address);
       expect(finalHasCriticalRole).to.equal(initialHasCriticalRole);
     });
   });
@@ -225,7 +225,7 @@ describe("Governance Upgrade Tests", function () {
       // This ensures the registry upgrade process works similarly to the hub upgrade
 
       // Verify initial state - deployer should have roles after initialization
-      expect(await registryProxy.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
+      expect(await registryProxy.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
 
       // Upgrade to governance using the shared library instance
       const IdentityRegistryV2 = await ethers.getContractFactory("IdentityRegistryImplV1", {
@@ -248,12 +248,12 @@ describe("Governance Upgrade Tests", function () {
       // After upgrade, the contract now has governance capabilities
       // For this test, we'll simulate that the migration script has already run
       try {
-        await registryProxy.grantRole(CRITICAL_ROLE, deployer.address);
-        await registryProxy.grantRole(STANDARD_ROLE, deployer.address);
+        await registryProxy.grantRole(SECURITY_ROLE, deployer.address);
+        await registryProxy.grantRole(OPERATIONS_ROLE, deployer.address);
 
         // Verify governance roles are set correctly
-        expect(await registryProxy.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-        expect(await registryProxy.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+        expect(await registryProxy.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+        expect(await registryProxy.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
       } catch (error) {
         // If role setup fails, it might mean the roles are already set up or the contract doesn't support it yet
         console.log("Role setup skipped:", (error as Error).message);
@@ -288,15 +288,15 @@ describe("Governance Upgrade Tests", function () {
     it("should deploy PCR0Manager with deployer having initial roles", async function () {
       // Test: Verify that PCR0Manager is deployed with the deployer having both governance roles
       // This follows the pattern where deployer gets initial control before transferring to multisigs
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await pcr0Manager.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
     });
 
     it("should deploy VerifyAll with deployer having initial roles", async function () {
       // Test: Verify that VerifyAll is deployed with the deployer having both governance roles
       // This ensures consistent role initialization across all governance contracts
-      expect(await verifyAll.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await verifyAll.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      expect(await verifyAll.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await verifyAll.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
     });
 
     it("should allow role transfer and then critical multisig to manage PCR0", async function () {
@@ -304,14 +304,14 @@ describe("Governance Upgrade Tests", function () {
       // This simulates the production process of deploying, transferring roles, and operating the contract
 
       // First transfer roles to multisigs (simulating production deployment workflow)
-      await pcr0Manager.connect(deployer).grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await pcr0Manager.connect(deployer).grantRole(STANDARD_ROLE, standardMultisig.address);
+      await pcr0Manager.connect(deployer).grantRole(SECURITY_ROLE, securityMultisig.address);
+      await pcr0Manager.connect(deployer).grantRole(OPERATIONS_ROLE, operationsMultisig.address);
 
       const testPCR0 = "0x" + "00".repeat(48); // 48 zero bytes (valid PCR0 format)
 
       // Critical multisig should be able to add PCR0 (testing governance functionality)
       await expect(
-        pcr0Manager.connect(criticalMultisig).addPCR0(testPCR0)
+        pcr0Manager.connect(securityMultisig).addPCR0(testPCR0)
       ).to.emit(pcr0Manager, "PCR0Added");
 
       // Verify PCR0 was added successfully
@@ -319,7 +319,7 @@ describe("Governance Upgrade Tests", function () {
 
       // Critical multisig should be able to remove PCR0 (testing full CRUD operations)
       await expect(
-        pcr0Manager.connect(criticalMultisig).removePCR0(testPCR0)
+        pcr0Manager.connect(securityMultisig).removePCR0(testPCR0)
       ).to.emit(pcr0Manager, "PCR0Removed");
 
       // Verify PCR0 was removed successfully
@@ -343,8 +343,8 @@ describe("Governance Upgrade Tests", function () {
       // This tests the governance of contract dependencies and configuration updates
 
       // First transfer roles to multisigs (following production deployment pattern)
-      await verifyAll.connect(deployer).grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await verifyAll.connect(deployer).grantRole(STANDARD_ROLE, standardMultisig.address);
+      await verifyAll.connect(deployer).grantRole(SECURITY_ROLE, securityMultisig.address);
+      await verifyAll.connect(deployer).grantRole(OPERATIONS_ROLE, operationsMultisig.address);
 
       // Generate new addresses for testing (simulating contract upgrades or migrations)
       const newHubAddress = ethers.Wallet.createRandom().address;
@@ -352,12 +352,12 @@ describe("Governance Upgrade Tests", function () {
 
       // Critical multisig should be able to update hub address
       await expect(
-        verifyAll.connect(criticalMultisig).setHub(newHubAddress)
+        verifyAll.connect(securityMultisig).setHub(newHubAddress)
       ).to.not.be.reverted;
 
       // Critical multisig should be able to update registry address
       await expect(
-        verifyAll.connect(criticalMultisig).setRegistry(newRegistryAddress)
+        verifyAll.connect(securityMultisig).setRegistry(newRegistryAddress)
       ).to.not.be.reverted;
 
       // Verify addresses were updated correctly
@@ -387,45 +387,45 @@ describe("Governance Upgrade Tests", function () {
       await pcr0Manager.waitForDeployment();
 
       // Grant roles to multisigs (deployer has initial roles from constructor)
-      await pcr0Manager.connect(deployer).grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await pcr0Manager.connect(deployer).grantRole(STANDARD_ROLE, standardMultisig.address);
+      await pcr0Manager.connect(deployer).grantRole(SECURITY_ROLE, securityMultisig.address);
+      await pcr0Manager.connect(deployer).grantRole(OPERATIONS_ROLE, operationsMultisig.address);
     });
 
     it("should allow critical multisig to manage roles", async function () {
-      // Test: Verify that CRITICAL_ROLE can manage other roles (role hierarchy)
+      // Test: Verify that SECURITY_ROLE can manage other roles (role hierarchy)
       // This tests the admin functionality where critical multisig manages all roles
 
       const newStandardUser = user.address;
 
       // Critical multisig (admin) should be able to grant standard role
       await expect(
-        pcr0Manager.connect(criticalMultisig).grantRole(STANDARD_ROLE, newStandardUser)
+        pcr0Manager.connect(securityMultisig).grantRole(OPERATIONS_ROLE, newStandardUser)
       ).to.not.be.reverted;
 
       // Verify role was granted successfully
-      expect(await pcr0Manager.hasRole(STANDARD_ROLE, newStandardUser)).to.be.true;
+      expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, newStandardUser)).to.be.true;
 
       // Critical multisig should be able to revoke role (testing full role management)
       await expect(
-        pcr0Manager.connect(criticalMultisig).revokeRole(STANDARD_ROLE, newStandardUser)
+        pcr0Manager.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, newStandardUser)
       ).to.not.be.reverted;
 
       // Verify role was revoked successfully
-      expect(await pcr0Manager.hasRole(STANDARD_ROLE, newStandardUser)).to.be.false;
+      expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, newStandardUser)).to.be.false;
     });
 
     it("should prevent non-admin from managing roles", async function () {
-      // Test: Verify that only CRITICAL_ROLE can manage roles (enforce role hierarchy)
+      // Test: Verify that only SECURITY_ROLE can manage roles (enforce role hierarchy)
       // This ensures that standard multisig and regular users cannot escalate privileges
 
       // Standard multisig should not be able to grant roles (lacks admin privileges)
       await expect(
-        pcr0Manager.connect(standardMultisig).grantRole(STANDARD_ROLE, user.address)
+        pcr0Manager.connect(operationsMultisig).grantRole(OPERATIONS_ROLE, user.address)
       ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
 
       // Random user should not be able to grant roles (no privileges at all)
       await expect(
-        pcr0Manager.connect(user).grantRole(STANDARD_ROLE, user.address)
+        pcr0Manager.connect(user).grantRole(OPERATIONS_ROLE, user.address)
       ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
     });
   });
@@ -449,11 +449,11 @@ describe("Governance Upgrade Tests", function () {
     });
 
     it("should allow critical multisig to authorize upgrades", async function () {
-      // Test: Verify that CRITICAL_ROLE can authorize contract upgrades
+      // Test: Verify that SECURITY_ROLE can authorize contract upgrades
       // This is essential for secure upgrade governance in production
 
-      // Grant CRITICAL_ROLE to criticalMultisig for this test
-      await testProxy.connect(deployer).grantRole(CRITICAL_ROLE, criticalMultisig.address);
+      // Grant SECURITY_ROLE to securityMultisig for this test
+      await testProxy.connect(deployer).grantRole(SECURITY_ROLE, securityMultisig.address);
 
       // Deploy new implementation for upgrade testing
       const NewImplementation = await ethers.getContractFactory("MockImplRoot");
@@ -472,16 +472,16 @@ describe("Governance Upgrade Tests", function () {
     });
 
     it("should prevent non-critical roles from authorizing upgrades", async function () {
-      // Test: Verify that only CRITICAL_ROLE can authorize upgrades
+      // Test: Verify that only SECURITY_ROLE can authorize upgrades
       // This prevents unauthorized upgrades by standard multisig or regular users
 
-      // Grant STANDARD_ROLE to standardMultisig (but not CRITICAL_ROLE)
-      await testProxy.connect(deployer).grantRole(STANDARD_ROLE, standardMultisig.address);
+      // Grant OPERATIONS_ROLE to operationsMultisig (but not SECURITY_ROLE)
+      await testProxy.connect(deployer).grantRole(OPERATIONS_ROLE, operationsMultisig.address);
 
-      // The upgrade should fail when attempted without CRITICAL_ROLE
+      // The upgrade should fail when attempted without SECURITY_ROLE
       // This tests the _authorizeUpgrade function's access control directly
       await expect(
-        testProxy.connect(standardMultisig).exposed_authorizeUpgrade(ethers.ZeroAddress)
+        testProxy.connect(operationsMultisig).exposed_authorizeUpgrade(ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(testProxy, "AccessControlUnauthorizedAccount");
     });
   });

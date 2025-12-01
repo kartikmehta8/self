@@ -46,8 +46,8 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
   this.timeout(120000);
 
   let deployer: SignerWithAddress;
-  let criticalMultisig: SignerWithAddress;
-  let standardMultisig: SignerWithAddress;
+  let securityMultisig: SignerWithAddress;
+  let operationsMultisig: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
 
@@ -64,20 +64,20 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
   let poseidonT3: PoseidonT3;
 
   // Test constants
-  const CRITICAL_ROLE = ethers.keccak256(ethers.toUtf8Bytes("CRITICAL_ROLE"));
-  const STANDARD_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STANDARD_ROLE"));
+  const SECURITY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("SECURITY_ROLE"));
+  const OPERATIONS_ROLE = ethers.keccak256(ethers.toUtf8Bytes("OPERATIONS_ROLE"));
 
   // Sample production data
   const SAMPLE_CSCA_ROOT = "0x1111111111111111111111111111111111111111111111111111111111111111";
   const SAMPLE_PCR0 = "0x" + "22".repeat(48);
 
   before(async function () {
-    [deployer, criticalMultisig, standardMultisig, user1, user2] = await ethers.getSigners();
+    [deployer, securityMultisig, operationsMultisig, user1, user2] = await ethers.getSigners();
 
     console.log("\n🎯 Production Upgrade Simulation");
     console.log(`   Deployer: ${deployer.address}`);
-    console.log(`   Critical Multisig: ${criticalMultisig.address}`);
-    console.log(`   Standard Multisig: ${standardMultisig.address}`);
+    console.log(`   Critical Multisig: ${securityMultisig.address}`);
+    console.log(`   Standard Multisig: ${operationsMultisig.address}`);
     console.log("\n📝 Scenario: Upgrade IdentityVerificationHubImplV2 & Registries");
     console.log("   From: Ownable2StepUpgradeable (old ImplRoot)");
     console.log("   To:   AccessControlUpgradeable (new ImplRoot)");
@@ -207,8 +207,8 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   ✅ Same proxy address (in-place upgrade)");
 
       // Verify governance roles initialized
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
       console.log("   ✅ Governance roles initialized (deployer has both roles)");
 
       // Verify ALL state preserved
@@ -244,8 +244,8 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   ✅ Same proxy address (in-place upgrade)");
 
       // Verify governance roles initialized
-      expect(await upgradedRegistry.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await upgradedRegistry.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedRegistry.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedRegistry.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
       console.log("   ✅ Governance roles initialized (deployer has both roles)");
 
       // Verify ALL state preserved
@@ -275,7 +275,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
 
       await idCardRegistryProxy.waitForDeployment();
       console.log(`   ✅ ID Card Registry: ${await idCardRegistryProxy.getAddress()}`);
-      expect(await idCardRegistryProxy.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
+      expect(await idCardRegistryProxy.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
       console.log("   ✅ Deployer has governance roles");
     });
 
@@ -286,7 +286,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       pcr0Manager = await PCR0ManagerFactory.deploy();
       await pcr0Manager.waitForDeployment();
       console.log(`   ✅ PCR0Manager: ${await pcr0Manager.getAddress()}`);
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
       console.log("   ✅ Deployer has governance roles");
     });
   });
@@ -295,58 +295,58 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
     it("should transfer HubV2 roles to multisigs and remove deployer", async function () {
       console.log("\n🔑 Transferring HubV2 roles to multisigs...");
 
-      await upgradedHub.grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await upgradedHub.grantRole(STANDARD_ROLE, standardMultisig.address);
+      await upgradedHub.grantRole(SECURITY_ROLE, securityMultisig.address);
+      await upgradedHub.grantRole(OPERATIONS_ROLE, operationsMultisig.address);
       console.log("   ✅ Granted roles to multisigs");
 
-      await upgradedHub.renounceRole(CRITICAL_ROLE, deployer.address);
-      await upgradedHub.renounceRole(STANDARD_ROLE, deployer.address);
+      await upgradedHub.renounceRole(SECURITY_ROLE, deployer.address);
+      await upgradedHub.renounceRole(OPERATIONS_ROLE, deployer.address);
       console.log("   ✅ Deployer renounced roles");
 
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, criticalMultisig.address)).to.be.true;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, standardMultisig.address)).to.be.true;
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, deployer.address)).to.be.false;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, deployer.address)).to.be.false;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, operationsMultisig.address)).to.be.true;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, deployer.address)).to.be.false;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.false;
       console.log("   ✅ HubV2 now controlled by multisigs only");
     });
 
     it("should transfer Registry roles to multisigs and remove deployer", async function () {
       console.log("\n🔑 Transferring Registry roles to multisigs...");
 
-      await upgradedRegistry.grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await upgradedRegistry.grantRole(STANDARD_ROLE, standardMultisig.address);
-      await upgradedRegistry.renounceRole(CRITICAL_ROLE, deployer.address);
-      await upgradedRegistry.renounceRole(STANDARD_ROLE, deployer.address);
+      await upgradedRegistry.grantRole(SECURITY_ROLE, securityMultisig.address);
+      await upgradedRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig.address);
+      await upgradedRegistry.renounceRole(SECURITY_ROLE, deployer.address);
+      await upgradedRegistry.renounceRole(OPERATIONS_ROLE, deployer.address);
 
-      expect(await upgradedRegistry.hasRole(CRITICAL_ROLE, criticalMultisig.address)).to.be.true;
-      expect(await upgradedRegistry.hasRole(STANDARD_ROLE, standardMultisig.address)).to.be.true;
-      expect(await upgradedRegistry.hasRole(CRITICAL_ROLE, deployer.address)).to.be.false;
+      expect(await upgradedRegistry.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;
+      expect(await upgradedRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig.address)).to.be.true;
+      expect(await upgradedRegistry.hasRole(SECURITY_ROLE, deployer.address)).to.be.false;
       console.log("   ✅ Registry now controlled by multisigs only");
     });
 
     it("should transfer ID Card Registry roles to multisigs", async function () {
       console.log("\n🔑 Transferring ID Card Registry roles to multisigs...");
 
-      await idCardRegistryProxy.grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await idCardRegistryProxy.grantRole(STANDARD_ROLE, standardMultisig.address);
-      await idCardRegistryProxy.renounceRole(CRITICAL_ROLE, deployer.address);
-      await idCardRegistryProxy.renounceRole(STANDARD_ROLE, deployer.address);
+      await idCardRegistryProxy.grantRole(SECURITY_ROLE, securityMultisig.address);
+      await idCardRegistryProxy.grantRole(OPERATIONS_ROLE, operationsMultisig.address);
+      await idCardRegistryProxy.renounceRole(SECURITY_ROLE, deployer.address);
+      await idCardRegistryProxy.renounceRole(OPERATIONS_ROLE, deployer.address);
 
-      expect(await idCardRegistryProxy.hasRole(CRITICAL_ROLE, criticalMultisig.address)).to.be.true;
-      expect(await idCardRegistryProxy.hasRole(CRITICAL_ROLE, deployer.address)).to.be.false;
+      expect(await idCardRegistryProxy.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;
+      expect(await idCardRegistryProxy.hasRole(SECURITY_ROLE, deployer.address)).to.be.false;
       console.log("   ✅ ID Card Registry now controlled by multisigs only");
     });
 
     it("should transfer PCR0Manager roles to multisigs", async function () {
       console.log("\n🔑 Transferring PCR0Manager roles to multisigs...");
 
-      await pcr0Manager.grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await pcr0Manager.grantRole(STANDARD_ROLE, standardMultisig.address);
-      await pcr0Manager.renounceRole(CRITICAL_ROLE, deployer.address);
-      await pcr0Manager.renounceRole(STANDARD_ROLE, deployer.address);
+      await pcr0Manager.grantRole(SECURITY_ROLE, securityMultisig.address);
+      await pcr0Manager.grantRole(OPERATIONS_ROLE, operationsMultisig.address);
+      await pcr0Manager.renounceRole(SECURITY_ROLE, deployer.address);
+      await pcr0Manager.renounceRole(OPERATIONS_ROLE, deployer.address);
 
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, criticalMultisig.address)).to.be.true;
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, deployer.address)).to.be.false;
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, deployer.address)).to.be.false;
       console.log("   ✅ PCR0Manager now controlled by multisigs only");
     });
   });
@@ -355,7 +355,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
     it("should allow critical multisig to update HubV2", async function () {
       console.log("\n✅ Testing HubV2 multisig control...");
       const newRegistry = user1.address;
-      await upgradedHub.connect(criticalMultisig).updateRegistry(newRegistry);
+      await upgradedHub.connect(securityMultisig).updateRegistry(newRegistry);
       expect(await upgradedHub.getRegistry()).to.equal(newRegistry);
       console.log("   ✅ Critical multisig can update HubV2");
     });
@@ -363,14 +363,14 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
     it("should allow critical multisig to update Registry", async function () {
       console.log("\n✅ Testing Registry multisig control...");
       const newRoot = "0x" + "33".repeat(32);
-      await upgradedRegistry.connect(criticalMultisig).updateCscaRoot(newRoot);
+      await upgradedRegistry.connect(securityMultisig).updateCscaRoot(newRoot);
       expect(await upgradedRegistry.getCscaRoot()).to.equal(newRoot);
       console.log("   ✅ Critical multisig can update Registry");
     });
 
     it("should allow critical multisig to manage PCR0", async function () {
       console.log("\n✅ Testing PCR0Manager multisig control...");
-      await pcr0Manager.connect(criticalMultisig).addPCR0(SAMPLE_PCR0);
+      await pcr0Manager.connect(securityMultisig).addPCR0(SAMPLE_PCR0);
       expect(await pcr0Manager.isPCR0Set(SAMPLE_PCR0)).to.be.true;
       console.log("   ✅ Critical multisig can manage PCR0");
     });
@@ -423,10 +423,10 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("\n🎯 Final HubV2 verification...");
 
       const newRegistry = user2.address;
-      await upgradedHub.connect(criticalMultisig).updateRegistry(newRegistry);
+      await upgradedHub.connect(securityMultisig).updateRegistry(newRegistry);
       expect(await upgradedHub.getRegistry()).to.equal(newRegistry);
 
-      await upgradedHub.connect(criticalMultisig).updateCircuitVersion(3);
+      await upgradedHub.connect(securityMultisig).updateCircuitVersion(3);
       expect(await upgradedHub.getCircuitVersion()).to.equal(3);
       console.log("   ✅ HubV2 fully functional with multisig control");
     });
@@ -435,7 +435,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("\n🎯 Final Registry verification...");
 
       const finalRoot = "0x" + "99".repeat(32);
-      await upgradedRegistry.connect(criticalMultisig).updateCscaRoot(finalRoot);
+      await upgradedRegistry.connect(securityMultisig).updateCscaRoot(finalRoot);
       expect(await upgradedRegistry.getCscaRoot()).to.equal(finalRoot);
       console.log("   ✅ Registry fully functional with multisig control");
     });
@@ -444,7 +444,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("\n🎯 Final PCR0Manager verification...");
 
       const newPCR0 = "0x" + "88".repeat(48);
-      await pcr0Manager.connect(criticalMultisig).addPCR0(newPCR0);
+      await pcr0Manager.connect(securityMultisig).addPCR0(newPCR0);
       expect(await pcr0Manager.isPCR0Set(newPCR0)).to.be.true;
       console.log("   ✅ PCR0Manager fully functional with multisig control");
     });
@@ -476,8 +476,8 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   ✓ NO storage corruption");
 
       console.log("\n🔑 Governance Configuration:");
-      console.log(`   Critical Multisig (3/5): ${criticalMultisig.address}`);
-      console.log(`   Standard Multisig (2/5): ${standardMultisig.address}`);
+      console.log(`   Critical Multisig (3/5): ${securityMultisig.address}`);
+      console.log(`   Standard Multisig (2/5): ${operationsMultisig.address}`);
       console.log("   Critical Role: Upgrades, critical parameters, role management");
       console.log("   Standard Role: Standard operational parameters");
 

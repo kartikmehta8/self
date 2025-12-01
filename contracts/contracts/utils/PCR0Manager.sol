@@ -8,23 +8,23 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  * @notice This contract manages a mapping of PCR0 values (provided as a 48-byte value)
  *         to booleans. The PCR0 value (the 48-byte SHA384 output) is hashed
  *         using keccak256 and then stored in the mapping.
- *         Only accounts with CRITICAL_ROLE can add or remove entries.
+ *         Only accounts with SECURITY_ROLE can add or remove entries.
  */
 contract PCR0Manager is AccessControl {
     /// @notice Critical operations and role management requiring 3/5 multisig consensus
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
 
     /// @notice Standard operations requiring 2/5 multisig consensus
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     constructor() {
         // Grant all roles to deployer initially
-        _grantRole(CRITICAL_ROLE, msg.sender);
-        _grantRole(STANDARD_ROLE, msg.sender);
+        _grantRole(SECURITY_ROLE, msg.sender);
+        _grantRole(OPERATIONS_ROLE, msg.sender);
 
-        // Set role admins - CRITICAL_ROLE is admin of both roles
-        _setRoleAdmin(CRITICAL_ROLE, CRITICAL_ROLE);
-        _setRoleAdmin(STANDARD_ROLE, CRITICAL_ROLE);
+        // Set role admins - SECURITY_ROLE is admin of both roles
+        _setRoleAdmin(SECURITY_ROLE, SECURITY_ROLE);
+        _setRoleAdmin(OPERATIONS_ROLE, SECURITY_ROLE);
     }
 
     // Mapping from keccak256(pcr0) to its boolean state.
@@ -44,7 +44,7 @@ contract PCR0Manager is AccessControl {
      * @dev Reverts if the PCR0 value is not 32 bytes or if it is already set.
      * @dev Pads the PCR0 value to 48 bytes by prefixing 16 zero bytes to maintain mobile app compatibility.
      */
-    function addPCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
+    function addPCR0(bytes calldata pcr0) external onlyRole(SECURITY_ROLE) {
         require(pcr0.length == 32, "PCR0 must be 32 bytes");
         bytes memory paddedPcr0 = abi.encodePacked(new bytes(16), pcr0);
         bytes32 key = keccak256(paddedPcr0);
@@ -59,7 +59,7 @@ contract PCR0Manager is AccessControl {
      * @dev Reverts if the PCR0 value is not 32 bytes or if it is not currently set.
      * @dev Pads the PCR0 value to 48 bytes by prefixing 16 zero bytes to maintain mobile app compatibility.
      */
-    function removePCR0(bytes calldata pcr0) external onlyRole(CRITICAL_ROLE) {
+    function removePCR0(bytes calldata pcr0) external onlyRole(SECURITY_ROLE) {
         require(pcr0.length == 32, "PCR0 must be 32 bytes");
         bytes memory paddedPcr0 = abi.encodePacked(new bytes(16), pcr0);
         bytes32 key = keccak256(paddedPcr0);

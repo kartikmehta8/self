@@ -23,8 +23,8 @@ import {IdentityRegistryAadhaarImplV1} from "../contracts/registry/IdentityRegis
  *
  * Usage:
  * - Set in .env file:
- *   CRITICAL_GOVERNANCE_ADDRESS=0x...
- *   STANDARD_GOVERNANCE_ADDRESS=0x...
+ *   SECURITY_GOVERNANCE_ADDRESS=0x...
+ *   OPERATIONS_GOVERNANCE_ADDRESS=0x...
  *
  * - Dry run:
  *   forge script script/UpgradeToAccessControl.s.sol \
@@ -55,12 +55,12 @@ contract UpgradeToAccessControl is Script {
     address constant REGISTRY_AADHAAR_PROXY = 0xd603Fa8C8f4694E8DD1DcE1f27C0C3fc91e32Ac4; // IdentityRegistry (Aadhaar) proxy
 
     // Governance roles
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     // Multisig addresses (from environment)
-    address criticalMultisig;
-    address standardMultisig;
+    address securityMultisig;
+    address operationsMultisig;
 
     function run() external {
         console2.log("================================================================================");
@@ -71,15 +71,15 @@ contract UpgradeToAccessControl is Script {
         console2.log("Chain ID:", block.chainid);
 
         // Get multisig addresses from .env
-        criticalMultisig = vm.envAddress("CRITICAL_GOVERNANCE_ADDRESS");
-        standardMultisig = vm.envAddress("STANDARD_GOVERNANCE_ADDRESS");
+        securityMultisig = vm.envAddress("SECURITY_GOVERNANCE_ADDRESS");
+        operationsMultisig = vm.envAddress("OPERATIONS_GOVERNANCE_ADDRESS");
 
-        require(criticalMultisig != address(0), "CRITICAL_GOVERNANCE_ADDRESS not set in .env");
-        require(standardMultisig != address(0), "STANDARD_GOVERNANCE_ADDRESS not set in .env");
+        require(securityMultisig != address(0), "SECURITY_GOVERNANCE_ADDRESS not set in .env");
+        require(operationsMultisig != address(0), "OPERATIONS_GOVERNANCE_ADDRESS not set in .env");
 
         console2.log("\nGovernance addresses (roles will be transferred):");
-        console2.log("  Critical Multisig:", criticalMultisig);
-        console2.log("  Standard Multisig:", standardMultisig);
+        console2.log("  Critical Multisig:", securityMultisig);
+        console2.log("  Standard Multisig:", operationsMultisig);
 
         // Start broadcasting transactions
         vm.startBroadcast();
@@ -131,8 +131,8 @@ contract UpgradeToAccessControl is Script {
 
         // Verify governance roles
         IdentityVerificationHubImplV2 hub = IdentityVerificationHubImplV2(HUB_PROXY);
-        require(hub.hasRole(CRITICAL_ROLE, msg.sender), "Deployer missing CRITICAL_ROLE");
-        require(hub.hasRole(STANDARD_ROLE, msg.sender), "Deployer missing STANDARD_ROLE");
+        require(hub.hasRole(SECURITY_ROLE, msg.sender), "Deployer missing SECURITY_ROLE");
+        require(hub.hasRole(OPERATIONS_ROLE, msg.sender), "Deployer missing OPERATIONS_ROLE");
         console2.log("   Governance: Deployer has both roles");
     }
 
@@ -154,8 +154,8 @@ contract UpgradeToAccessControl is Script {
 
         // Verify governance roles
         IdentityRegistryImplV1 registry = IdentityRegistryImplV1(REGISTRY_PASSPORT_PROXY);
-        require(registry.hasRole(CRITICAL_ROLE, msg.sender), "Deployer missing CRITICAL_ROLE");
-        require(registry.hasRole(STANDARD_ROLE, msg.sender), "Deployer missing STANDARD_ROLE");
+        require(registry.hasRole(SECURITY_ROLE, msg.sender), "Deployer missing SECURITY_ROLE");
+        require(registry.hasRole(OPERATIONS_ROLE, msg.sender), "Deployer missing OPERATIONS_ROLE");
         console2.log("   Governance: Deployer has both roles");
     }
 
@@ -179,8 +179,8 @@ contract UpgradeToAccessControl is Script {
 
         // Verify governance roles
         IdentityRegistryIdCardImplV1 registry = IdentityRegistryIdCardImplV1(REGISTRY_ID_CARD_PROXY);
-        require(registry.hasRole(CRITICAL_ROLE, msg.sender), "Deployer missing CRITICAL_ROLE");
-        require(registry.hasRole(STANDARD_ROLE, msg.sender), "Deployer missing STANDARD_ROLE");
+        require(registry.hasRole(SECURITY_ROLE, msg.sender), "Deployer missing SECURITY_ROLE");
+        require(registry.hasRole(OPERATIONS_ROLE, msg.sender), "Deployer missing OPERATIONS_ROLE");
         console2.log("   Governance: Deployer has both roles");
     }
 
@@ -202,8 +202,8 @@ contract UpgradeToAccessControl is Script {
 
         // Verify governance roles
         IdentityRegistryAadhaarImplV1 registry = IdentityRegistryAadhaarImplV1(REGISTRY_AADHAAR_PROXY);
-        require(registry.hasRole(CRITICAL_ROLE, msg.sender), "Deployer missing CRITICAL_ROLE");
-        require(registry.hasRole(STANDARD_ROLE, msg.sender), "Deployer missing STANDARD_ROLE");
+        require(registry.hasRole(SECURITY_ROLE, msg.sender), "Deployer missing SECURITY_ROLE");
+        require(registry.hasRole(OPERATIONS_ROLE, msg.sender), "Deployer missing OPERATIONS_ROLE");
         console2.log("   Governance: Deployer has both roles");
     }
 
@@ -218,44 +218,44 @@ contract UpgradeToAccessControl is Script {
 
         // Grant roles to multisigs
         console2.log("   Granting roles to multisigs...");
-        hub.grantRole(CRITICAL_ROLE, criticalMultisig);
-        hub.grantRole(STANDARD_ROLE, standardMultisig);
+        hub.grantRole(SECURITY_ROLE, securityMultisig);
+        hub.grantRole(OPERATIONS_ROLE, operationsMultisig);
 
-        passportRegistry.grantRole(CRITICAL_ROLE, criticalMultisig);
-        passportRegistry.grantRole(STANDARD_ROLE, standardMultisig);
+        passportRegistry.grantRole(SECURITY_ROLE, securityMultisig);
+        passportRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig);
 
-        idCardRegistry.grantRole(CRITICAL_ROLE, criticalMultisig);
-        idCardRegistry.grantRole(STANDARD_ROLE, standardMultisig);
+        idCardRegistry.grantRole(SECURITY_ROLE, securityMultisig);
+        idCardRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig);
 
-        aadhaarRegistry.grantRole(CRITICAL_ROLE, criticalMultisig);
-        aadhaarRegistry.grantRole(STANDARD_ROLE, standardMultisig);
+        aadhaarRegistry.grantRole(SECURITY_ROLE, securityMultisig);
+        aadhaarRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig);
 
         // Deployer renounces roles
         console2.log("   Deployer renouncing all roles...");
-        hub.renounceRole(CRITICAL_ROLE, msg.sender);
-        hub.renounceRole(STANDARD_ROLE, msg.sender);
+        hub.renounceRole(SECURITY_ROLE, msg.sender);
+        hub.renounceRole(OPERATIONS_ROLE, msg.sender);
 
-        passportRegistry.renounceRole(CRITICAL_ROLE, msg.sender);
-        passportRegistry.renounceRole(STANDARD_ROLE, msg.sender);
+        passportRegistry.renounceRole(SECURITY_ROLE, msg.sender);
+        passportRegistry.renounceRole(OPERATIONS_ROLE, msg.sender);
 
-        idCardRegistry.renounceRole(CRITICAL_ROLE, msg.sender);
-        idCardRegistry.renounceRole(STANDARD_ROLE, msg.sender);
+        idCardRegistry.renounceRole(SECURITY_ROLE, msg.sender);
+        idCardRegistry.renounceRole(OPERATIONS_ROLE, msg.sender);
 
-        aadhaarRegistry.renounceRole(CRITICAL_ROLE, msg.sender);
-        aadhaarRegistry.renounceRole(STANDARD_ROLE, msg.sender);
+        aadhaarRegistry.renounceRole(SECURITY_ROLE, msg.sender);
+        aadhaarRegistry.renounceRole(OPERATIONS_ROLE, msg.sender);
 
         console2.log("   Status: Roles transferred successfully");
 
         // Verify deployer has no roles
-        require(!hub.hasRole(CRITICAL_ROLE, msg.sender), "Hub: Deployer still has CRITICAL_ROLE");
-        require(!hub.hasRole(STANDARD_ROLE, msg.sender), "Hub: Deployer still has STANDARD_ROLE");
-        require(!passportRegistry.hasRole(CRITICAL_ROLE, msg.sender), "Passport: Deployer still has CRITICAL_ROLE");
-        require(!idCardRegistry.hasRole(CRITICAL_ROLE, msg.sender), "IDCard: Deployer still has CRITICAL_ROLE");
-        require(!aadhaarRegistry.hasRole(CRITICAL_ROLE, msg.sender), "Aadhaar: Deployer still has CRITICAL_ROLE");
+        require(!hub.hasRole(SECURITY_ROLE, msg.sender), "Hub: Deployer still has SECURITY_ROLE");
+        require(!hub.hasRole(OPERATIONS_ROLE, msg.sender), "Hub: Deployer still has OPERATIONS_ROLE");
+        require(!passportRegistry.hasRole(SECURITY_ROLE, msg.sender), "Passport: Deployer still has SECURITY_ROLE");
+        require(!idCardRegistry.hasRole(SECURITY_ROLE, msg.sender), "IDCard: Deployer still has SECURITY_ROLE");
+        require(!aadhaarRegistry.hasRole(SECURITY_ROLE, msg.sender), "Aadhaar: Deployer still has SECURITY_ROLE");
 
         // Verify multisigs have roles
-        require(hub.hasRole(CRITICAL_ROLE, criticalMultisig), "Hub: Critical multisig missing CRITICAL_ROLE");
-        require(hub.hasRole(STANDARD_ROLE, standardMultisig), "Hub: Standard multisig missing STANDARD_ROLE");
+        require(hub.hasRole(SECURITY_ROLE, securityMultisig), "Hub: Critical multisig missing SECURITY_ROLE");
+        require(hub.hasRole(OPERATIONS_ROLE, operationsMultisig), "Hub: Standard multisig missing OPERATIONS_ROLE");
 
         console2.log("   Verification: Deployer has ZERO control");
         console2.log("   Verification: Multisigs have full control");

@@ -6,7 +6,7 @@
 ```bash
 CELO_RPC_URL=https://forno.celo.org
 CELO_PRIVATE_KEY=<deployer_private_key>
-CRITICAL_GOVERNANCE_ADDRESS=<critical_multisig_address>
+SECURITY_GOVERNANCE_ADDRESS=<critical_multisig_address>
 STANDARD_GOVERNANCE_ADDRESS=<standard_multisig_address>
 ```
 
@@ -70,8 +70,8 @@ forge script script/MigratePCR0Manager.s.sol:MigratePCR0Manager \
 # Check governance roles
 cast call 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF \
   "hasRole(bytes32,address)" \
-  $(cast keccak "CRITICAL_ROLE") \
-  $CRITICAL_GOVERNANCE_ADDRESS \
+  $(cast keccak "SECURITY_ROLE") \
+  $SECURITY_GOVERNANCE_ADDRESS \
   --rpc-url $CELO_RPC_URL
 
 # Check PCR0 values migrated (example)
@@ -96,4 +96,4 @@ cast call <NEW_PCR0_MANAGER_ADDRESS> \
 
 If issues occur, the multisigs can:
 1. Deploy previous implementation versions
-2. Use `upgradeTo()` to revert (requires `CRITICAL_ROLE`)
+2. Use `upgradeTo()` to revert (requires `SECURITY_ROLE`)

@@ -28,7 +28,7 @@ import {Formatter} from "./libraries/Formatter.sol";
  * @custom:version 2.12.0
  * @custom:version-history
  * - v2.11.0 (Initializer v11): V2 hub deployment with Ownable2StepUpgradeable governance
- * - v2.12.0 (Initializer v12): Governance upgrade - migrated to AccessControlUpgradeable with multi-tier governance (CRITICAL_ROLE, STANDARD_ROLE)
+ * - v2.12.0 (Initializer v12): Governance upgrade - migrated to AccessControlUpgradeable with multi-tier governance (SECURITY_ROLE, OPERATIONS_ROLE)
  */
 contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub
@@ -357,7 +357,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the AADHAAR registration window.
      * @param window The new AADHAAR registration window.
      */
-    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         AADHAAR_REGISTRATION_WINDOW = window;
     }
 
@@ -400,7 +400,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registries[attestationId] = registryAddress;
         emit RegistryUpdated(attestationId, registryAddress);
@@ -413,7 +413,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function updateVcAndDiscloseCircuit(
         bytes32 attestationId,
         address vcAndDiscloseCircuitVerifierAddress
-    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._discloseVerifiers[attestationId] = vcAndDiscloseCircuitVerifierAddress;
         emit VcAndDiscloseCircuitUpdated(attestationId, vcAndDiscloseCircuitVerifierAddress);
@@ -429,7 +429,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registerCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit RegisterCircuitVerifierUpdated(typeId, verifierAddress);
@@ -445,7 +445,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._dscCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit DscCircuitVerifierUpdated(typeId, verifierAddress);
@@ -461,7 +461,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }
@@ -482,7 +482,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyRole(CRITICAL_ROLE) {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }

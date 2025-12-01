@@ -172,12 +172,12 @@ async function transferUtilityContractRoles() {
 async function transferRolesForContract(contract: any, contractName: string) {
   const [deployer] = await ethers.getSigners();
 
-  const CRITICAL_ROLE = await contract.CRITICAL_ROLE();
-  const STANDARD_ROLE = await contract.STANDARD_ROLE();
+  const SECURITY_ROLE = await contract.SECURITY_ROLE();
+  const OPERATIONS_ROLE = await contract.OPERATIONS_ROLE();
 
   // Check current roles
-  const deployerHasCritical = await contract.hasRole(CRITICAL_ROLE, deployer.address);
-  const deployerHasStandard = await contract.hasRole(STANDARD_ROLE, deployer.address);
+  const deployerHasCritical = await contract.hasRole(SECURITY_ROLE, deployer.address);
+  const deployerHasStandard = await contract.hasRole(OPERATIONS_ROLE, deployer.address);
 
   if (!deployerHasCritical || !deployerHasStandard) {
     log.warning(`⚠️  Deployer doesn't have all roles for ${contractName}, skipping...`);
@@ -185,22 +185,22 @@ async function transferRolesForContract(contract: any, contractName: string) {
   }
 
   if (DRY_RUN) {
-    log.info(`[DRY RUN] Would grant CRITICAL_ROLE to ${CRITICAL_MULTISIG}`);
-    log.info(`[DRY RUN] Would grant STANDARD_ROLE to ${STANDARD_MULTISIG}`);
+    log.info(`[DRY RUN] Would grant SECURITY_ROLE to ${CRITICAL_MULTISIG}`);
+    log.info(`[DRY RUN] Would grant OPERATIONS_ROLE to ${STANDARD_MULTISIG}`);
     log.info(`[DRY RUN] Would renounce deployer roles`);
     return;
   }
 
   // Grant roles to multisigs
-  log.info(`Granting CRITICAL_ROLE to ${CRITICAL_MULTISIG}...`);
-  await contract.connect(deployer).grantRole(CRITICAL_ROLE, CRITICAL_MULTISIG);
+  log.info(`Granting SECURITY_ROLE to ${CRITICAL_MULTISIG}...`);
+  await contract.connect(deployer).grantRole(SECURITY_ROLE, CRITICAL_MULTISIG);
 
-  log.info(`Granting STANDARD_ROLE to ${STANDARD_MULTISIG}...`);
-  await contract.connect(deployer).grantRole(STANDARD_ROLE, STANDARD_MULTISIG);
+  log.info(`Granting OPERATIONS_ROLE to ${STANDARD_MULTISIG}...`);
+  await contract.connect(deployer).grantRole(OPERATIONS_ROLE, STANDARD_MULTISIG);
 
   // Verify roles were granted
-  const criticalGranted = await contract.hasRole(CRITICAL_ROLE, CRITICAL_MULTISIG);
-  const standardGranted = await contract.hasRole(STANDARD_ROLE, STANDARD_MULTISIG);
+  const criticalGranted = await contract.hasRole(SECURITY_ROLE, CRITICAL_MULTISIG);
+  const standardGranted = await contract.hasRole(OPERATIONS_ROLE, STANDARD_MULTISIG);
 
   if (!criticalGranted || !standardGranted) {
     throw new Error(`Failed to grant roles to multisigs for ${contractName}`);
@@ -208,12 +208,12 @@ async function transferRolesForContract(contract: any, contractName: string) {
 
   // Renounce deployer roles
   log.info(`Renouncing deployer roles...`);
-  await contract.connect(deployer).renounceRole(CRITICAL_ROLE, deployer.address);
-  await contract.connect(deployer).renounceRole(STANDARD_ROLE, deployer.address);
+  await contract.connect(deployer).renounceRole(SECURITY_ROLE, deployer.address);
+  await contract.connect(deployer).renounceRole(OPERATIONS_ROLE, deployer.address);
 
   // Verify roles were renounced
-  const deployerStillHasCritical = await contract.hasRole(CRITICAL_ROLE, deployer.address);
-  const deployerStillHasStandard = await contract.hasRole(STANDARD_ROLE, deployer.address);
+  const deployerStillHasCritical = await contract.hasRole(SECURITY_ROLE, deployer.address);
+  const deployerStillHasStandard = await contract.hasRole(OPERATIONS_ROLE, deployer.address);
 
   if (deployerStillHasCritical || deployerStillHasStandard) {
     throw new Error(`Failed to renounce deployer roles for ${contractName}`);

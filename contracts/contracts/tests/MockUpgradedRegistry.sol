@@ -46,37 +46,37 @@ contract MockUpgradedRegistry is ImplRoot {
     }
 
     /**
-     * @notice Sets the hub address (now requires CRITICAL_ROLE)
+     * @notice Sets the hub address (now requires SECURITY_ROLE)
      * @param hubAddress The new hub address
      */
-    function setHub(address hubAddress) external onlyRole(CRITICAL_ROLE) {
+    function setHub(address hubAddress) external onlyRole(SECURITY_ROLE) {
         _hub = hubAddress;
         emit HubUpdated(hubAddress);
     }
 
     /**
-     * @notice Updates the hub address (now requires CRITICAL_ROLE)
+     * @notice Updates the hub address (now requires SECURITY_ROLE)
      * @param hubAddress The new hub address
      */
-    function updateHub(address hubAddress) external onlyRole(CRITICAL_ROLE) {
+    function updateHub(address hubAddress) external onlyRole(SECURITY_ROLE) {
         _hub = hubAddress;
         emit HubUpdated(hubAddress);
     }
 
     /**
-     * @notice Updates the CSCA root (now requires CRITICAL_ROLE)
+     * @notice Updates the CSCA root (now requires SECURITY_ROLE)
      * @param cscaRoot The new CSCA root
      */
-    function updateCscaRoot(bytes32 cscaRoot) external onlyRole(CRITICAL_ROLE) {
+    function updateCscaRoot(bytes32 cscaRoot) external onlyRole(SECURITY_ROLE) {
         _cscaRoot = cscaRoot;
         emit CscaRootUpdated(cscaRoot);
     }
 
     /**
-     * @notice Adds a commitment (now requires CRITICAL_ROLE)
+     * @notice Adds a commitment (now requires SECURITY_ROLE)
      * @param commitment The commitment to add
      */
-    function addCommitment(bytes32 commitment) external onlyRole(CRITICAL_ROLE) {
+    function addCommitment(bytes32 commitment) external onlyRole(SECURITY_ROLE) {
         _commitments[commitment] = true;
     }
 
@@ -101,4 +101,3 @@ contract MockUpgradedRegistry is ImplRoot {
         return _commitments[commitment];
     }
 }
-

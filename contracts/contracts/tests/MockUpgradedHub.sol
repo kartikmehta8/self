@@ -40,19 +40,19 @@ contract MockUpgradedHub is ImplRoot {
     }
 
     /**
-     * @notice Updates the registry address (now requires CRITICAL_ROLE)
+     * @notice Updates the registry address (now requires SECURITY_ROLE)
      * @param registryAddress The new registry address
      */
-    function updateRegistry(address registryAddress) external onlyRole(CRITICAL_ROLE) {
+    function updateRegistry(address registryAddress) external onlyRole(SECURITY_ROLE) {
         _registry = registryAddress;
         emit RegistryUpdated(registryAddress);
     }
 
     /**
-     * @notice Updates circuit version (requires CRITICAL_ROLE)
+     * @notice Updates circuit version (requires SECURITY_ROLE)
      * @param version The new circuit version
      */
-    function updateCircuitVersion(uint256 version) external onlyRole(CRITICAL_ROLE) {
+    function updateCircuitVersion(uint256 version) external onlyRole(SECURITY_ROLE) {
         _circuitVersion = version;
     }
 
@@ -77,6 +77,6 @@ contract MockUpgradedHub is ImplRoot {
     function verifyStorageMigration() external view returns (bool) {
         // The important thing is that the contract is functional and governance works
         // Registry and circuit version should be preserved, deprecated owner may be zero
-        return hasRole(CRITICAL_ROLE, msg.sender) || hasRole(STANDARD_ROLE, msg.sender);
+        return hasRole(SECURITY_ROLE, msg.sender) || hasRole(OPERATIONS_ROLE, msg.sender);
     }
 }

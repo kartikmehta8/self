@@ -27,16 +27,16 @@ import {
 
 describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
   let deployer: SignerWithAddress;
-  let criticalMultisig: SignerWithAddress;
-  let standardMultisig: SignerWithAddress;
+  let securityMultisig: SignerWithAddress;
+  let operationsMultisig: SignerWithAddress;
   let user: SignerWithAddress;
 
   // Test constants
-  const CRITICAL_ROLE = ethers.keccak256(ethers.toUtf8Bytes("CRITICAL_ROLE"));
-  const STANDARD_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STANDARD_ROLE"));
+  const SECURITY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("SECURITY_ROLE"));
+  const OPERATIONS_ROLE = ethers.keccak256(ethers.toUtf8Bytes("OPERATIONS_ROLE"));
 
   beforeEach(async function () {
-    [deployer, criticalMultisig, standardMultisig, user] = await ethers.getSigners();
+    [deployer, securityMultisig, operationsMultisig, user] = await ethers.getSigners();
   });
 
   describe("Ownable to AccessControl Upgrade (Storage Validation Demo)", function () {
@@ -110,8 +110,8 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       console.log(`   ✅ Registry preserved: ${preservedRegistry}`);
 
       // Check that new governance is working
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
       console.log("   ✅ New governance roles active");
 
       // Verify the upgrade worked (unsafeSkipStorageCheck allows this test scenario)
@@ -135,7 +135,7 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       await upgradedHub.initialize();
 
       // Test that governance functions work
-      const newRegistry = criticalMultisig.address;
+      const newRegistry = securityMultisig.address;
       await upgradedHub.updateRegistry(newRegistry);
       expect(await upgradedHub.getRegistry()).to.equal(newRegistry);
 
@@ -185,24 +185,24 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       await upgradedHub.initialize();
 
       // Transfer roles to multisigs
-      await upgradedHub.grantRole(CRITICAL_ROLE, criticalMultisig.address);
-      await upgradedHub.grantRole(STANDARD_ROLE, standardMultisig.address);
+      await upgradedHub.grantRole(SECURITY_ROLE, securityMultisig.address);
+      await upgradedHub.grantRole(OPERATIONS_ROLE, operationsMultisig.address);
 
       // Verify multisigs have roles
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, criticalMultisig.address)).to.be.true;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, standardMultisig.address)).to.be.true;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, operationsMultisig.address)).to.be.true;
 
       // Test that multisig can perform governance functions
-      await upgradedHub.connect(criticalMultisig).updateRegistry(criticalMultisig.address);
-      expect(await upgradedHub.getRegistry()).to.equal(criticalMultisig.address);
+      await upgradedHub.connect(securityMultisig).updateRegistry(securityMultisig.address);
+      expect(await upgradedHub.getRegistry()).to.equal(securityMultisig.address);
 
       // Renounce deployer roles
-      await upgradedHub.renounceRole(CRITICAL_ROLE, deployer.address);
-      await upgradedHub.renounceRole(STANDARD_ROLE, deployer.address);
+      await upgradedHub.renounceRole(SECURITY_ROLE, deployer.address);
+      await upgradedHub.renounceRole(OPERATIONS_ROLE, deployer.address);
 
       // Verify deployer no longer has roles
-      expect(await upgradedHub.hasRole(CRITICAL_ROLE, deployer.address)).to.be.false;
-      expect(await upgradedHub.hasRole(STANDARD_ROLE, deployer.address)).to.be.false;
+      expect(await upgradedHub.hasRole(SECURITY_ROLE, deployer.address)).to.be.false;
+      expect(await upgradedHub.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.false;
     });
   });
 
@@ -250,8 +250,8 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       console.log("\n📋 AFTER UPGRADE:");
       console.log(`   Registry (preserved): ${await upgradedHub.getRegistry()}`);
       console.log(`   Circuit Version (preserved): ${await upgradedHub.getCircuitVersion()}`);
-      console.log(`   Has CRITICAL_ROLE: ${await upgradedHub.hasRole(CRITICAL_ROLE, deployer.address)}`);
-      console.log(`   Has STANDARD_ROLE: ${await upgradedHub.hasRole(STANDARD_ROLE, deployer.address)}`);
+      console.log(`   Has SECURITY_ROLE: ${await upgradedHub.hasRole(SECURITY_ROLE, deployer.address)}`);
+      console.log(`   Has OPERATIONS_ROLE: ${await upgradedHub.hasRole(OPERATIONS_ROLE, deployer.address)}`);
 
       // Verify storage preservation - application state is preserved
       expect(await upgradedHub.getRegistry()).to.equal(user.address);

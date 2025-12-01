@@ -4,11 +4,11 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Upgrade Safety Validation Tests", function () {
   let deployer: SignerWithAddress;
-  let criticalMultisig: SignerWithAddress;
-  let standardMultisig: SignerWithAddress;
+  let securityMultisig: SignerWithAddress;
+  let operationsMultisig: SignerWithAddress;
 
   beforeEach(async function () {
-    [deployer, criticalMultisig, standardMultisig] = await ethers.getSigners();
+    [deployer, securityMultisig, operationsMultisig] = await ethers.getSigners();
   });
 
   describe("Storage Layout Validation", function () {
@@ -129,12 +129,12 @@ describe("Upgrade Safety Validation Tests", function () {
 
       // Verify initialization worked correctly
       const DEFAULT_ADMIN_ROLE = ethers.ZeroHash;
-      const STANDARD_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STANDARD_ROLE"));
+      const OPERATIONS_ROLE = ethers.keccak256(ethers.toUtf8Bytes("OPERATIONS_ROLE"));
 
       // PCR0Manager now grants initial roles to deployer
-      const CRITICAL_ROLE = ethers.keccak256(ethers.toUtf8Bytes("CRITICAL_ROLE"));
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
-      expect(await pcr0Manager.hasRole(STANDARD_ROLE, deployer.address)).to.be.true;
+      const SECURITY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("SECURITY_ROLE"));
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
+      expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, deployer.address)).to.be.true;
     });
 
     it("should prevent initialization with zero addresses", async function () {
@@ -146,8 +146,8 @@ describe("Upgrade Safety Validation Tests", function () {
       await pcr0Manager.waitForDeployment();
 
       // Verify deployer has initial roles
-      const CRITICAL_ROLE = ethers.keccak256(ethers.toUtf8Bytes("CRITICAL_ROLE"));
-      expect(await pcr0Manager.hasRole(CRITICAL_ROLE, deployer.address)).to.be.true;
+      const SECURITY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("SECURITY_ROLE"));
+      expect(await pcr0Manager.hasRole(SECURITY_ROLE, deployer.address)).to.be.true;
     });
   });
 

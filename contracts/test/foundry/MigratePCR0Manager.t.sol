@@ -21,16 +21,16 @@ import {PCR0Manager} from "../../contracts/utils/PCR0Manager.sol";
 contract MigratePCR0ManagerTest is Test {
     // Test accounts
     address deployer;
-    address criticalMultisig;
-    address standardMultisig;
+    address securityMultisig;
+    address operationsMultisig;
     address unauthorized;
 
     // Contracts
     PCR0Manager pcr0Manager;
 
     // Governance roles
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     // Finalized PCR0 values (32-byte format)
     bytes[] pcr0Values;
@@ -42,15 +42,15 @@ contract MigratePCR0ManagerTest is Test {
 
         // Set up test accounts
         deployer = makeAddr("deployer");
-        criticalMultisig = makeAddr("criticalMultisig");
-        standardMultisig = makeAddr("standardMultisig");
+        securityMultisig = makeAddr("securityMultisig");
+        operationsMultisig = makeAddr("operationsMultisig");
         unauthorized = makeAddr("unauthorized");
 
         vm.deal(deployer, 100 ether);
 
         console2.log("Deployer:", deployer);
-        console2.log("Critical Multisig:", criticalMultisig);
-        console2.log("Standard Multisig:", standardMultisig);
+        console2.log("Critical Multisig:", securityMultisig);
+        console2.log("Standard Multisig:", operationsMultisig);
 
         // Populate finalized PCR0 values (32-byte format)
         pcr0Values.push(hex"eb71776987d5f057030823f591d160c9d5d5e0a96c9a2a826778be1da2b8302a");
@@ -70,8 +70,8 @@ contract MigratePCR0ManagerTest is Test {
         vm.stopPrank();
 
         console2.log("Deployed at:", address(pcr0Manager));
-        assertTrue(pcr0Manager.hasRole(CRITICAL_ROLE, deployer), "Deployer missing CRITICAL_ROLE");
-        assertTrue(pcr0Manager.hasRole(STANDARD_ROLE, deployer), "Deployer missing STANDARD_ROLE");
+        assertTrue(pcr0Manager.hasRole(SECURITY_ROLE, deployer), "Deployer missing SECURITY_ROLE");
+        assertTrue(pcr0Manager.hasRole(OPERATIONS_ROLE, deployer), "Deployer missing OPERATIONS_ROLE");
 
         console2.log("\n=== Step 2: Add PCR0 Values ===");
 
@@ -113,10 +113,10 @@ contract MigratePCR0ManagerTest is Test {
         console2.log("\n=== Step 4: Transfer Roles to Multisigs ===");
 
         vm.startPrank(deployer);
-        pcr0Manager.grantRole(CRITICAL_ROLE, criticalMultisig);
-        pcr0Manager.grantRole(STANDARD_ROLE, standardMultisig);
-        pcr0Manager.renounceRole(CRITICAL_ROLE, deployer);
-        pcr0Manager.renounceRole(STANDARD_ROLE, deployer);
+        pcr0Manager.grantRole(SECURITY_ROLE, securityMultisig);
+        pcr0Manager.grantRole(OPERATIONS_ROLE, operationsMultisig);
+        pcr0Manager.renounceRole(SECURITY_ROLE, deployer);
+        pcr0Manager.renounceRole(OPERATIONS_ROLE, deployer);
         vm.stopPrank();
 
         console2.log("Roles transferred to multisigs");
@@ -124,15 +124,15 @@ contract MigratePCR0ManagerTest is Test {
         console2.log("\n=== Step 5: Verify Final State ===");
 
         // Deployer has no roles
-        assertFalse(pcr0Manager.hasRole(CRITICAL_ROLE, deployer), "Deployer still has CRITICAL_ROLE");
-        assertFalse(pcr0Manager.hasRole(STANDARD_ROLE, deployer), "Deployer still has STANDARD_ROLE");
+        assertFalse(pcr0Manager.hasRole(SECURITY_ROLE, deployer), "Deployer still has SECURITY_ROLE");
+        assertFalse(pcr0Manager.hasRole(OPERATIONS_ROLE, deployer), "Deployer still has OPERATIONS_ROLE");
 
         // Multisigs have roles
-        assertTrue(pcr0Manager.hasRole(CRITICAL_ROLE, criticalMultisig), "Critical multisig missing CRITICAL_ROLE");
-        assertTrue(pcr0Manager.hasRole(STANDARD_ROLE, standardMultisig), "Standard multisig missing STANDARD_ROLE");
+        assertTrue(pcr0Manager.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE");
+        assertTrue(pcr0Manager.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE");
 
         // Multisig can manage, deployer cannot
-        vm.startPrank(criticalMultisig);
+        vm.startPrank(securityMultisig);
         bytes memory testPCR0_32_v2 = hex"2222222222222222222222222222222222222222222222222222222222222222";
         bytes memory testPCR0_48_v2 = abi.encodePacked(new bytes(16), testPCR0_32_v2);
         pcr0Manager.addPCR0(testPCR0_32_v2);

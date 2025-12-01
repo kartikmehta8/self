@@ -18,19 +18,19 @@ import {PCR0Manager} from "../contracts/utils/PCR0Manager.sol";
  *
  * Usage:
  * - Set in .env file:
- *   CRITICAL_GOVERNANCE_ADDRESS=0x...
- *   STANDARD_GOVERNANCE_ADDRESS=0x...
+ *   SECURITY_GOVERNANCE_ADDRESS=0x...
+ *   OPERATIONS_GOVERNANCE_ADDRESS=0x...
  * - Dry run: forge script script/MigratePCR0Manager.s.sol --fork-url $CELO_RPC_URL -vvv
  * - Execute: forge script script/MigratePCR0Manager.s.sol --rpc-url https://forno.celo.org --broadcast --verify -vvv
  */
 contract MigratePCR0Manager is Script {
     // Governance roles
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     // Multisig addresses (from environment)
-    address criticalMultisig;
-    address standardMultisig;
+    address securityMultisig;
+    address operationsMultisig;
 
     function run() external returns (address newPCR0Manager) {
         console2.log("================================================================================");
@@ -41,15 +41,15 @@ contract MigratePCR0Manager is Script {
         console2.log("Chain ID:", block.chainid);
 
         // Get multisig addresses from .env
-        criticalMultisig = vm.envAddress("CRITICAL_GOVERNANCE_ADDRESS");
-        standardMultisig = vm.envAddress("STANDARD_GOVERNANCE_ADDRESS");
+        securityMultisig = vm.envAddress("SECURITY_GOVERNANCE_ADDRESS");
+        operationsMultisig = vm.envAddress("OPERATIONS_GOVERNANCE_ADDRESS");
 
-        require(criticalMultisig != address(0), "CRITICAL_GOVERNANCE_ADDRESS not set in .env");
-        require(standardMultisig != address(0), "STANDARD_GOVERNANCE_ADDRESS not set in .env");
+        require(securityMultisig != address(0), "SECURITY_GOVERNANCE_ADDRESS not set in .env");
+        require(operationsMultisig != address(0), "OPERATIONS_GOVERNANCE_ADDRESS not set in .env");
 
         console2.log("\nGovernance addresses:");
-        console2.log("  Critical Multisig:", criticalMultisig);
-        console2.log("  Standard Multisig:", standardMultisig);
+        console2.log("  Critical Multisig:", securityMultisig);
+        console2.log("  Standard Multisig:", operationsMultisig);
 
         // Get finalized PCR0 values
         bytes[] memory pcr0Values = getFinalizedPCR0Values();
@@ -73,17 +73,17 @@ contract MigratePCR0Manager is Script {
 
         // Step 3: Transfer roles to multisigs
         console2.log("\n=== Step 3: Transfer Roles to Multisigs ===");
-        pcr0Manager.grantRole(CRITICAL_ROLE, criticalMultisig);
-        pcr0Manager.grantRole(STANDARD_ROLE, standardMultisig);
-        console2.log("  Granted CRITICAL_ROLE to:", criticalMultisig);
-        console2.log("  Granted STANDARD_ROLE to:", standardMultisig);
+        pcr0Manager.grantRole(SECURITY_ROLE, securityMultisig);
+        pcr0Manager.grantRole(OPERATIONS_ROLE, operationsMultisig);
+        console2.log("  Granted SECURITY_ROLE to:", securityMultisig);
+        console2.log("  Granted OPERATIONS_ROLE to:", operationsMultisig);
 
         // Step 4: Deployer renounces roles
         console2.log("\n=== Step 4: Deployer Renounces All Roles ===");
-        pcr0Manager.renounceRole(CRITICAL_ROLE, msg.sender);
-        pcr0Manager.renounceRole(STANDARD_ROLE, msg.sender);
-        console2.log("  Deployer renounced CRITICAL_ROLE");
-        console2.log("  Deployer renounced STANDARD_ROLE");
+        pcr0Manager.renounceRole(SECURITY_ROLE, msg.sender);
+        pcr0Manager.renounceRole(OPERATIONS_ROLE, msg.sender);
+        console2.log("  Deployer renounced SECURITY_ROLE");
+        console2.log("  Deployer renounced OPERATIONS_ROLE");
 
         vm.stopBroadcast();
 
@@ -97,8 +97,8 @@ contract MigratePCR0Manager is Script {
         console2.log("\nNew PCR0Manager:", newPCR0Manager);
         console2.log("Total PCR0 values:", pcr0Values.length);
         console2.log("Governance:");
-        console2.log("  Critical Multisig:", criticalMultisig);
-        console2.log("  Standard Multisig:", standardMultisig);
+        console2.log("  Critical Multisig:", securityMultisig);
+        console2.log("  Standard Multisig:", operationsMultisig);
         console2.log("\nNext steps:");
         console2.log("1. Update Hub to point to new PCR0Manager");
         console2.log("2. Update documentation with new address");
@@ -139,17 +139,17 @@ contract MigratePCR0Manager is Script {
         console2.log("  [PASS] All", pcr0Values.length, "PCR0 values verified");
 
         // Verify deployer has no roles
-        bool deployerHasCritical = pcr0Manager.hasRole(CRITICAL_ROLE, msg.sender);
-        bool deployerHasStandard = pcr0Manager.hasRole(STANDARD_ROLE, msg.sender);
-        require(!deployerHasCritical, "Deployer still has CRITICAL_ROLE");
-        require(!deployerHasStandard, "Deployer still has STANDARD_ROLE");
+        bool deployerHasCritical = pcr0Manager.hasRole(SECURITY_ROLE, msg.sender);
+        bool deployerHasStandard = pcr0Manager.hasRole(OPERATIONS_ROLE, msg.sender);
+        require(!deployerHasCritical, "Deployer still has SECURITY_ROLE");
+        require(!deployerHasStandard, "Deployer still has OPERATIONS_ROLE");
         console2.log("  [PASS] Deployer has no roles");
 
         // Verify multisigs have roles
-        bool criticalHasRole = pcr0Manager.hasRole(CRITICAL_ROLE, criticalMultisig);
-        bool standardHasRole = pcr0Manager.hasRole(STANDARD_ROLE, standardMultisig);
-        require(criticalHasRole, "Critical multisig missing CRITICAL_ROLE");
-        require(standardHasRole, "Standard multisig missing STANDARD_ROLE");
+        bool criticalHasRole = pcr0Manager.hasRole(SECURITY_ROLE, securityMultisig);
+        bool standardHasRole = pcr0Manager.hasRole(OPERATIONS_ROLE, operationsMultisig);
+        require(criticalHasRole, "Critical multisig missing SECURITY_ROLE");
+        require(standardHasRole, "Standard multisig missing OPERATIONS_ROLE");
         console2.log("  [PASS] Multisigs have correct roles");
 
         console2.log("\n  [SUCCESS] All verifications passed!");

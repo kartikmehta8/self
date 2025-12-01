@@ -94,12 +94,12 @@ async function testHubUpgradeLogic(customVerifierAddress: string) {
 
   // Verify governance roles
   const [deployer] = await ethers.getSigners();
-  const hasRole = await hubContract.hasRole(await hubContract.CRITICAL_ROLE(), deployer.address);
+  const hasRole = await hubContract.hasRole(await hubContract.SECURITY_ROLE(), deployer.address);
 
   if (hasRole) {
-    log.success("✅ Governance verification: deployer has CRITICAL_ROLE");
+    log.success("✅ Governance verification: deployer has SECURITY_ROLE");
   } else {
-    log.error("❌ Governance verification failed: deployer doesn't have CRITICAL_ROLE");
+    log.error("❌ Governance verification failed: deployer doesn't have SECURITY_ROLE");
   }
 }
 
@@ -152,12 +152,12 @@ async function testRegistryUpgradeLogic() {
 
   // Verify governance roles
   const [deployer] = await ethers.getSigners();
-  const hasRole = await registryContract.hasRole(await registryContract.CRITICAL_ROLE(), deployer.address);
+  const hasRole = await registryContract.hasRole(await registryContract.SECURITY_ROLE(), deployer.address);
 
   if (hasRole) {
-    log.success("✅ Governance verification: deployer has CRITICAL_ROLE");
+    log.success("✅ Governance verification: deployer has SECURITY_ROLE");
   } else {
-    log.error("❌ Governance verification failed: deployer doesn't have CRITICAL_ROLE");
+    log.error("❌ Governance verification failed: deployer doesn't have SECURITY_ROLE");
   }
 }
 

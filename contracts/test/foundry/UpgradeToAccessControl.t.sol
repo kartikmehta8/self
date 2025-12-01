@@ -40,8 +40,8 @@ contract UpgradeToAccessControlTest is Test {
 
     // Test accounts
     address deployer;
-    address criticalMultisig;
-    address standardMultisig;
+    address securityMultisig;
+    address operationsMultisig;
 
     // Contracts
     IdentityVerificationHubImplV2 hub;
@@ -50,8 +50,8 @@ contract UpgradeToAccessControlTest is Test {
     IdentityRegistryAadhaarImplV1 aadhaarRegistry;
 
     // Governance roles
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     // Pre-upgrade state - captures ALL publicly accessible critical state variables
     struct PreUpgradeState {
@@ -96,14 +96,14 @@ contract UpgradeToAccessControlTest is Test {
         deployer = Ownable2StepUpgradeable(address(hub)).owner();
 
         // Set up multisig accounts for testing role transfer
-        criticalMultisig = makeAddr("criticalMultisig");
-        standardMultisig = makeAddr("standardMultisig");
+        securityMultisig = makeAddr("securityMultisig");
+        operationsMultisig = makeAddr("operationsMultisig");
 
         vm.deal(deployer, 100 ether);
 
         console2.log("Current Owner (will execute upgrade):", deployer);
-        console2.log("Critical Multisig (will receive roles):", criticalMultisig);
-        console2.log("Standard Multisig (will receive roles):", standardMultisig);
+        console2.log("Critical Multisig (will receive roles):", securityMultisig);
+        console2.log("Standard Multisig (will receive roles):", operationsMultisig);
     }
 
     function testFullUpgradeWorkflow() public {
@@ -235,12 +235,12 @@ contract UpgradeToAccessControlTest is Test {
         console2.log("\n=== Phase 4: Verify Governance Roles ===");
 
         // Deployer should have both roles initially
-        assertTrue(hub.hasRole(CRITICAL_ROLE, deployer), "Deployer missing CRITICAL_ROLE on Hub");
-        assertTrue(hub.hasRole(STANDARD_ROLE, deployer), "Deployer missing STANDARD_ROLE on Hub");
-        assertTrue(passportRegistry.hasRole(CRITICAL_ROLE, deployer), "Deployer missing CRITICAL_ROLE on Passport");
-        assertTrue(passportRegistry.hasRole(STANDARD_ROLE, deployer), "Deployer missing STANDARD_ROLE on Passport");
-        assertTrue(idCardRegistry.hasRole(CRITICAL_ROLE, deployer), "Deployer missing CRITICAL_ROLE on ID Card");
-        assertTrue(idCardRegistry.hasRole(STANDARD_ROLE, deployer), "Deployer missing STANDARD_ROLE on ID Card");
+        assertTrue(hub.hasRole(SECURITY_ROLE, deployer), "Deployer missing SECURITY_ROLE on Hub");
+        assertTrue(hub.hasRole(OPERATIONS_ROLE, deployer), "Deployer missing OPERATIONS_ROLE on Hub");
+        assertTrue(passportRegistry.hasRole(SECURITY_ROLE, deployer), "Deployer missing SECURITY_ROLE on Passport");
+        assertTrue(passportRegistry.hasRole(OPERATIONS_ROLE, deployer), "Deployer missing OPERATIONS_ROLE on Passport");
+        assertTrue(idCardRegistry.hasRole(SECURITY_ROLE, deployer), "Deployer missing SECURITY_ROLE on ID Card");
+        assertTrue(idCardRegistry.hasRole(OPERATIONS_ROLE, deployer), "Deployer missing OPERATIONS_ROLE on ID Card");
 
         console2.log("Deployer has all required roles");
 
@@ -249,20 +249,20 @@ contract UpgradeToAccessControlTest is Test {
         vm.startPrank(deployer);
 
         // Grant roles to multisigs
-        hub.grantRole(CRITICAL_ROLE, criticalMultisig);
-        hub.grantRole(STANDARD_ROLE, standardMultisig);
-        passportRegistry.grantRole(CRITICAL_ROLE, criticalMultisig);
-        passportRegistry.grantRole(STANDARD_ROLE, standardMultisig);
-        idCardRegistry.grantRole(CRITICAL_ROLE, criticalMultisig);
-        idCardRegistry.grantRole(STANDARD_ROLE, standardMultisig);
+        hub.grantRole(SECURITY_ROLE, securityMultisig);
+        hub.grantRole(OPERATIONS_ROLE, operationsMultisig);
+        passportRegistry.grantRole(SECURITY_ROLE, securityMultisig);
+        passportRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig);
+        idCardRegistry.grantRole(SECURITY_ROLE, securityMultisig);
+        idCardRegistry.grantRole(OPERATIONS_ROLE, operationsMultisig);
 
         // Deployer renounces roles
-        hub.renounceRole(CRITICAL_ROLE, deployer);
-        hub.renounceRole(STANDARD_ROLE, deployer);
-        passportRegistry.renounceRole(CRITICAL_ROLE, deployer);
-        passportRegistry.renounceRole(STANDARD_ROLE, deployer);
-        idCardRegistry.renounceRole(CRITICAL_ROLE, deployer);
-        idCardRegistry.renounceRole(STANDARD_ROLE, deployer);
+        hub.renounceRole(SECURITY_ROLE, deployer);
+        hub.renounceRole(OPERATIONS_ROLE, deployer);
+        passportRegistry.renounceRole(SECURITY_ROLE, deployer);
+        passportRegistry.renounceRole(OPERATIONS_ROLE, deployer);
+        idCardRegistry.renounceRole(SECURITY_ROLE, deployer);
+        idCardRegistry.renounceRole(OPERATIONS_ROLE, deployer);
 
         vm.stopPrank();
 
@@ -271,16 +271,16 @@ contract UpgradeToAccessControlTest is Test {
         console2.log("\n=== Phase 6: Verify Final State ===");
 
         // Deployer should have NO roles
-        assertFalse(hub.hasRole(CRITICAL_ROLE, deployer), "Deployer still has CRITICAL_ROLE on Hub");
-        assertFalse(hub.hasRole(STANDARD_ROLE, deployer), "Deployer still has STANDARD_ROLE on Hub");
+        assertFalse(hub.hasRole(SECURITY_ROLE, deployer), "Deployer still has SECURITY_ROLE on Hub");
+        assertFalse(hub.hasRole(OPERATIONS_ROLE, deployer), "Deployer still has OPERATIONS_ROLE on Hub");
 
         // Multisigs should have roles
-        assertTrue(hub.hasRole(CRITICAL_ROLE, criticalMultisig), "Critical multisig missing CRITICAL_ROLE on Hub");
-        assertTrue(hub.hasRole(STANDARD_ROLE, standardMultisig), "Standard multisig missing STANDARD_ROLE on Hub");
-        assertTrue(passportRegistry.hasRole(CRITICAL_ROLE, criticalMultisig), "Critical multisig missing CRITICAL_ROLE on Passport");
-        assertTrue(passportRegistry.hasRole(STANDARD_ROLE, standardMultisig), "Standard multisig missing STANDARD_ROLE on Passport");
-        assertTrue(idCardRegistry.hasRole(CRITICAL_ROLE, criticalMultisig), "Critical multisig missing CRITICAL_ROLE on ID Card");
-        assertTrue(idCardRegistry.hasRole(STANDARD_ROLE, standardMultisig), "Standard multisig missing STANDARD_ROLE on ID Card");
+        assertTrue(hub.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on Hub");
+        assertTrue(hub.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on Hub");
+        assertTrue(passportRegistry.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on Passport");
+        assertTrue(passportRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on Passport");
+        assertTrue(idCardRegistry.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on ID Card");
+        assertTrue(idCardRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on ID Card");
 
         console2.log("Multisigs have full control");
         console2.log("Deployer has ZERO control");

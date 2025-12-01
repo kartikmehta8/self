@@ -11,15 +11,15 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
  * Serves as a base for upgradeable implementations.
  *
  * Governance Roles:
- * - CRITICAL_ROLE: Critical operations and role management (3/5 multisig consensus)
- * - STANDARD_ROLE: Standard operations (2/5 multisig consensus)
+ * - SECURITY_ROLE: Security-sensitive operations and role management (3/5 multisig consensus)
+ * - OPERATIONS_ROLE: Routine operational tasks (2/5 multisig consensus)
  */
 abstract contract ImplRoot is UUPSUpgradeable, AccessControlUpgradeable {
-    /// @notice Critical operations requiring 3/5 multisig consensus
-    bytes32 public constant CRITICAL_ROLE = keccak256("CRITICAL_ROLE");
+    /// @notice Security-sensitive operations requiring 3/5 multisig consensus
+    bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
 
-    /// @notice Standard operations requiring 2/5 multisig consensus
-    bytes32 public constant STANDARD_ROLE = keccak256("STANDARD_ROLE");
+    /// @notice Routine operations requiring 2/5 multisig consensus
+    bytes32 public constant OPERATIONS_ROLE = keccak256("OPERATIONS_ROLE");
 
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private __gap;
@@ -34,21 +34,21 @@ abstract contract ImplRoot is UUPSUpgradeable, AccessControlUpgradeable {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        _grantRole(CRITICAL_ROLE, msg.sender);
-        _grantRole(STANDARD_ROLE, msg.sender);
+        _grantRole(SECURITY_ROLE, msg.sender);
+        _grantRole(OPERATIONS_ROLE, msg.sender);
 
-        // Set role admins - CRITICAL_ROLE manages all roles
-        _setRoleAdmin(CRITICAL_ROLE, CRITICAL_ROLE);
-        _setRoleAdmin(STANDARD_ROLE, CRITICAL_ROLE);
+        // Set role admins - SECURITY_ROLE manages all roles
+        _setRoleAdmin(SECURITY_ROLE, SECURITY_ROLE);
+        _setRoleAdmin(OPERATIONS_ROLE, SECURITY_ROLE);
     }
 
     /**
      * @dev Authorizes an upgrade to a new implementation.
      * Requirements:
      *   - Must be called through a proxy.
-     *   - Caller must have CRITICAL_ROLE.
+     *   - Caller must have SECURITY_ROLE.
      *
      * @param newImplementation The address of the new implementation contract.
      */
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyProxy onlyRole(CRITICAL_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyProxy onlyRole(SECURITY_ROLE) {}
 }

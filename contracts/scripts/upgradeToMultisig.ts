@@ -156,11 +156,11 @@ async function upgradeIdentityVerificationHub() {
     // Verify the upgrade was successful by checking the implementation
     const [deployer] = await ethers.getSigners();
     try {
-      const hasRole = await hubContract.hasRole(await hubContract.CRITICAL_ROLE(), deployer.address);
+      const hasRole = await hubContract.hasRole(await hubContract.SECURITY_ROLE(), deployer.address);
       if (hasRole) {
-        log.success("✅ Governance verification: deployer has CRITICAL_ROLE");
+        log.success("✅ Governance verification: deployer has SECURITY_ROLE");
       } else {
-        log.warning("⚠️  Governance verification: deployer doesn't have CRITICAL_ROLE (may be expected)");
+        log.warning("⚠️  Governance verification: deployer doesn't have SECURITY_ROLE (may be expected)");
       }
     } catch (roleError) {
       log.warning(`⚠️  Could not verify governance roles: ${roleError}`);
