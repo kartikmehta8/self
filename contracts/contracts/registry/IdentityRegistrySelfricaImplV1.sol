@@ -381,7 +381,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         if (!IPCR0Manager(_PCR0Manager).isPCR0Set(imageHash)) revert INVALID_IMAGE();
 
         // Unpack the pubkey and register it
-        uint256 memory pubkeyCommitment = GCPJWTHelper.unpackPubkeyString(pubSignals[1], pubSignals[2], pubSignals[3]);
+        uint256 pubkeyCommitment = GCPJWTHelper.unpackAndDecodeHexPubkey(pubSignals[1], pubSignals[2], pubSignals[3]);
         _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
         emit PubkeyCommitmentRegistered(pubkeyCommitment);
     }

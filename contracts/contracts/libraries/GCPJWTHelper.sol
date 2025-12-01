@@ -25,19 +25,16 @@ library GCPJWTHelper {
         return 0;
     }
 
-    function unpackPubkeyString(uint256 p0, uint256 p1, uint256 p2) internal pure returns (uint256) {
-        bytes memory b64 = new bytes(93);
+    function unpackAndDecodeHexPubkey(uint256 p0, uint256 p1, uint256 p2) internal pure returns (uint256) {
+        bytes memory hex64 = new bytes(64);
         uint256 idx;
-        for (; p0 > 0 && idx < 31; idx++) { b64[idx] = bytes1(uint8(p0 & 0xff)); p0 >>= 8; }
-        for (; p1 > 0 && idx < 62; idx++) { b64[idx] = bytes1(uint8(p1 & 0xff)); p1 >>= 8; }
-        for (; p2 > 0 && idx < 93; idx++) { b64[idx] = bytes1(uint8(p2 & 0xff)); p2 >>= 8; }
+        for (; p0 > 0 && idx < 31; idx++) { hex64[idx] = bytes1(uint8(p0 & 0xff)); p0 >>= 8; }
+        for (; p1 > 0 && idx < 62; idx++) { hex64[idx] = bytes1(uint8(p1 & 0xff)); p1 >>= 8; }
+        for (; p2 > 0 && idx < 64; idx++) { hex64[idx] = bytes1(uint8(p2 & 0xff)); p2 >>= 8; }
 
-        // Trim to actual length
-        bytes memory b = new bytes(idx);
-        uint256 result = 0;
-
-        for (uint256 i = 0; i < b.length; i++) {
-            uint8 c = uint8(b[i]);
+        uint256 result;
+        for (uint256 i = 0; i < idx; i++) {
+            uint8 c = uint8(hex64[i]);
 
             if (c >= 48 && c <= 57) {
                 // '0' - '9'

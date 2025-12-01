@@ -24,18 +24,18 @@ contract TestGCPJWTHelper {
     }
 
     /**
-     * @notice Exposes unpackPubkeyString for testing
-     * @param p0 First packed field element (up to 31 bytes of base64url chars)
-     * @param p1 Second packed field element (up to 31 bytes of base64url chars)
-     * @param p2 Third packed field element (remaining base64url chars)
-     * @return The unpacked pubkey as a string
+     * @notice Exposes unpackAndDecodeHexPubkey for testing (returns uint256 decoded from hex)
+     * @param p0 First packed field element (up to 31 bytes of hex chars)
+     * @param p1 Second packed field element (up to 31 bytes of hex chars)
+     * @param p2 Third packed field element (remaining hex chars)
+     * @return The decoded pubkey commitment as uint256
      */
     function testUnpackPubkeyString(
         uint256 p0,
         uint256 p1,
         uint256 p2
-    ) external pure returns (string memory) {
-        return GCPJWTHelper.unpackPubkeyString(p0, p1, p2);
+    ) external pure returns (uint256) {
+        return GCPJWTHelper.unpackAndDecodeHexPubkey(p0, p1, p2);
     }
 
     /**

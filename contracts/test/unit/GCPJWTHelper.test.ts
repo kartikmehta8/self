@@ -2,6 +2,24 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { TestGCPJWTHelper, MockGCPJWTVerifier } from "../../typechain-types";
 
+// Helper to pack a string into field elements (max 31 bytes per field)
+function packStringToFieldElements(str: string): [bigint, bigint, bigint] {
+  const bytes = Buffer.from(str, 'utf8');
+  let p0 = 0n, p1 = 0n, p2 = 0n;
+
+  for (let i = 0; i < Math.min(31, bytes.length); i++) {
+    p0 |= BigInt(bytes[i]) << BigInt(i * 8);
+  }
+  for (let i = 31; i < Math.min(62, bytes.length); i++) {
+    p1 |= BigInt(bytes[i]) << BigInt((i - 31) * 8);
+  }
+  for (let i = 62; i < Math.min(93, bytes.length); i++) {
+    p2 |= BigInt(bytes[i]) << BigInt((i - 62) * 8);
+  }
+
+  return [p0, p1, p2];
+}
+
 describe("GCPJWTHelper", function () {
   let testHelper: TestGCPJWTHelper;
 
@@ -116,80 +134,73 @@ describe("GCPJWTHelper", function () {
     });
   });
 
-  describe("unpackPubkeyString", function () {
-    // Known test vectors from TypeScript implementation
-    // These values pack to the base64url string: "AmtPnrcj3vuhOo10QXjKfsQ2JZsLt7DqeeTHyLlicfUe"
-    const testPubkey = {
-      p0: 120528331859004517890829780969855117024568439798883539465419002021135281473n,
-      p1: 8028474419668106797405631243633n,
-      p2: 0n,
-    };
+  describe("unpackAndDecodeHexPubkey", function () {
+    // Test vector from the JWT example:
+    // eat_nonce[0] = "1618d28fdfb51eb55112bb56ddf92b87a6d44d0f61dd04a811680b90b6533ce5"
+    // Expected decoded value: 9994740243950890658651670052465332625517225873797253432802227881421242055909n
+    const testHexString = "1618d28fdfb51eb55112bb56ddf92b87a6d44d0f61dd04a811680b90b6533ce5";
+    const expectedValue = 9994740243950890658651670052465332625517225873797253432802227881421242055909n;
 
-    // Expected pubkey string (base64url encoded)
-    const expectedPubkeyString = "AmtPnrcj3vuhOo10QXjKfsQ2JZsLt7DqeeTHyLlicfUe";
+    // Pack the hex string into field elements
+    const [p0, p1, p2] = packStringToFieldElements(testHexString);
 
-    it("should correctly unpack to the expected string", async function () {
-      const result = await testHelper.testUnpackPubkeyString(
-        testPubkey.p0,
-        testPubkey.p1,
-        testPubkey.p2,
-      );
-
-      expect(result).to.equal(expectedPubkeyString);
+    it("should correctly decode hex string to uint256", async function () {
+      const result = await testHelper.testUnpackPubkeyString(p0, p1, p2);
+      expect(result).to.equal(expectedValue);
     });
 
     it("should handle zeros correctly", async function () {
-      // All zeros should produce empty string
+      // All zeros should produce zero output
       const result = await testHelper.testUnpackPubkeyString(0n, 0n, 0n);
-      expect(result).to.equal("");
+      expect(result).to.equal(0n);
     });
 
     it("should produce consistent results", async function () {
       // Call multiple times to ensure deterministic behavior
-      const result1 = await testHelper.testUnpackPubkeyString(
-        testPubkey.p0,
-        testPubkey.p1,
-        testPubkey.p2,
-      );
-
-      const result2 = await testHelper.testUnpackPubkeyString(
-        testPubkey.p0,
-        testPubkey.p1,
-        testPubkey.p2,
-      );
-
+      const result1 = await testHelper.testUnpackPubkeyString(p0, p1, p2);
+      const result2 = await testHelper.testUnpackPubkeyString(p0, p1, p2);
       expect(result1).to.equal(result2);
     });
 
-    it("should handle different base64url characters correctly", async function () {
-      // The test string contains various base64url characters:
-      // Uppercase: A-Z
-      // Lowercase: a-z
-      // Numbers: 0-9
-      // The fact that we get the correct string proves all chars are unpacked correctly
-      const result = await testHelper.testUnpackPubkeyString(
-        testPubkey.p0,
-        testPubkey.p1,
-        testPubkey.p2,
-      );
-
-      expect(result).to.equal(expectedPubkeyString);
+    it("should handle uppercase hex characters correctly", async function () {
+      // Test with uppercase hex
+      const upperHex = "ABCDEF0123456789";
+      const [up0, up1, up2] = packStringToFieldElements(upperHex);
+      const result = await testHelper.testUnpackPubkeyString(up0, up1, up2);
+      // 0xABCDEF0123456789 = 12379813738877118345
+      expect(result).to.equal(12379813738877118345n);
     });
 
-    it("should return correct length string", async function () {
-      const result = await testHelper.testUnpackPubkeyString(
-        testPubkey.p0,
-        testPubkey.p1,
-        testPubkey.p2,
-      );
+    it("should handle mixed case hex characters", async function () {
+      // Test with mixed case
+      const mixedHex = "AbCdEf";
+      const [mp0, mp1, mp2] = packStringToFieldElements(mixedHex);
+      const result = await testHelper.testUnpackPubkeyString(mp0, mp1, mp2);
+      // 0xABCDEF = 11259375
+      expect(result).to.equal(11259375n);
+    });
 
-      expect(result.length).to.equal(expectedPubkeyString.length);
+    it("should revert with invalid hex character", async function () {
+      // Pack a string with invalid hex character 'g'
+      const invalidHex = "abcdefg";
+      const [ip0, ip1, ip2] = packStringToFieldElements(invalidHex);
+      await expect(testHelper.testUnpackPubkeyString(ip0, ip1, ip2)).to.be.revertedWith("Invalid hex character");
+    });
+
+    it("should handle hex string spanning multiple field elements", async function () {
+      // 64-char hex string spans p0 (31 chars) + p1 (31 chars) + p2 (2 chars)
+      const longHex = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+      const [lp0, lp1, lp2] = packStringToFieldElements(longHex);
+      const result = await testHelper.testUnpackPubkeyString(lp0, lp1, lp2);
+      expect(result).to.equal(BigInt("0x" + longHex));
     });
   });
 
   describe("Edge Cases", function () {
     it("should handle maximum single byte value in each field", async function () {
-      // Pack a single byte 0xff ('ÿ') - not a valid hex char, should produce 0
+      // Pack a single byte 0xff ('ÿ') - not a valid hex char, should revert
+      // But the contract reverts with "Invalid hex character"
+      // For image hash, invalid chars return 0
       const result = await testHelper.testUnpackAndConvertImageHash(255n, 0n, 0n);
       const bytes = ethers.getBytes(result);
 
