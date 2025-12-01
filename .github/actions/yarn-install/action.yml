@@ -1,6 +1,6 @@
 name: Yarn Install
 
-description: Install Yarn v4 and run yarn install.
+description: Install Yarn v4 and run yarn install with optimized caching.
 
 inputs:
   working_directory:
@@ -23,8 +23,23 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: 22
-        cache: "yarn"
-        cache-dependency-path: yarn.lock
+        # Don't use setup-node cache for Yarn v4 Berry - it doesn't work well
+
+    - name: Get Yarn cache directory
+      id: yarn-cache-dir
+      shell: bash
+      run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+    - name: Cache Yarn dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ steps.yarn-cache-dir.outputs.dir }}
+          .yarn/cache
+          .yarn/install-state.gz
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
 
     - name: Install dependencies
       uses: nick-fields/retry@v3

@@ -1,6 +1,9 @@
 name: Mobile SDK CI
 
 on:
+  push:
+    branches:
+      - "jcortejoso/**"
   pull_request:
     paths:
       - "packages/mobile-sdk-alpha/**"
