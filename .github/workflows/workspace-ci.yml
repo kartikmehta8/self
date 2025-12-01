@@ -11,6 +11,7 @@ on:
       - dev
       - staging
       - main
+      - "jcortejoso/**"
 
 jobs:
   workspace-build:
