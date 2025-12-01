@@ -7,7 +7,6 @@ import {AttestationId} from "../constants/AttestationId.sol";
 import {ImplRoot} from "../upgradeable/ImplRoot.sol";
 import {GCPJWTHelper} from "../libraries/GCPJWTHelper.sol";
 
-import {console} from "hardhat/console.sol";
 /**
  * @notice ⚠️ CRITICAL STORAGE LAYOUT WARNING ⚠️
  * =============================================
@@ -56,7 +55,7 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
     /// @notice Mapping from nullifier to a boolean indicating registration.
     mapping(uint256 => bool) internal _nullifiers;
 
-    /// @notice Pubkey commitments registered for Selfrica. .
+    /// @notice Pubkey commitments registered for Selfrica.
     mapping(uint256 => bool) internal _isRegisteredPubkeyCommitment;
 
     /// @notice Current name and date of birth OFAC root.
@@ -69,11 +68,32 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
     address internal _gcpJwtVerifier;
 }
 
+/**
+ * @title IGCPJWTVerifier
+ * @notice Interface for the GCP JWT verifier contract.
+ */
 interface IGCPJWTVerifier {
+    /**
+     * @notice Verifies a Groth16 proof for GCP JWT attestation.
+     * @param pA Proof element A.
+     * @param pB Proof element B.
+     * @param pC Proof element C.
+     * @param pubSignals Public signals from the circuit.
+     * @return True if the proof is valid, false otherwise.
+     */
     function verifyProof(uint256[2] calldata pA, uint256[2][2] calldata pB, uint256[2] calldata pC, uint256[7] calldata pubSignals) external view returns (bool);
 }
 
+/**
+ * @title IPCR0Manager
+ * @notice Interface for the PCR0 (TEE image hash) manager contract.
+ */
 interface IPCR0Manager {
+    /**
+     * @notice Checks if a PCR0 hash is registered as valid.
+     * @param pcr0 The PCR0 hash to check.
+     * @return True if the PCR0 hash is registered, false otherwise.
+     */
     function isPCR0Set(bytes calldata pcr0) external view returns (bool);
 }
 
@@ -85,6 +105,7 @@ interface IPCR0Manager {
 contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistrySelfricaV1 {
     using InternalLeanIMT for LeanIMTData;
 
+    /// @notice The expected hash of the GCP root CA public key for JWT verification.
     uint256 public constant GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501;
 
     // ====================================================
@@ -139,8 +160,11 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     error REGISTERED_COMMITMENT();
     /// @notice Thrown when the hub address is set to the zero address.
     error HUB_ADDRESS_ZERO();
+    /// @notice Thrown when the GCP JWT proof verification fails.
     error INVALID_PROOF();
+    /// @notice Thrown when the GCP root CA public key hash does not match the expected value.
     error INVALID_ROOT_CA();
+    /// @notice Thrown when the TEE image hash is not registered in the PCR0Manager.
     error INVALID_IMAGE();
 
     // ====================================================
@@ -263,8 +287,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
-     * @notice Retrieves the identity commitment Merkle tree.
-     * @return The current identity commitment Merkle tree.
+     * @notice Checks if the provided OFAC roots match the stored OFAC roots.
+     * @param nameAndDobRoot The name and date of birth OFAC root to verify.
+     * @param nameAndYobRoot The name and year of birth OFAC root to verify.
+     * @return True if both provided roots match the stored values, false otherwise.
      */
     function checkOfacRoots(uint256 nameAndDobRoot, uint256 nameAndYobRoot) external view onlyProxy returns (bool) {
         return _nameAndDobOfacRoot == nameAndDobRoot && _nameAndYobOfacRoot == nameAndYobRoot;
@@ -323,6 +349,8 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
 
     /**
      * @notice Updates the name and date of birth OFAC root.
+     * @dev Callable only via a proxy and restricted to the contract owner.
+     * @param nameAndDobOfacRoot The new name and date of birth OFAC root value.
      */
     function updateNameAndDobOfacRoot(uint256 nameAndDobOfacRoot) external virtual onlyProxy onlyOwner {
         _nameAndDobOfacRoot = nameAndDobOfacRoot;
@@ -331,6 +359,8 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
 
     /**
      * @notice Updates the name and year of birth OFAC root.
+     * @dev Callable only via a proxy and restricted to the contract owner.
+     * @param nameAndYobOfacRoot The new name and year of birth OFAC root value.
      */
     function updateNameAndYobOfacRoot(uint256 nameAndYobOfacRoot) external virtual onlyProxy onlyOwner {
         _nameAndYobOfacRoot = nameAndYobOfacRoot;
