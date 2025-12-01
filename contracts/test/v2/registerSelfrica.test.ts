@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 import { deploySystemFixturesV2 } from "../utils/deploymentV2";
 import { DeployedActorsV2 } from "../utils/types";
-import { KYC_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
-import { generateMockKycRegisterInput, OFAC_DUMMY_INPUT } from '@selfxyz/common';
+import { SELFRICA_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
+import { generateMockKycRegisterInput } from '@selfxyz/common/utils/kyc/generateInputs';
 import { generateRegisterSelfricaProof } from "../utils/generateProof";
 import { expect } from "chai";
 
@@ -38,7 +38,7 @@ describe("Selfrica Registration test", function () {
 
   before(async () => {
     deployedActors = await deploySystemFixturesV2();
-    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
+    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
 
     console.log("🎉 System deployment and initial setup completed!");
   });

@@ -4,6 +4,7 @@ export const ATTESTATION_ID = {
   PASSPORT: 1,
   BIOMETRIC_ID_CARD: 2,
   AADHAAR: 3,
+  SELFRICA_ID_CARD: 4,
 } as const;
 
 export const discloseIndices = {
@@ -44,6 +45,19 @@ export const discloseIndices = {
     nameyobSmtRootIndex: 15,
     scopeIndex: 17,
     userIdentifierIndex: 18,
+    passportNoSmtRootIndex: 99,
+  },
+  4: {
+    revealedDataPackedIndex: 1,
+    forbiddenCountriesListPackedIndex: 10,
+    nullifierIndex: 14,
+    attestationIdIndex: 0,
+    merkleRootIndex: 16,
+    currentDateIndex: 20,
+    namedobSmtRootIndex: 17,
+    nameyobSmtRootIndex: 18,
+    scopeIndex: 15,
+    userIdentifierIndex: 19,
     passportNoSmtRootIndex: 99,
   },
 } as const;
