@@ -67,9 +67,6 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
 
     /// @notice Address of the GCP JWT verifier contract.
     address internal _gcpJwtVerifier;
-
-    /// @notice Pubkey strings registered for Selfrica (via GCP JWT proof).
-    mapping(string => bool) internal _isRegisteredPubkey;
 }
 
 interface IGCPJWTVerifier {
@@ -113,10 +110,8 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256 imtRoot,
         uint256 imtIndex
     );
-    /// @notice Emitted when a public key commitment is successfully registered (owner).
+    /// @notice Emitted when a public key commitment is successfully registered.
     event PubkeyCommitmentRegistered(uint256 indexed commitment);
-    /// @notice Emitted when a public key is successfully registered (via GCP JWT proof).
-    event PubkeyRegistered(string pubkey);
 
     /// @notice Emitted when a identity commitment is added by dev team.
     event DevCommitmentRegistered(
@@ -225,18 +220,11 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         return _rootTimestamps[root];
     }
 
-    /// @notice Checks if the pubkey commitment is registered (owner-registered).
+    /// @notice Checks if the pubkey commitment is registered.
     /// @param pubkeyCommitment The pubkey commitment to check.
     /// @return True if the pubkey commitment is registered, false otherwise.
     function isRegisteredPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
         return _isRegisteredPubkeyCommitment[pubkeyCommitment];
-    }
-
-    /// @notice Checks if the pubkey string is registered (via GCP JWT proof).
-    /// @param pubkey The pubkey string to check.
-    /// @return True if the pubkey is registered, false otherwise.
-    function isRegisteredPubkey(string calldata pubkey) external view onlyProxy returns (bool) {
-        return _isRegisteredPubkey[pubkey];
     }
 
     /// @notice Retrieves the total number of identity commitments in the Merkle tree.
@@ -283,21 +271,12 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
-     * @notice Checks if the provided pubkey commitment is stored in the registry (owner-registered).
+     * @notice Checks if the provided pubkey commitment is stored in the registry.
      * @param pubkeyCommitment The pubkey commitment to verify.
      * @return True if the pubkey commitment is stored in the registry, false otherwise.
      */
     function checkPubkeyCommitment(uint256 pubkeyCommitment) external view onlyProxy returns (bool) {
         return _isRegisteredPubkeyCommitment[pubkeyCommitment];
-    }
-
-    /**
-     * @notice Checks if the provided pubkey string is stored in the registry (via GCP JWT proof).
-     * @param pubkey The pubkey string to verify.
-     * @return True if the pubkey is stored in the registry, false otherwise.
-     */
-    function checkPubkey(string calldata pubkey) external view onlyProxy returns (bool) {
-        return _isRegisteredPubkey[pubkey];
     }
 
     // ====================================================

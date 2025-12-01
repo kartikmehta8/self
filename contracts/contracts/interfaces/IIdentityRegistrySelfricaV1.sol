@@ -28,13 +28,6 @@ interface IIdentityRegistrySelfricaV1 {
     function checkPubkeyCommitment(uint256 pubkeyCommitment) external view returns (bool);
 
     /**
-     * @notice Checks if the provided pubkey string is stored in the registry.
-     * @param pubkey The pubkey string to verify.
-     * @return True if the pubkey is stored in the registry, false otherwise.
-     */
-    function checkPubkey(string calldata pubkey) external view returns (bool);
-
-    /**
      * @notice Checks if the identity commitment Merkle tree contains the specified root.
      * @param root The Merkle tree root to check.
      * @return True if the root exists in the tree, false otherwise.
