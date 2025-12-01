@@ -432,7 +432,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newPassportNoOfacRoot The new passport number OFAC root value.
      */
-    function updatePassportNoOfacRoot(uint256 newPassportNoOfacRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updatePassportNoOfacRoot(uint256 newPassportNoOfacRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _passportNoOfacRoot = newPassportNoOfacRoot;
         emit PassportNoOfacRootUpdated(newPassportNoOfacRoot);
     }
@@ -442,7 +442,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndDobOfacRoot The new name and date of birth OFAC root value.
      */
-    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _nameAndDobOfacRoot = newNameAndDobOfacRoot;
         emit NameAndDobOfacRootUpdated(newNameAndDobOfacRoot);
     }
@@ -452,7 +452,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndYobOfacRoot The new name and year of birth OFAC root value.
      */
-    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _nameAndYobOfacRoot = newNameAndYobOfacRoot;
         emit NameAndYobOfacRootUpdated(newNameAndYobOfacRoot);
     }
@@ -462,7 +462,7 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newCscaRoot The new CSCA root value.
      */
-    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _cscaRoot = newCscaRoot;
         emit CscaRootUpdated(newCscaRoot);
     }

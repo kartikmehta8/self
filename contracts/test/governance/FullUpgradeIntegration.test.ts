@@ -360,12 +360,12 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   ✅ Critical multisig can update HubV2");
     });
 
-    it("should allow critical multisig to update Registry", async function () {
+    it("should allow operations multisig to update Registry CSCA root", async function () {
       console.log("\n✅ Testing Registry multisig control...");
       const newRoot = "0x" + "33".repeat(32);
-      await upgradedRegistry.connect(securityMultisig).updateCscaRoot(newRoot);
+      await upgradedRegistry.connect(operationsMultisig).updateCscaRoot(newRoot);
       expect(await upgradedRegistry.getCscaRoot()).to.equal(newRoot);
-      console.log("   ✅ Critical multisig can update Registry");
+      console.log("   ✅ Operations multisig can update Registry CSCA root");
     });
 
     it("should allow critical multisig to manage PCR0", async function () {
@@ -435,7 +435,7 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("\n🎯 Final Registry verification...");
 
       const finalRoot = "0x" + "99".repeat(32);
-      await upgradedRegistry.connect(securityMultisig).updateCscaRoot(finalRoot);
+      await upgradedRegistry.connect(operationsMultisig).updateCscaRoot(finalRoot);
       expect(await upgradedRegistry.getCscaRoot()).to.equal(finalRoot);
       console.log("   ✅ Registry fully functional with multisig control");
     });

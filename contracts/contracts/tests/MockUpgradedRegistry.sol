@@ -67,7 +67,7 @@ contract MockUpgradedRegistry is ImplRoot {
      * @notice Updates the CSCA root (now requires SECURITY_ROLE)
      * @param cscaRoot The new CSCA root
      */
-    function updateCscaRoot(bytes32 cscaRoot) external onlyRole(SECURITY_ROLE) {
+    function updateCscaRoot(bytes32 cscaRoot) external onlyRole(OPERATIONS_ROLE) {
         _cscaRoot = cscaRoot;
         emit CscaRootUpdated(cscaRoot);
     }

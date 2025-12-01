@@ -409,7 +409,7 @@ contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdent
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndDobOfacRoot The new name and date of birth OFAC root value.
      */
-    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateNameAndDobOfacRoot(uint256 newNameAndDobOfacRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _nameAndDobOfacRoot = newNameAndDobOfacRoot;
         emit NameAndDobOfacRootUpdated(newNameAndDobOfacRoot);
     }
@@ -419,7 +419,7 @@ contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdent
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newNameAndYobOfacRoot The new name and year of birth OFAC root value.
      */
-    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateNameAndYobOfacRoot(uint256 newNameAndYobOfacRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _nameAndYobOfacRoot = newNameAndYobOfacRoot;
         emit NameAndYobOfacRootUpdated(newNameAndYobOfacRoot);
     }
@@ -429,7 +429,7 @@ contract IdentityRegistryIdCardImplV1 is IdentityRegistryIdCardStorageV1, IIdent
      * @dev Callable only via a proxy and restricted to the contract owner.
      * @param newCscaRoot The new CSCA root value.
      */
-    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateCscaRoot(uint256 newCscaRoot) external onlyProxy onlyRole(OPERATIONS_ROLE) {
         _cscaRoot = newCscaRoot;
         emit CscaRootUpdated(newCscaRoot);
     }
