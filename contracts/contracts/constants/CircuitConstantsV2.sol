@@ -138,18 +138,29 @@ library CircuitConstantsV2 {
                     passportNoSmtRootIndex: 99
                 });
         } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+            // Selfrica circuit pubSignals layout (30 elements total):
+            // [0-8]   revealedData_packed (9 elements)
+            // [9-12]  forbidden_countries_list_packed (4 elements)
+            // [13-15] nullifier + padding (3 elements)
+            // [16]    scope (public input)
+            // [17]    merkle_root (public input)
+            // [18]    ofac_name_dob_smt_root (public input)
+            // [19]    ofac_name_yob_smt_root (public input)
+            // [20]    user_identifier (public input)
+            // [21-28] current_date (8 elements, public input)
+            // [29]    attestation_id (public input)
             return
                 DiscloseIndices({
-                    revealedDataPackedIndex: 1,
-                    forbiddenCountriesListPackedIndex: 10,
-                    nullifierIndex: 14,
-                    attestationIdIndex: 0,
-                    merkleRootIndex: 16,
-                    currentDateIndex: 20,
-                    namedobSmtRootIndex: 17,
-                    nameyobSmtRootIndex: 18,
-                    scopeIndex: 15,
-                    userIdentifierIndex: 19,
+                    revealedDataPackedIndex: 0,
+                    forbiddenCountriesListPackedIndex: 9,
+                    nullifierIndex: 13,
+                    attestationIdIndex: 29,
+                    merkleRootIndex: 17,
+                    currentDateIndex: 21,
+                    namedobSmtRootIndex: 18,
+                    nameyobSmtRootIndex: 19,
+                    scopeIndex: 16,
+                    userIdentifierIndex: 20,
                     passportNoSmtRootIndex: 99
                 });
         } else {

@@ -5,7 +5,7 @@ import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs";
 import { groth16 } from "snarkjs";
 import { PassportData } from "@selfxyz/common/utils/types";
 import { CircuitArtifacts, DscCircuitProof, RegisterCircuitProof, VcAndDiscloseProof } from "./types.js";
-import { generateMockKycRegisterInput, generateSelfricaDiscloseInput, prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
+import { generateMockKycRegisterInput, generateKycDiscloseInput, prepareAadhaarDiscloseTestData, prepareAadhaarRegisterTestData } from "@selfxyz/common";
 
 import { BigNumberish } from "ethers";
 import {
@@ -525,7 +525,7 @@ export async function generateVcAndDiscloseAadhaarProof(
 }
 
 export async function generateVcAndDiscloseSelfricaProof(
-  inputs: ReturnType<typeof generateSelfricaDiscloseInput>,
+  inputs: ReturnType<typeof generateKycDiscloseInput>,
 ): Promise<GenericProofStructStruct> {
   const circuitName = "vc_and_disclose_selfrica";
   const circuitArtifacts = vcAndDiscloseCircuitsSelfrica;

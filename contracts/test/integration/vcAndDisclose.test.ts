@@ -11,7 +11,7 @@ import { BigNumberish } from "ethers";
 import { generateRandomFieldElement, getStartOfDayTimestamp, splitHexFromBack } from "../utils/utils";
 import { Formatter, CircuitAttributeHandler } from "../utils/formatter";
 import { formatCountriesList, reverseBytes, reverseCountryBytes } from "@selfxyz/common/utils/circuits/formatInputs";
-import { getPackedForbiddenCountries } from "@selfxyz/common/utils/sanctions";
+import { getPackedForbiddenCountries } from "@selfxyz/common/utils/contracts/forbiddenCountries";
 import { countries, Country3LetterCode } from "@selfxyz/common/constants/countries";
 import path from "path";
 
