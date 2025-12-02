@@ -9,13 +9,13 @@ import { getSMTs } from "../utils/generateProof";
 import { getPackedForbiddenCountries } from "@selfxyz/common/utils/contracts/forbiddenCountries";
 import { BigNumberish } from "ethers";
 import { generateVcAndDiscloseSelfricaProof } from "../utils/generateProof";
-import { SELFRICA_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
+import { KYC_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
 import { poseidon2 } from "poseidon-lite";
 
 // Selfrica circuit indices - matches CircuitConstantsV2.getDiscloseIndices(SELFRICA_ID_CARD)
 // See CircuitConstantsV2.sol for full layout documentation
 const SELFRICA_CURRENT_DATE_INDEX = 21;
-const SELFRICA_ATTESTATION_ID_INDEX = 29;
+const KYC_ATTESTATION_ID_INDEX = 29;
 
 describe("Self Verification Flow V2 - Selfrica", () => {
   let deployedActors: DeployedActorsV2;
@@ -72,7 +72,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
       undefined,
       18,
       true,
-      SELFRICA_ATTESTATION_ID,
+      KYC_ATTESTATION_ID,
     );
 
     const dataPadded = testInputs.data_padded.map((x: string) => Number(x));
@@ -139,7 +139,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -196,7 +196,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       await deployedActors.testSelfVerificationRoot.setVerificationConfigNoHub(verificationConfigV2);
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -254,7 +254,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
     it("should fail with invalid length of userContextData", async () => {
       const invalidUserContextData = ethers.toUtf8Bytes("short");
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -301,7 +301,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // scopeIndex for Selfrica is 16
@@ -352,7 +352,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // userIdentifierIndex for Selfrica is 20
@@ -403,7 +403,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // Modify current date at the correct index using BigInt for safe arithmetic
@@ -456,7 +456,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // Modify current date at the correct index using BigInt for safe arithmetic
@@ -509,7 +509,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         [destChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const clonedGrothProof = structuredClone(baseVcAndDiscloseProof);
       clonedGrothProof.a = ["999999999", "888888888"];
@@ -609,7 +609,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -651,7 +651,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -698,7 +698,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       await deployedActors.testSelfVerificationRoot.setVerificationConfig(verificationConfigV2);
 
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -775,11 +775,11 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         undefined,
         18,
         false,
-        SELFRICA_ATTESTATION_ID,
+        KYC_ATTESTATION_ID,
       );
 
       const newProof = await generateVcAndDiscloseSelfricaProof(inputs);
-      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+      const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
         [

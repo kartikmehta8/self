@@ -66,7 +66,7 @@ library ProofVerifierLib {
             ) {
                 revert InvalidVcAndDiscloseProof();
             }
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             uint256[28] memory pubSignals;
             for (uint256 i = 0; i < 28; i++) {
                 pubSignals[i] = vcAndDiscloseProof.pubSignals[i];

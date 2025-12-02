@@ -21,5 +21,5 @@ library AttestationId {
     bytes32 constant AADHAAR = bytes32(uint256(3));
 
     /// @notice Identifier for a SELFRICA_ID_CARD attestation (African identity documents via Selfrica/SmileID).
-    bytes32 constant SELFRICA_ID_CARD = bytes32(uint256(4));
+    bytes32 constant KYC = bytes32(uint256(4));
 }

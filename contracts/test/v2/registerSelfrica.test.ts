@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { deploySystemFixturesV2 } from "../utils/deploymentV2";
 import { DeployedActorsV2 } from "../utils/types";
-import { SELFRICA_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
+import { KYC_ATTESTATION_ID } from "@selfxyz/common/constants/constants";
 import { generateMockKycRegisterInput } from '@selfxyz/common/utils/kyc/generateInputs';
 import { generateRegisterSelfricaProof } from "../utils/generateProof";
 import { expect } from "chai";
@@ -38,7 +38,7 @@ describe("Selfrica Registration test", function () {
 
   before(async () => {
     deployedActors = await deploySystemFixturesV2();
-    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(SELFRICA_ATTESTATION_ID)), 32);
+    attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
     console.log("🎉 System deployment and initial setup completed!");
   });
@@ -56,6 +56,10 @@ describe("Selfrica Registration test", function () {
     let registerProof: any;
     let registerSecret: string;
     let mockVerifier: any;
+    let mockProof: any;
+    let mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint];
+    const GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501n;
+    let snapshotId: string;
 
     before(async () => {
       registerSecret = "12345";
@@ -84,27 +88,33 @@ describe("Selfrica Registration test", function () {
       await deployedActors.pcr0Manager.addPCR0(pcr0Bytes);
 
       // Register the pubkey commitment via GCP JWT proof
-      const GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501n;
-      const mockProof = {
+      mockProof = {
         a: [1n, 2n] as [bigint, bigint],
         b: [[1n, 2n], [3n, 4n]] as [[bigint, bigint], [bigint, bigint]],
         c: [1n, 2n] as [bigint, bigint],
       };
-      const gcpPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
+
+      mockPubSignals = [
         GCP_ROOT_CA_PUBKEY_HASH,
         p0, p1, p2,
         testImageHash.p0, testImageHash.p1, testImageHash.p2,
       ];
+      // Take an EVM snapshot before tests to allow reverting in each test for isolation
+      // We will use this snapshot in the afterEach for revert, but store it here.
+      // Using Mocha "this" context to store snapshotId for this suite.
+      snapshotId = await ethers.provider.send("evm_snapshot", []);
+    });
 
-      await deployedActors.registrySelfrica.registerPubkeyCommitment(
-        mockProof.a, mockProof.b, mockProof.c, gcpPubSignals
-      );
-
-      const isRegistered = await deployedActors.registrySelfrica.checkPubkeyCommitment(pubkeyCommitment);
-      console.log(`Pubkey commitment ${pubkeyCommitment} registered:`, isRegistered);
+    afterEach(async () => {
+      await ethers.provider.send("evm_revert", [snapshotId]);
+      snapshotId = await ethers.provider.send("evm_snapshot", []);
     });
 
     it("should successfully register an identity commitment", async () => {
+      await deployedActors.registrySelfrica.registerPubkeyCommitment(
+        mockProof.a, mockProof.b, mockProof.c, mockPubSignals
+      );
+
       await expect(deployedActors.hub.registerCommitment(attestationIdBytes32, 0n, registerProof)).to.emit(
         deployedActors.registrySelfrica,
         "CommitmentRegistered",
@@ -114,7 +124,18 @@ describe("Selfrica Registration test", function () {
       expect(isRegistered).to.be.true;
     });
 
+    it("should throw an error if the pubkey commitment is not registered", async () => {
+      await expect(deployedActors.hub.registerCommitment(attestationIdBytes32, 0n, registerProof)).to.be.revertedWithCustomError(
+        deployedActors.hub,
+        "InvalidPubkeyCommitment",
+      );
+    });
+
     it("should not register an identity commitment if the proof is invalid", async () => {
+      await deployedActors.registrySelfrica.registerPubkeyCommitment(
+        mockProof.a, mockProof.b, mockProof.c, mockPubSignals
+      );
+
       const invalidRegisterProof = structuredClone(registerProof);
       invalidRegisterProof.pubSignals[1] = 0n;
       await expect(

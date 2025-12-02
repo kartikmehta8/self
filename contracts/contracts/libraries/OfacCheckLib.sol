@@ -7,7 +7,7 @@ import {GenericProofStruct} from "../interfaces/IRegisterCircuitVerifier.sol";
 import {IIdentityRegistryV1} from "../interfaces/IIdentityRegistryV1.sol";
 import {IIdentityRegistryIdCardV1} from "../interfaces/IIdentityRegistryIdCardV1.sol";
 import {IIdentityRegistryAadhaarV1} from "../interfaces/IIdentityRegistryAadhaarV1.sol";
-import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
+import {IIdentityRegistryKycV1} from "../interfaces/IIdentityRegistryKycV1.sol";
 
 /**
  * @title OfacCheckLib
@@ -62,9 +62,9 @@ library OfacCheckLib {
             ) {
                 revert InvalidOfacRoots();
             }
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             if (
-                !IIdentityRegistrySelfricaV1(registryAddress).checkOfacRoots(
+                !IIdentityRegistryKycV1(registryAddress).checkOfacRoots(
                     vcAndDiscloseProof.pubSignals[indices.namedobSmtRootIndex],
                     vcAndDiscloseProof.pubSignals[indices.nameyobSmtRootIndex]
                 )

@@ -137,7 +137,7 @@ library CircuitConstantsV2 {
                     userIdentifierIndex: 18,
                     passportNoSmtRootIndex: 99
                 });
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             // Selfrica circuit pubSignals layout (30 elements total):
             // [0-8]   revealedData_packed (9 elements)
             // [9-12]  forbidden_countries_list_packed (4 elements)

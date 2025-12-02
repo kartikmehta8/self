@@ -11,7 +11,7 @@ import {ISelfVerificationRoot} from "./interfaces/ISelfVerificationRoot.sol";
 import {IIdentityRegistryV1} from "./interfaces/IIdentityRegistryV1.sol";
 import {IIdentityRegistryIdCardV1} from "./interfaces/IIdentityRegistryIdCardV1.sol";
 import {IIdentityRegistryAadhaarV1} from "./interfaces/IIdentityRegistryAadhaarV1.sol";
-import {IIdentityRegistrySelfricaV1} from "./interfaces/IIdentityRegistrySelfricaV1.sol";
+import {IIdentityRegistryKycV1} from "./interfaces/IIdentityRegistryKycV1.sol";
 import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
 import {CircuitConstantsV2} from "./constants/CircuitConstantsV2.sol";
 import {Formatter} from "./libraries/Formatter.sol";
@@ -285,8 +285,8 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
                 registerCircuitProof.pubSignals[CircuitConstantsV2.AADHAAR_NULLIFIER_INDEX],
                 registerCircuitProof.pubSignals[CircuitConstantsV2.AADHAAR_COMMITMENT_INDEX]
             );
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
-            IIdentityRegistrySelfricaV1($._registries[attestationId]).registerCommitment(
+        } else if (attestationId == AttestationId.KYC) {
+            IIdentityRegistryKycV1($._registries[attestationId]).registerCommitment(
                 registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_NULLIFIER_INDEX],
                 registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_COMMITMENT_INDEX]
             );
@@ -870,7 +870,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
                 }
             }
             currentTimestamp = Formatter.proofDateToUnixTimestamp(dateNum);
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             // SELFRICA: 8 ASCII digits (YYYYMMDD)
             uint256[3] memory dateNum; // [year, month, day]
             unchecked {
@@ -1004,8 +1004,8 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             return OutputFormatterLib.createEuIdOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
         } else if (attestationId == AttestationId.AADHAAR) {
             return OutputFormatterLib.createAadhaarOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
-            return OutputFormatterLib.createSelfricaOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
+        } else if (attestationId == AttestationId.KYC) {
+            return OutputFormatterLib.createKycOutput(vcAndDiscloseProof, indices, attestationId, userIdentifier);
         } else {
             revert InvalidAttestationId();
         }

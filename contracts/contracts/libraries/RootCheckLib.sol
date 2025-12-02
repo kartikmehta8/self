@@ -7,7 +7,7 @@ import {GenericProofStruct} from "../interfaces/IRegisterCircuitVerifier.sol";
 import {IIdentityRegistryV1} from "../interfaces/IIdentityRegistryV1.sol";
 import {IIdentityRegistryIdCardV1} from "../interfaces/IIdentityRegistryIdCardV1.sol";
 import {IIdentityRegistryAadhaarV1} from "../interfaces/IIdentityRegistryAadhaarV1.sol";
-import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
+import {IIdentityRegistryKycV1} from "../interfaces/IIdentityRegistryKycV1.sol";
 
 /**
  * @title RootCheckLib
@@ -55,8 +55,8 @@ library RootCheckLib {
             if (!IIdentityRegistryAadhaarV1(registryAddress).checkIdentityCommitmentRoot(merkleRoot)) {
                 revert InvalidIdentityCommitmentRoot();
             }
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
-            if (!IIdentityRegistrySelfricaV1(registryAddress).checkIdentityCommitmentRoot(merkleRoot)) {
+        } else if (attestationId == AttestationId.KYC) {
+            if (!IIdentityRegistryKycV1(registryAddress).checkIdentityCommitmentRoot(merkleRoot)) {
                 revert InvalidIdentityCommitmentRoot();
             }
         } else {

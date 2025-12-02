@@ -10,7 +10,7 @@ import {ISelfricaRegisterCircuitVerifier} from "../interfaces/IRegisterCircuitVe
 import {IIdentityRegistryV1} from "../interfaces/IIdentityRegistryV1.sol";
 import {IIdentityRegistryIdCardV1} from "../interfaces/IIdentityRegistryIdCardV1.sol";
 import {IIdentityRegistryAadhaarV1} from "../interfaces/IIdentityRegistryAadhaarV1.sol";
-import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
+import {IIdentityRegistryKycV1} from "../interfaces/IIdentityRegistryKycV1.sol";
 
 /**
  * @title RegisterProofVerifierLib
@@ -97,9 +97,9 @@ library RegisterProofVerifierLib {
             ) {
                 revert InvalidPubkey();
             }
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             if (
-                !IIdentityRegistrySelfricaV1(registryAddress).checkPubkeyCommitment(
+                !IIdentityRegistryKycV1(registryAddress).checkPubkeyCommitment(
                     registerCircuitProof.pubSignals[CircuitConstantsV2.SELFRICA_PUBKEY_COMMITMENT_INDEX]
                 )
             ) {
@@ -150,7 +150,7 @@ library RegisterProofVerifierLib {
             ) {
                 revert InvalidRegisterProof();
             }
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             uint256[4] memory pubSignals = [
                 registerCircuitProof.pubSignals[0],
                 registerCircuitProof.pubSignals[1],

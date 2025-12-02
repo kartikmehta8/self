@@ -37,8 +37,8 @@ library CustomVerifier {
         } else if (attestationId == AttestationId.AADHAAR) {
             SelfStructs.AadhaarOutput memory aadhaarOutput = abi.decode(proofOutput, (SelfStructs.AadhaarOutput));
             return CustomVerifier.verifyAadhaar(verificationConfig, aadhaarOutput);
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
-            SelfStructs.SelfricaOutput memory selfricaOutput = abi.decode(proofOutput, (SelfStructs.SelfricaOutput));
+        } else if (attestationId == AttestationId.KYC) {
+            SelfStructs.KycOutput memory selfricaOutput = abi.decode(proofOutput, (SelfStructs.KycOutput));
             return CustomVerifier.verifySelfrica(verificationConfig, selfricaOutput);
         } else {
             revert InvalidAttestationId();
@@ -305,12 +305,12 @@ library CustomVerifier {
      */
     function verifySelfrica(
         SelfStructs.VerificationConfigV2 memory verificationConfig,
-        SelfStructs.SelfricaOutput memory selfricaOutput
+        SelfStructs.KycOutput memory selfricaOutput
     ) internal pure returns (SelfStructs.GenericDiscloseOutputV2 memory) {
         if (verificationConfig.ofacEnabled[1] || verificationConfig.ofacEnabled[2]) {
             if (
                 !CircuitAttributeHandlerV2.compareOfac(
-                    AttestationId.SELFRICA_ID_CARD,
+                    AttestationId.KYC,
                     selfricaOutput.revealedDataPacked,
                     false,
                     verificationConfig.ofacEnabled[1],
@@ -334,7 +334,7 @@ library CustomVerifier {
         if (verificationConfig.olderThanEnabled) {
             if (
                 !CircuitAttributeHandlerV2.compareOlderThan(
-                    AttestationId.SELFRICA_ID_CARD,
+                    AttestationId.KYC,
                     selfricaOutput.revealedDataPacked,
                     verificationConfig.olderThan
                 )
@@ -344,22 +344,22 @@ library CustomVerifier {
         }
 
         SelfStructs.GenericDiscloseOutputV2 memory genericDiscloseOutput = SelfStructs.GenericDiscloseOutputV2({
-            attestationId: AttestationId.SELFRICA_ID_CARD,
+            attestationId: AttestationId.KYC,
             userIdentifier: selfricaOutput.userIdentifier,
             nullifier: selfricaOutput.nullifier,
             forbiddenCountriesListPacked: selfricaOutput.forbiddenCountriesListPacked,
             issuingState: 'UNAVAILABLE',
-            name: CircuitAttributeHandlerV2.getName(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-            idNumber: CircuitAttributeHandlerV2.getDocumentNumber(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-            nationality: CircuitAttributeHandlerV2.getNationality(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-            dateOfBirth: CircuitAttributeHandlerV2.getDateOfBirthFullYear(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-            gender: CircuitAttributeHandlerV2.getGender(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-            expiryDate: CircuitAttributeHandlerV2.getExpiryDateFullYear(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
+            name: CircuitAttributeHandlerV2.getName(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+            idNumber: CircuitAttributeHandlerV2.getDocumentNumber(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+            nationality: CircuitAttributeHandlerV2.getNationality(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+            dateOfBirth: CircuitAttributeHandlerV2.getDateOfBirthFullYear(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+            gender: CircuitAttributeHandlerV2.getGender(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+            expiryDate: CircuitAttributeHandlerV2.getExpiryDateFullYear(AttestationId.KYC, selfricaOutput.revealedDataPacked),
             olderThan: verificationConfig.olderThan,
             ofac: [
                 false,
-                CircuitAttributeHandlerV2.getNameAndDobOfac(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked),
-                CircuitAttributeHandlerV2.getNameAndYobOfac(AttestationId.SELFRICA_ID_CARD, selfricaOutput.revealedDataPacked)
+                CircuitAttributeHandlerV2.getNameAndDobOfac(AttestationId.KYC, selfricaOutput.revealedDataPacked),
+                CircuitAttributeHandlerV2.getNameAndYobOfac(AttestationId.KYC, selfricaOutput.revealedDataPacked)
             ]
         });
 

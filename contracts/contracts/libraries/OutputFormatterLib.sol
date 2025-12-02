@@ -113,30 +113,30 @@ library OutputFormatterLib {
     }
 
     /**
-     * @notice Creates Selfrica ID output struct from proof data
-     * @param vcAndDiscloseProof The verified proof containing Selfrica ID data
+     * @notice Creates KYC ID output struct from proof data
+     * @param vcAndDiscloseProof The verified proof containing KYC ID data
      * @param indices Circuit-specific indices for extracting values
      * @param attestationId The attestation identifier
      * @param userIdentifier The user identifier
-     * @return Encoded SelfricaOutput struct
+     * @return Encoded KycOutput struct
      */
-    function createSelfricaOutput(
+    function createKycOutput(
         GenericProofStruct memory vcAndDiscloseProof,
         CircuitConstantsV2.DiscloseIndices memory indices,
         bytes32 attestationId,
         uint256 userIdentifier
     ) external pure returns (bytes memory) {
-        SelfStructs.SelfricaOutput memory selfricaOutput;
-        selfricaOutput.attestationId = uint256(attestationId);
-        selfricaOutput.userIdentifier = userIdentifier;
-        selfricaOutput.nullifier = vcAndDiscloseProof.pubSignals[indices.nullifierIndex];
+        SelfStructs.KycOutput memory kycOutput;
+        kycOutput.attestationId = uint256(attestationId);
+        kycOutput.userIdentifier = userIdentifier;
+        kycOutput.nullifier = vcAndDiscloseProof.pubSignals[indices.nullifierIndex];
 
         uint256[9] memory revealedDataPacked;
         for (uint256 i = 0; i < 9; i++) {
             revealedDataPacked[i] = vcAndDiscloseProof.pubSignals[indices.revealedDataPackedIndex + i];
         }
-        selfricaOutput.revealedDataPacked = Formatter.fieldElementsToBytesSelfrica(revealedDataPacked);
+        kycOutput.revealedDataPacked = Formatter.fieldElementsToBytesKyc(revealedDataPacked);
 
-        return abi.encode(selfricaOutput);
+        return abi.encode(kycOutput);
     }
 }

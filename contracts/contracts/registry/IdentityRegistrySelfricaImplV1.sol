@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {InternalLeanIMT, LeanIMTData} from "@zk-kit/imt.sol/internal/InternalLeanIMT.sol";
-import {IIdentityRegistrySelfricaV1} from "../interfaces/IIdentityRegistrySelfricaV1.sol";
+import {IIdentityRegistryKycV1} from "../interfaces/IIdentityRegistryKycV1.sol";
 import {AttestationId} from "../constants/AttestationId.sol";
 import {ImplRoot} from "../upgradeable/ImplRoot.sol";
 import {GCPJWTHelper} from "../libraries/GCPJWTHelper.sol";
@@ -102,7 +102,7 @@ interface IPCR0Manager {
  * @notice Provides functions to register and manage identity commitments using a Merkle tree structure.
  * @dev Inherits from IdentityRegistrySelfricaStorageV1 and implements IIdentityRegistrySelfricaV1.
  */
-contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistrySelfricaV1 {
+contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistryKycV1 {
     using InternalLeanIMT for LeanIMTData;
 
     /// @notice The expected hash of the GCP root CA public key for JWT verification.
@@ -319,7 +319,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256 index = _identityCommitmentIMT.size;
         uint256 imt_root = _identityCommitmentIMT._insert(commitment);
         _rootTimestamps[imt_root] = block.timestamp;
-        emit CommitmentRegistered(AttestationId.SELFRICA_ID_CARD, nullifier, commitment, block.timestamp, imt_root, index);
+        emit CommitmentRegistered(AttestationId.KYC, nullifier, commitment, block.timestamp, imt_root, index);
     }
 
     // ====================================================
@@ -414,7 +414,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256 imt_root = _identityCommitmentIMT._insert(commitment);
         _rootTimestamps[imt_root] = block.timestamp;
         uint256 index = _identityCommitmentIMT._indexOf(commitment);
-        emit DevCommitmentRegistered(AttestationId.SELFRICA_ID_CARD, nullifier, commitment, block.timestamp, imt_root, index);
+        emit DevCommitmentRegistered(AttestationId.KYC, nullifier, commitment, block.timestamp, imt_root, index);
     }
 
     /// @notice (DEV) Updates an existing identity commitment.

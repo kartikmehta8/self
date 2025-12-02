@@ -66,7 +66,7 @@ library SelfStructs {
         uint256[4] forbiddenCountriesListPacked;
     }
 
-    struct SelfricaOutput {
+    struct KycOutput {
         uint256 attestationId;
         bytes revealedDataPacked;
         uint256 userIdentifier;

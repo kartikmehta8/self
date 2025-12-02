@@ -197,7 +197,7 @@ library Formatter {
         return bytesArray;
     }
 
-    function fieldElementsToBytesSelfrica(uint256[9] memory publicSignals) internal pure returns (bytes memory) {
+    function fieldElementsToBytesKyc(uint256[9] memory publicSignals) internal pure returns (bytes memory) {
         for (uint256 i = 0; i < 9; i++) {
             if (publicSignals[i] >= SNARK_SCALAR_FIELD) {
                 revert InvalidFieldElement();

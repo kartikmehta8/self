@@ -112,7 +112,7 @@ library CircuitAttributeHandlerV2 {
                     ofacStart: 116,
                     ofacEnd: 117
                 });
-        } else if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        } else if (attestationId == AttestationId.KYC) {
             return
                 FieldPositions({
                     issuingStateStart: 50,
@@ -257,7 +257,7 @@ library CircuitAttributeHandlerV2 {
      */
     function getOlderThan(bytes32 attestationId, bytes memory charcodes) internal pure returns (uint256) {
         FieldPositions memory positions = getFieldPositions(attestationId);
-        if (attestationId == AttestationId.SELFRICA_ID_CARD) {
+        if (attestationId == AttestationId.KYC) {
             return
                 Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart])) * 100 +
                 Formatter.numAsciiToUint(uint8(charcodes[positions.olderThanStart + 1])) * 10 +
