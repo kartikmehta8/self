@@ -65,7 +65,7 @@ target "Self" do
       puts "📦 Using SSH for private NFCPassportReader (local selfxyz development)"
     end
 
-    pod "NFCPassportReader", git: nfc_repo_url, commit: "9eff7c4e3a9037fdc1e03301584e0d5dcf14d76b"
+    pod "NFCPassportReader", git: nfc_repo_url, commit: "cd13731df62fa8a9a1423000aa0669894d186b34"
   end
 
   pod "QKMRZScanner"
