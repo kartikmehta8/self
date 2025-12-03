@@ -9,26 +9,31 @@ import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
+import {
+  hasAnyValidRegisteredDocument,
+  useSelfClient,
+} from '@selfxyz/mobile-sdk-alpha';
 import {
   PrimaryButton,
   SecondaryButton,
 } from '@selfxyz/mobile-sdk-alpha/components';
 import { BackupEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  black,
+  blue600,
+  slate200,
+  slate500,
+  white,
+} from '@selfxyz/mobile-sdk-alpha/constants/colors';
+import { advercase, dinot } from '@selfxyz/mobile-sdk-alpha/constants/fonts';
 
+import Cloud from '@/assets/icons/logo_cloud_backup.svg';
 import { useModal } from '@/hooks/useModal';
-import CloudIcon from '@/images/icons/settings_cloud_backup.svg';
+import { buttonTap, confirmTap } from '@/integrations/haptics';
 import type { RootStackParamList } from '@/navigation';
 import { useAuth } from '@/providers/authProvider';
+import { STORAGE_NAME, useBackupMnemonic } from '@/services/cloud-backup';
 import { useSettingStore } from '@/stores/settingStore';
-import { STORAGE_NAME, useBackupMnemonic } from '@/utils/cloudBackup';
-import { black, blue600, slate200, slate500, white } from '@/utils/colors';
-import { advercase, dinot } from '@/utils/fonts';
-import { buttonTap, confirmTap } from '@/utils/haptic';
-
-// DISABLED FOR NOW: Turnkey functionality
-// import { Wallet } from '@tamagui/lucide-icons';
-// import { useTurnkeyUtils } from '@/utils/turnkey';
 
 type NextScreen = keyof Pick<RootStackParamList, 'SaveRecoveryPhrase'>;
 
@@ -62,6 +67,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
 
   const [_selectedMethod, setSelectedMethod] = useState<BackupMethod>(null);
   const [iCloudPending, setICloudPending] = useState(false);
+  const selfClient = useSelfClient();
   // DISABLED FOR NOW: Turnkey functionality
   // const [turnkeyPending, setTurnkeyPending] = useState(false);
 
@@ -96,6 +102,25 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
     ),
   );
 
+  const { showModal: showNoRegisteredAccountModal } = useModal(
+    useMemo(
+      () => ({
+        titleText: 'No registered account',
+        bodyText: 'You need to register an account to enable cloud backups.',
+        buttonText: 'Register now',
+        secondaryButtonText: 'Cancel',
+        onButtonPress: () => {
+          // setTimeout to ensure modal closes before navigation to prevent navigation conflicts when the modal tries to goBack()
+          setTimeout(() => {
+            navigation.navigate('CountryPicker');
+          }, 100);
+        },
+        onModalDismiss: () => {},
+      }),
+      [navigation],
+    ),
+  );
+
   // DISABLED FOR NOW: Turnkey functionality
   // const { showModal: showAlreadySignedInModal } = useModal({
   //   titleText: 'Cannot use this email',
@@ -116,6 +141,13 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
   const handleICloudBackup = useCallback(async () => {
     buttonTap();
     setSelectedMethod('icloud');
+
+    const hasAnyValidRegisteredDocumentResult =
+      await hasAnyValidRegisteredDocument(selfClient);
+    if (!hasAnyValidRegisteredDocumentResult) {
+      showNoRegisteredAccountModal();
+      return;
+    }
 
     if (cloudBackupEnabled || !biometricsAvailable) {
       return;
@@ -151,6 +183,8 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
     trackEvent,
     navigation,
     params,
+    selfClient,
+    showNoRegisteredAccountModal,
   ]);
 
   const disableCloudBackups = useCallback(() => {
@@ -227,7 +261,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
       >
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <CloudIcon width={56} height={56} color={white} />
+            <Cloud width={56} height={56} color={white} />
           </View>
 
           <View style={styles.descriptionContainer}>
@@ -258,7 +292,7 @@ const CloudBackupScreen: React.FC<CloudBackupScreenProps> = ({
                 onPress={handleICloudBackup}
                 disabled={iCloudPending || !biometricsAvailable}
               >
-                <CloudIcon width={24} height={24} color={black} />
+                <Cloud width={24} height={24} color={black} />
                 <Text style={styles.optionText}>
                   {iCloudPending ? 'Enabling' : 'Backup with'} {STORAGE_NAME}
                   {iCloudPending ? '…' : ''}
