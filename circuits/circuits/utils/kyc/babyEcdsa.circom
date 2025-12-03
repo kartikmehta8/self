@@ -20,7 +20,7 @@ include "circomlib/circuits/escalarmulany.circom";
  *  public key in Edwards form.
  */
 template BabyJubJubECDSA() {
-    var bits = 256;
+    var bits = 254;
     signal input s;
     signal input Tx; // T = r^-1 * R
     signal input Ty; // T is represented in Twisted Edwards form
@@ -31,7 +31,7 @@ template BabyJubJubECDSA() {
     signal output pubKeyY;
 
     // bitify s
-    component sBits = Num2Bits(bits);
+    component sBits = Num2Bits_strict();
     sBits.in <== s;
 
     // check T, U are on curve

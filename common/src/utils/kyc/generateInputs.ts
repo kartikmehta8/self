@@ -83,25 +83,20 @@ export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean,
 
   const sig = signECDSA(sk, msgPadded);
   console.assert(verifyECDSA(msgPadded, sig, pk) == true, 'Invalid signature');
-
-  let { T, U } = getEffECDSAArgs(msgPadded, sig);
-  console.assert(verifyEffECDSA(sig.s, T, U, pk) == true, 'Invalid signature');
-
   console.assert(sig.s < subOrder, ' s is greater than scalar field');
-  console.assert(inCurve(T), 'Point T not on curve');
-  console.assert(inCurve(U), 'Point U not on curve');
 
   const rInv = modInv(sig.R[0], subOrder);
+  const rInvLimbs = bigintTo64bitLimbs(rInv);
   const neg_rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
 
   const kycRegisterInput: KycRegisterInput = {
     data_padded: msgPadded.map((x) => x.toString()),
     s: sig.s.toString(),
-    Tx: T[0].toString(),
-    Ty: T[1].toString(),
+    Rx: sig.R[0].toString(),
+    Ry: sig.R[1].toString(),
     pubKeyX: pk[0].toString(),
     pubKeyY: pk[1].toString(),
-    neg_r_inv: neg_rInvLimbs.map((x) => x.toString()),
+    r_inv: rInvLimbs.map((x) => x.toString()),
     secret: secret || "1234",
     attestation_id: attestationId || '4',
   };
@@ -177,7 +172,6 @@ export const generateKycDiscloseInput = (
     : ['0', '0', '0'].map((x) => x.charCodeAt(0));
 
     const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '').split('');
-
 
     const circuitInput: KycDiscloseInput = {
     data_padded: formatInput(msgPadded),

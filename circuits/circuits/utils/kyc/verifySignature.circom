@@ -12,10 +12,10 @@ include "../crypto/bigInt/bigInt.circom";
 template VERIFY_KYC_SIGNATURE(){
 
     signal input s;
-    signal input neg_r_inv[4];
+    signal input r_inv[4];
     signal input msg_hash_limbs[4];
-    signal input Tx;
-    signal input Ty;
+    signal input Rx;
+    signal input Ry;
     signal input pubKeyX;
     signal input pubKeyY;
 
@@ -26,7 +26,7 @@ template VERIFY_KYC_SIGNATURE(){
             16950150798460657717958625567821834550301663161624707787222815936182638968203
         ];
 
-    component computes2bits = Num2Bits(254);
+    component computes2bits = Num2Bits_strict();
     computes2bits.in <== s;
 
     // asserts s is a 251 bit number
@@ -52,20 +52,94 @@ template VERIFY_KYC_SIGNATURE(){
     scalar_mod[2] <== 3965992003123030795;
     scalar_mod[3] <== 435874783350371333;
 
-    //range check on neg_r_inv[i] < 2 ^ 64
-    component range_check_neg_r_inv[4];
+    signal minus_1[4];
+    minus_1[0] <== scalar_mod[0] - 1;
+    minus_1[1] <== scalar_mod[1];
+    minus_1[2] <== scalar_mod[2];
+    minus_1[3] <== scalar_mod[3];
+
+    //range check on r_inv[i] < 2 ^ 64
+    component range_check_r_inv_bits[4];
     for(var i = 0; i < 4; i++){
-        range_check_neg_r_inv[i] = Num2Bits(64);
-        range_check_neg_r_inv[i].in <== neg_r_inv[i];
+        range_check_r_inv_bits[i] = Num2Bits(64);
+        range_check_r_inv_bits[i].in <== r_inv[i];
     }
 
-    //Check is - r_inv < scalar_mod
-    component scalar_range_check = BigLessThan(64,4);
-    scalar_range_check.a <== neg_r_inv;
-    scalar_range_check.b <== scalar_mod;
-    scalar_range_check.out === 1 ;
+    signal zero[4];
+    for(var i = 0; i < 4; i++){
+        zero[i] <== 0;
+    }
 
-    //msg_hash % SUBORDER
+    signal one[4];
+    one[0] <== 1;
+    one[1] <== 0;
+    one[2] <== 0;
+    one[3] <== 0;
+
+    // Check if r_inv is in the range of 0 to SUBGROUP_ORDER - 1
+    component range_check_r_inv = BigRangeCheck(64,4);
+    range_check_r_inv.value <== r_inv;
+    range_check_r_inv.lowerBound <== zero;
+    range_check_r_inv.upperBound <== scalar_mod;
+    range_check_r_inv.out === 1;
+
+    // Check r_inv + neg_r_inv === 0
+    component neg_r_inv = BabyScalarMul();
+    neg_r_inv.in1 <== r_inv;
+    neg_r_inv.in2 <== minus_1;
+
+    // Checking if Rx * r_inv == identity
+    signal Rx_bits[254];
+    component bit_decompose = Num2Bits_strict();
+    bit_decompose.in <== Rx;
+    Rx_bits <== bit_decompose.out;
+    signal Rx_limbs[4];
+    component bits2Num[4];
+
+    // Convert Rx_bits (little-endian) to 4 LE limbs
+    for (var i = 0; i < 3; i++) {
+        bits2Num[i] = Bits2Num(64);
+        for (var j = 0; j < 64; j++) {
+            bits2Num[i].in[j] <== Rx_bits[i * 64 + j];
+        }
+        Rx_limbs[i] <== bits2Num[i].out;
+    }
+
+    bits2Num[3] = Bits2Num(62);
+    for (var i = 192; i < 254; i++) {
+        bits2Num[3].in[i - 192] <== Rx_bits[i];
+    }
+    Rx_limbs[3] <== bits2Num[3].out;
+
+    // See if r_inv * Rx == identity
+    component identity = BabyScalarMul();
+    identity.in1 <== r_inv;
+    identity.in2 <== Rx_limbs;
+
+    identity.out[0] === 1;
+    identity.out[1] === 0;
+    identity.out[2] === 0;
+    identity.out[3] === 0;
+
+    component T = EscalarMulAny(254);
+    signal r_inv_bits[256];
+    component num2bits[8];
+
+    // convert r_inv limbs to bits
+    for (var i = 0; i < 4; i++){
+        num2bits[i]= Num2Bits(64);
+        num2bits[i].in <== r_inv[i];
+        for(var j = 0; j < 64; j++){
+            r_inv_bits[i * 64 +j] <== num2bits[i].out[j];
+        }
+    }
+    for(var i = 0; i < 254; i++){
+        T.e[i] <== r_inv_bits[i];
+    }
+    T.p[0] <== Rx;
+    T.p[1] <== Ry;
+
+    // msg_hash % SUBORDER
     component msgReduced = BigMultModP(64, 4, 4, 4);
     for(var i = 0; i < 4; i++){
         msgReduced.in1[i]<== msg_hash_limbs[i];
@@ -81,19 +155,18 @@ template VERIFY_KYC_SIGNATURE(){
     // calculates (- r_inv * msg_hash) % SUBGROUP_ORDER
     component neg_r_inv_msg_hash = BabyScalarMul();
     for(var i = 0 ;i < 4 ;i++) {
-        neg_r_inv_msg_hash.in1[i] <== neg_r_inv[i];
+        neg_r_inv_msg_hash.in1[i] <== neg_r_inv.out[i];
         neg_r_inv_msg_hash.in2[i] <== msgReduced.mod[i];
     }
 
     signal neg_r_inv_msg_hash_bits[256];
-    component num2bits[4];
 
    // convert neg_r_inv_msg_hash limbs to bits
     for (var i = 0; i < 4; i++){
-        num2bits[i]= Num2Bits(64);
-        num2bits[i].in <== neg_r_inv_msg_hash.out[i];
+        num2bits[4 + i]= Num2Bits(64);
+        num2bits[4 + i].in <== neg_r_inv_msg_hash.out[i];
         for(var j = 0; j < 64; j++){
-            neg_r_inv_msg_hash_bits[i * 64 +j] <== num2bits[i].out[j];
+            neg_r_inv_msg_hash_bits[i * 64 +j] <== num2bits[4 + i].out[j];
         }
     }
 
@@ -104,15 +177,14 @@ template VERIFY_KYC_SIGNATURE(){
     }
 
     component ecdsa = BabyJubJubECDSA();
-    ecdsa.Tx <== Tx;
-    ecdsa.Ty <== Ty;
+    ecdsa.Tx <== T.out[0];
+    ecdsa.Ty <== T.out[1];
     ecdsa.Ux <== mulFix.out[0];
     ecdsa.Uy <== mulFix.out[1];
     ecdsa.s <== s;
 
     ecdsa.pubKeyX === pubKeyX;
     ecdsa.pubKeyY === pubKeyY;
-
 }
 
 

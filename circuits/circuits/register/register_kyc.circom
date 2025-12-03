@@ -7,7 +7,6 @@ include "../utils/kyc/verifySignature.circom";
 
 
 template REGISTER_KYC() {
-
     var max_length = KYC_MAX_LENGTH();
     var country_length = COUNTRY_LENGTH();
     var id_number_length = ID_NUMBER_LENGTH();
@@ -18,11 +17,11 @@ template REGISTER_KYC() {
     signal input data_padded[max_length];
 
     signal input s;
-    signal input Tx;
-    signal input Ty;
+    signal input Rx;
+    signal input Ry;
     signal input pubKeyX;
     signal input pubKeyY;
-    signal input neg_r_inv[4];
+    signal input r_inv[4];
     signal input secret;
     signal input attestation_id;
 
@@ -50,13 +49,12 @@ template REGISTER_KYC() {
         msg_hash_limbs[i] <== bits2Num[i].out;
     }
 
-
     component verifyIdCommSig = VERIFY_KYC_SIGNATURE();
     verifyIdCommSig.s <== s;
-    verifyIdCommSig.neg_r_inv <== neg_r_inv;
+    verifyIdCommSig.r_inv <== r_inv;
     verifyIdCommSig.msg_hash_limbs <== msg_hash_limbs;
-    verifyIdCommSig.Tx <== Tx;
-    verifyIdCommSig.Ty <== Ty;
+    verifyIdCommSig.Rx <== Rx;
+    verifyIdCommSig.Ry <== Ry;
     verifyIdCommSig.pubKeyX <== pubKeyX;
     verifyIdCommSig.pubKeyY <== pubKeyY;
 
@@ -68,5 +66,6 @@ template REGISTER_KYC() {
     signal output commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     signal output pubkey_hash <== Poseidon(2)([pubKeyX, pubKeyY]);
-
 }
+
+component main = REGISTER_KYC();
