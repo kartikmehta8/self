@@ -688,6 +688,7 @@
     "@peculiar/x509": "^1.12.3",
     "@stablelib/cbor": "^2.0.1",
     "@zk-kit/baby-jubjub": "^1.0.3",
+    "@zk-kit/eddsa-poseidon": "^1.1.0",
     "asn1.js": "^5.4.1",
     "asn1js": "^3.0.5",
     "axios": "^1.7.2",

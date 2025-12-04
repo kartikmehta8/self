@@ -7564,6 +7564,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^8.0.0"
     "@vitest/ui": "npm:^2.1.8"
     "@zk-kit/baby-jubjub": "npm:^1.0.3"
+    "@zk-kit/eddsa-poseidon": "npm:^1.1.0"
     asn1.js: "npm:^5.4.1"
     asn1js: "npm:^3.0.5"
     axios: "npm:^1.7.2"
@@ -14042,7 +14043,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@zk-kit/baby-jubjub@npm:^1.0.3":
+"@zk-kit/baby-jubjub@npm:1.0.3, @zk-kit/baby-jubjub@npm:^1.0.3":
   version: 1.0.3
   resolution: "@zk-kit/baby-jubjub@npm:1.0.3"
   dependencies:
@@ -14066,6 +14067,19 @@ __metadata:
   dependencies:
     circomlib: "npm:^2.0.5"
   checksum: 10c0/0e73afec1174d892c569c619077dedbe7d1409a867c52cad18028e1351c39e2edcc032227fb7968c3804a2359fd8107ad00a496bfe4c9dc8336ce039987b7322
+  languageName: node
+  linkType: hard
+
+"@zk-kit/eddsa-poseidon@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@zk-kit/eddsa-poseidon@npm:1.1.0"
+  dependencies:
+    "@zk-kit/baby-jubjub": "npm:1.0.3"
+    "@zk-kit/utils": "npm:1.2.1"
+    blakejs: "npm:^1.2.1"
+    buffer: "npm:6.0.3"
+    poseidon-lite: "npm:0.3.0"
+  checksum: 10c0/c7eb1bb884426a6b2d1dd03632aff39b1ebafd704460799dcc1fee057e2a08500f8294c564bed3d6853ce706b5ea1a5d29b0ed7855387bc89e427b983776769a
   languageName: node
   linkType: hard
 
@@ -15537,7 +15551,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"blakejs@npm:1.2.1, blakejs@npm:^1.1.0":
+"blakejs@npm:1.2.1, blakejs@npm:^1.1.0, blakejs@npm:^1.2.1":
   version: 1.2.1
   resolution: "blakejs@npm:1.2.1"
   checksum: 10c0/c284557ce55b9c70203f59d381f1b85372ef08ee616a90162174d1291a45d3e5e809fdf9edab6e998740012538515152471dc4f1f9dbfa974ba2b9c1f7b9aad7
@@ -15762,6 +15776,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"buffer@npm:6.0.3, buffer@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "buffer@npm:6.0.3"
+  dependencies:
+    base64-js: "npm:^1.3.1"
+    ieee754: "npm:^1.2.1"
+  checksum: 10c0/2a905fbbcde73cc5d8bd18d1caa23715d5f83a5935867c2329f0ac06104204ba7947be098fe1317fbd8830e26090ff8e764f08cd14fefc977bb248c3487bcbd0
+  languageName: node
+  linkType: hard
+
 "buffer@npm:^5.4.3, buffer@npm:^5.5.0":
   version: 5.7.1
   resolution: "buffer@npm:5.7.1"
@@ -15769,16 +15793,6 @@ __metadata:
     base64-js: "npm:^1.3.1"
     ieee754: "npm:^1.1.13"
   checksum: 10c0/27cac81cff434ed2876058d72e7c4789d11ff1120ef32c9de48f59eab58179b66710c488987d295ae89a228f835fc66d088652dffeb8e3ba8659f80eb091d55e
-  languageName: node
-  linkType: hard
-
-"buffer@npm:^6.0.3":
-  version: 6.0.3
-  resolution: "buffer@npm:6.0.3"
-  dependencies:
-    base64-js: "npm:^1.3.1"
-    ieee754: "npm:^1.2.1"
-  checksum: 10c0/2a905fbbcde73cc5d8bd18d1caa23715d5f83a5935867c2329f0ac06104204ba7947be098fe1317fbd8830e26090ff8e764f08cd14fefc977bb248c3487bcbd0
   languageName: node
   linkType: hard
 
@@ -27395,17 +27409,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"poseidon-lite@npm:0.3.0, poseidon-lite@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "poseidon-lite@npm:0.3.0"
+  checksum: 10c0/03494ea69be0dc3ced055b7f1505ff73848002c68332d52a5cf5f00d1a657693317e1ffc790b84ccaf9a0f5f61bf05e1a453eab60c385c98701a6580edead49c
+  languageName: node
+  linkType: hard
+
 "poseidon-lite@npm:^0.2.0":
   version: 0.2.1
   resolution: "poseidon-lite@npm:0.2.1"
   checksum: 10c0/b1da834c8e1e8db3d8d1e8bfcbac5b5b5abbd3aa65e0a80206f8dfa09c9e858b8bc8d5291596e03c8845505af7982c6c2574fe5b184ce256dc34de9ea325b466
-  languageName: node
-  linkType: hard
-
-"poseidon-lite@npm:^0.3.0":
-  version: 0.3.0
-  resolution: "poseidon-lite@npm:0.3.0"
-  checksum: 10c0/03494ea69be0dc3ced055b7f1505ff73848002c68332d52a5cf5f00d1a657693317e1ffc790b84ccaf9a0f5f61bf05e1a453eab60c385c98701a6580edead49c
   languageName: node
   linkType: hard
 

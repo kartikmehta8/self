@@ -19,8 +19,7 @@ import {
 } from './constants.js';
 import { poseidon2 } from 'poseidon-lite';
 import { Base8, inCurve, mulPointEscalar, subOrder } from '@zk-kit/baby-jubjub';
-import { signECDSA, verifyECDSA, verifyEffECDSA } from './ecdsa/ecdsa.js';
-import { bigintTo64bitLimbs, getEffECDSAArgs, modInv, modulus } from './ecdsa/utils.js';
+import { signEdDSA } from './ecdsa/ecdsa.js';
 import { LeanIMT } from '@openpassport/zk-kit-lean-imt';
 import { packBytesAndPoseidon } from '../hash.js';
 import { COMMITMENT_TREE_DEPTH } from '../../constants/constants.js';
@@ -69,7 +68,7 @@ export const createKycDiscloseSelFromFields = (fieldsToReveal: KycField[]): stri
 };
 
 
-export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean, secret?: string, attestationId?: string) => {
+export const generateMockKycRegisterInput = async (secretKey?: bigint, ofac?: boolean, secret?: string) => {
   const kycData = ofac ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
   const serializedData = serializeKycData(kycData).padEnd(KYC_MAX_LENGTH, '\0');
 
@@ -81,24 +80,16 @@ export const generateMockKycRegisterInput = (secretKey?: bigint, ofac?: boolean,
   console.assert(inCurve(pk), 'Point pk not on curve');
   console.assert(pk[0] != 0n && pk[1] != 0n, 'pk is zero');
 
-  const sig = signECDSA(sk, msgPadded);
-  console.assert(verifyECDSA(msgPadded, sig, pk) == true, 'Invalid signature');
-  console.assert(sig.s < subOrder, ' s is greater than scalar field');
-
-  const rInv = modInv(sig.R[0], subOrder);
-  const rInvLimbs = bigintTo64bitLimbs(rInv);
-  const neg_rInvLimbs = bigintTo64bitLimbs(modulus(-rInv, subOrder));
+  const [sig, pubKey] = signEdDSA(sk, msgPadded);
+  console.assert(BigInt(sig.S) < subOrder, ' s is greater than scalar field');
 
   const kycRegisterInput: KycRegisterInput = {
-    data_padded: msgPadded.map((x) => x.toString()),
-    s: sig.s.toString(),
-    Rx: sig.R[0].toString(),
-    Ry: sig.R[1].toString(),
-    pubKeyX: pk[0].toString(),
-    pubKeyY: pk[1].toString(),
-    r_inv: rInvLimbs.map((x) => x.toString()),
+    data_padded: msgPadded.map((x) => Number(x)),
+    s: BigInt(sig.S),
+    R: sig.R8 as [bigint, bigint],
+    pubKey,
     secret: secret || "1234",
-    attestation_id: attestationId || '4',
+    attestation_id: '4',
   };
 
   return kycRegisterInput;

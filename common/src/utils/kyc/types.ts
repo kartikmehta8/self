@@ -40,13 +40,10 @@ export const serializeKycData = (kycData: KycData) => {
 }
 
 export type KycRegisterInput = {
-    data_padded: string[],
-    s: string,
-    Rx: string,
-    Ry: string,
-    pubKeyX: string,
-    pubKeyY: string,
-    r_inv: string[],
+    data_padded: number[],
+    s: bigint,
+    R: [bigint, bigint],
+    pubKey: [bigint, bigint],
     secret: string,
     attestation_id: string,
 }

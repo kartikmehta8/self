@@ -13,7 +13,7 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   before(async function () {
     this.timeout(0);
-    input = generateMockKycRegisterInput(null, true, undefined);
+    input = await generateMockKycRegisterInput(null, true, undefined);
     circuit = await wasmTester(
       path.join(__dirname, '../../circuits/register/register_kyc.circom'),
       {
@@ -64,7 +64,7 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   it('should fail if data is tampered', async function () {
     this.timeout(0);
-    input = generateMockKycRegisterInput(null, true, undefined);
+    input = await generateMockKycRegisterInput(null, true, undefined);
     input.data_padded[5] = (Number(input.data_padded[5]) + 1).toString();
     try {
       const w = await circuit.calculateWitness(input);
@@ -77,7 +77,7 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   it('should fail if data is not bytes', async function () {
     this.timeout(0);
-    input = generateMockKycRegisterInput(null, true, undefined);
+    input = await generateMockKycRegisterInput(null, true, undefined);
     input.data_padded[5] = '8000';
     try {
       const w = await circuit.calculateWitness(input);
@@ -102,22 +102,8 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   it('should fail if s is 0', async function () {
     this.timeout(0);
-    input = generateMockKycRegisterInput(null, true, undefined);
+    input = await generateMockKycRegisterInput(null, true, undefined);
     input.s = '0';
-    try {
-      const w = await circuit.calculateWitness(input);
-      await circuit.checkConstraints(w);
-      expect.fail('Expected an error but none was thrown.');
-    } catch (error) {
-      expect(error.message).to.include('Assert Failed');
-    }
-  });
-
-  it('should fail if r_inv is greater than scalar field', async function () {
-    this.timeout(0);
-    input = generateMockKycRegisterInput(null, true, undefined);
-    input.r_inv = ["7454187305358665460", "12339561404529962506", "3965992003123030795", "435874783350371333"];
-
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
