@@ -1,0 +1,209 @@
+{
+  "$schema": "./registry.schema.json",
+  "lastUpdated": "2025-12-04T01:20:29.734Z",
+  "contracts": {
+    "IdentityVerificationHub": {
+      "source": "IdentityVerificationHubImplV2",
+      "type": "uups-proxy",
+      "description": "Main identity verification hub for all document types"
+    },
+    "IdentityRegistry": {
+      "source": "IdentityRegistryImplV1",
+      "type": "uups-proxy",
+      "description": "Passport identity registry"
+    },
+    "IdentityRegistryIdCard": {
+      "source": "IdentityRegistryIdCardImplV1",
+      "type": "uups-proxy",
+      "description": "EU ID Card identity registry"
+    },
+    "IdentityRegistryAadhaar": {
+      "source": "IdentityRegistryAadhaarImplV1",
+      "type": "uups-proxy",
+      "description": "Aadhaar identity registry"
+    },
+    "PCR0Manager": {
+      "source": "PCR0Manager",
+      "type": "non-upgradeable",
+      "description": "PCR0 value management for TEE verification"
+    },
+    "VerifyAll": {
+      "source": "VerifyAll",
+      "type": "non-upgradeable",
+      "description": "SDK verification helper contract"
+    }
+  },
+  "networks": {
+    "celo": {
+      "chainId": 42220,
+      "governance": {
+        "securityMultisig": "",
+        "operationsMultisig": "",
+        "securityThreshold": "3/5",
+        "operationsThreshold": "2/5"
+      },
+      "deployments": {
+        "IdentityVerificationHub": {
+          "proxy": "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF",
+          "currentVersion": "2.12.0",
+          "currentImpl": ""
+        },
+        "IdentityRegistry": {
+          "proxy": "0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968",
+          "currentVersion": "1.2.0",
+          "currentImpl": ""
+        },
+        "IdentityRegistryIdCard": {
+          "proxy": "0xeAD1E6Ec29c1f3D33a0662f253a3a94D189566E1",
+          "currentVersion": "1.2.0",
+          "currentImpl": ""
+        },
+        "IdentityRegistryAadhaar": {
+          "proxy": "0xd603Fa8C8f4694E8DD1DcE1f27C0C3fc91e32Ac4",
+          "currentVersion": "1.2.0",
+          "currentImpl": ""
+        },
+        "PCR0Manager": {
+          "address": "",
+          "currentVersion": "1.0.0"
+        },
+        "VerifyAll": {
+          "address": "",
+          "currentVersion": "1.0.0"
+        }
+      }
+    },
+    "localhost": {
+      "chainId": 31337,
+      "governance": {
+        "securityMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "operationsMultisig": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "securityThreshold": "1/1",
+        "operationsThreshold": "1/1"
+      },
+      "deployments": {}
+    }
+  },
+  "versions": {
+    "IdentityVerificationHub": {
+      "2.12.0": {
+        "initializerVersion": 12,
+        "initializerFunction": "initializeGovernance",
+        "changelog": "Governance upgrade - migrated to AccessControlUpgradeable with multi-tier governance",
+        "gitTag": "hub-v2.12.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      },
+      "2.11.0": {
+        "initializerVersion": 11,
+        "initializerFunction": "initialize",
+        "changelog": "V2 hub deployment with Ownable2StepUpgradeable governance",
+        "gitTag": "hub-v2.11.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      }
+    },
+    "IdentityRegistry": {
+      "1.2.0": {
+        "initializerVersion": 2,
+        "initializerFunction": "initializeGovernance",
+        "changelog": "Governance upgrade - migrated to AccessControlUpgradeable",
+        "gitTag": "registry-passport-v1.2.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      },
+      "1.1.0": {
+        "initializerVersion": 1,
+        "initializerFunction": "initialize",
+        "changelog": "Initial deployment with Ownable2StepUpgradeable governance",
+        "gitTag": "registry-passport-v1.1.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      }
+    },
+    "IdentityRegistryIdCard": {
+      "1.2.0": {
+        "initializerVersion": 2,
+        "initializerFunction": "initializeGovernance",
+        "changelog": "Governance upgrade - migrated to AccessControlUpgradeable",
+        "gitTag": "registry-idcard-v1.2.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      },
+      "1.1.0": {
+        "initializerVersion": 1,
+        "initializerFunction": "initialize",
+        "changelog": "Initial deployment",
+        "gitTag": "registry-idcard-v1.1.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      }
+    },
+    "IdentityRegistryAadhaar": {
+      "1.2.0": {
+        "initializerVersion": 2,
+        "initializerFunction": "initializeGovernance",
+        "changelog": "Governance upgrade - migrated to AccessControlUpgradeable",
+        "gitTag": "registry-aadhaar-v1.2.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      },
+      "1.1.0": {
+        "initializerVersion": 1,
+        "initializerFunction": "initialize",
+        "changelog": "Initial deployment",
+        "gitTag": "registry-aadhaar-v1.1.0",
+        "deployments": {
+          "celo": {
+            "impl": "",
+            "deployedAt": "",
+            "deployedBy": "",
+            "gitCommit": ""
+          }
+        }
+      }
+    }
+  }
+}

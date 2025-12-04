@@ -1,99 +1,208 @@
-# Upgrade Guide: Governance Upgrade + PCR0 Migration
+# Contract Upgrade Guide
 
-## Prerequisites
+## Quick Start
 
-1. Set environment variables in `.env`:
-```bash
-CELO_RPC_URL=https://forno.celo.org
-CELO_PRIVATE_KEY=<deployer_private_key>
-SECURITY_GOVERNANCE_ADDRESS=<critical_multisig_address>
-STANDARD_GOVERNANCE_ADDRESS=<standard_multisig_address>
+### 1. Update Your Contract
+
+```solidity
+// Update version in NatSpec
+* @custom:version 2.13.0
+
+// Update reinitializer modifier (increment by 1)
+function initialize(...) external reinitializer(13) {
+    // Add any new initialization logic
+}
 ```
 
-2. Ensure deployer is current owner of all contracts
-
-## Step 1: Run All Tests
+### 2. Run the Upgrade Script
 
 ```bash
-# Test governance upgrade (18 state variables verified)
-forge test --match-contract UpgradeToAccessControlTest --fork-url $CELO_RPC_URL -vv
-
-# Test PCR0 migration (7 PCR0 values)
-forge test --match-contract MigratePCR0ManagerTest --fork-url $CELO_RPC_URL -vv
+cd contracts
+npx hardhat upgrade --contract IdentityVerificationHub --network celo --changelog "Added feature X"
 ```
 
-**Expected**: Both tests pass with "PASSED" output
+### 3. Approve in Safe
 
-## Step 2: Dry Run (Simulation)
+The script outputs instructions to submit to the Safe multisig. Once 3/5 signers approve, execute the transaction.
+
+---
+
+## Governance Roles
+
+| Role | Threshold | Purpose |
+|------|-----------|---------|
+| `SECURITY_ROLE` | 3/5 | Contract upgrades, role management |
+| `OPERATIONS_ROLE` | 2/5 | CSCA root updates, OFAC list updates |
+
+---
+
+## Detailed Workflow
+
+### Step 1: Modify the Contract
+
+1. Make your code changes
+2. Update `@custom:version` in the contract's NatSpec comment
+3. Increment the `reinitializer(N)` modifier (e.g., `reinitializer(12)` → `reinitializer(13)`)
+4. Add any new storage fields **at the end** of the storage struct
+
+**Example:**
+```solidity
+/**
+ * @title IdentityVerificationHubImplV2
+ * @custom:version 2.13.0
+ */
+contract IdentityVerificationHubImplV2 is ImplRoot {
+
+    struct HubStorage {
+        // Existing fields...
+        uint256 newField;  // Add new fields at the end only
+    }
+
+    function initialize(...) external reinitializer(13) {
+        // Initialize new fields if needed
+        HubStorage storage $ = _getHubStorage();
+        $.newField = defaultValue;
+    }
+}
+```
+
+### Step 2: Run the Upgrade Script
 
 ```bash
-# Simulate governance upgrade
-forge script script/UpgradeToAccessControl.s.sol:UpgradeToAccessControl \
-  --fork-url $CELO_RPC_URL \
-  -vvv
-
-# Simulate PCR0 migration
-forge script script/MigratePCR0Manager.s.sol:MigratePCR0Manager \
-  --fork-url $CELO_RPC_URL \
-  -vvv
+npx hardhat upgrade --contract <ContractName> --network <network> --changelog "Description"
 ```
 
-**Verify**:
-- No revert messages
-- Gas estimates reasonable
-- Correct multisig addresses shown
-- All 7 PCR0 values listed
+**Options:**
+- `--contract` - Contract name (e.g., `IdentityVerificationHub`)
+- `--network` - Target network (`celo`, `sepolia`, `localhost`)
+- `--changelog` - Brief description of changes
+- `--prepare-only` - Deploy implementation without creating Safe proposal
 
-## Step 3: Execute on Mainnet
+### Step 3: Script Execution
+
+The script automatically:
+
+1. **Validates version** - Ensures `@custom:version` is incremented correctly
+2. **Checks reinitializer** - Verifies `reinitializer(N)` matches expected version
+3. **Validates storage** - Ensures no breaking storage layout changes
+4. **Compiles fresh** - Clears cache to prevent stale bytecode
+5. **Compares bytecode** - Warns if implementation hasn't changed
+6. **Deploys implementation** - Deploys new implementation contract
+7. **Updates registry** - Records deployment in `deployments/registry.json`
+8. **Creates git commit & tag** - Auto-commits changes with version tag
+9. **Creates Safe proposal** - If you're a signer, auto-proposes to Safe
+
+### Step 4: Multisig Approval
+
+**If you're a Safe signer:**
+- Script auto-proposes the transaction
+- Other signers approve in Safe UI
+- Execute once threshold (3/5) is met
+
+**If you're not a signer:**
+- Script outputs transaction data for manual submission
+- Copy data to Safe Transaction Builder
+- Signers approve and execute
+
+---
+
+## Safety Checks
+
+The upgrade script performs these automatic checks:
+
+| Check | What it Does | Failure Behavior |
+|-------|--------------|------------------|
+| Version validation | Ensures semantic version increment | Blocks upgrade |
+| Reinitializer check | Verifies modifier matches version | Blocks upgrade |
+| Storage layout | Detects breaking storage changes | Blocks upgrade |
+| Bytecode comparison | Warns if code unchanged | Prompts confirmation |
+| Safe role verification | Confirms Safe has `SECURITY_ROLE` | Blocks upgrade |
+| Constructor check | Flags `_disableInitializers()` | Prompts confirmation |
+
+---
+
+## Registry Structure
+
+All deployments are tracked in `deployments/registry.json`:
+
+```json
+{
+  "contracts": {
+    "ContractName": {
+      "source": "ContractSourceFile",
+      "type": "uups-proxy"
+    }
+  },
+  "networks": {
+    "celo": {
+      "deployments": {
+        "ContractName": {
+          "proxy": "0x...",
+          "currentVersion": "2.12.0",
+          "currentImpl": "0x..."
+        }
+      }
+    }
+  },
+  "versions": {
+    "ContractName": {
+      "2.12.0": {
+        "initializerVersion": 12,
+        "changelog": "...",
+        "gitTag": "contractname-v2.12.0",
+        "deployments": { ... }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Utility Commands
 
 ```bash
-# Execute governance upgrade
-forge script script/UpgradeToAccessControl.s.sol:UpgradeToAccessControl \
-  --rpc-url $CELO_RPC_URL \
-  --private-key $CELO_PRIVATE_KEY \
-  --broadcast \
-  --verify \
-  -vvv
+# Check current deployment status
+npx hardhat upgrade:status --contract IdentityVerificationHub --network celo
 
-# Execute PCR0 migration
-forge script script/MigratePCR0Manager.s.sol:MigratePCR0Manager \
-  --rpc-url $CELO_RPC_URL \
-  --private-key $CELO_PRIVATE_KEY \
-  --broadcast \
-  --verify \
-  -vvv
+# View version history
+npx hardhat upgrade:history --contract IdentityVerificationHub
 ```
 
-## Step 4: Verify Deployment
-
-```bash
-# Check governance roles
-cast call 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF \
-  "hasRole(bytes32,address)" \
-  $(cast keccak "SECURITY_ROLE") \
-  $SECURITY_GOVERNANCE_ADDRESS \
-  --rpc-url $CELO_RPC_URL
-
-# Check PCR0 values migrated (example)
-cast call <NEW_PCR0_MANAGER_ADDRESS> \
-  "allowedPCR0s(bytes48)" \
-  0x000000000000000000ce66ff35f33ce989ca93409f200e37c5074052a3f84e0d3b8d8fce5b1cb2ba4a9fc86e27f32e2a \
-  --rpc-url $CELO_RPC_URL
-```
-
-**Expected**:
-- Role check returns `true`
-- PCR0 check returns `true`
-
-## Contracts Upgraded
-
-- IdentityVerificationHubImplV2: `0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF`
-- IdentityRegistryImplV1 (Passport): `0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968`
-- IdentityRegistryIdCardImplV1: `0xeAD1E6Ec29c1f3D33a0662f253a3a94D189566E1`
-- IdentityRegistryAadhaarImplV1: `0xd603Fa8C8f4694E8DD1DcE1f27C0C3fc91e32Ac4`
+---
 
 ## Rollback
 
-If issues occur, the multisigs can:
-1. Deploy previous implementation versions
-2. Use `upgradeTo()` to revert (requires `SECURITY_ROLE`)
+If issues occur after upgrade:
+
+1. Deploy the previous implementation version
+2. Create Safe transaction calling `upgradeToAndCall(previousImpl, "0x")`
+3. Execute with 3/5 multisig approval
+
+---
+
+## Environment Setup
+
+Required in `.env`:
+```bash
+CELO_RPC_URL=https://forno.celo.org
+PRIVATE_KEY=0x...  # Deployer wallet (needs ETH for gas)
+```
+
+Optional for contract verification:
+```bash
+CELOSCAN_API_KEY=...
+ETHERSCAN_API_KEY=...
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "Version matches current" | Update `@custom:version` in contract |
+| "Reinitializer mismatch" | Update `reinitializer(N)` to next version |
+| "Storage layout incompatible" | Don't remove/reorder storage variables |
+| "Safe not indexed" | Submit manually via Safe UI |
+| "Bytecode unchanged" | Ensure you saved contract changes |
