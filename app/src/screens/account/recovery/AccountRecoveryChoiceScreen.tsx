@@ -32,9 +32,9 @@ import RestoreAccountSvg from '@/assets/icons/restore_account.svg';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import type { RootStackParamList } from '@/navigation';
-import { useAuth } from '@/providers/authProvider';
+import { getPrivateKeyFromMnemonic, useAuth } from '@/providers/authProvider';
 import {
-  loadPassportDataAndSecret,
+  loadPassportData,
   reStorePassportDataWithRightCSCA,
 } from '@/providers/passportDataProvider';
 import { STORAGE_NAME, useBackupMnemonic } from '@/services/cloud-backup';
@@ -50,7 +50,8 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
   // const { turnkeyWallets, refreshWallets } = useTurnkeyUtils();
   // const { getMnemonic } = useTurnkeyUtils();
   // const { authState } = useTurnkey();
-  const [restoring, setRestoring] = useState(false);
+  const [_restoringFromTurnkey, _setRestoringFromTurnkey] = useState(false);
+  const [restoringFromCloud, setRestoringFromCloud] = useState(false);
   const { cloudBackupEnabled, toggleCloudBackupEnabled, biometricsAvailable } =
     useSettingStore();
   const { download } = useBackupMnemonic();
@@ -73,6 +74,7 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
     async (
       mnemonic: Mnemonic,
       isCloudRestore: boolean = false,
+      setRestoring: (value: boolean) => void,
     ): Promise<boolean> => {
       try {
         const result = await restoreAccountFromMnemonic(mnemonic.phrase);
@@ -85,32 +87,55 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
           return false;
         }
 
-        const passportDataAndSecret =
-          (await loadPassportDataAndSecret()) as string;
-        const { passportData, secret } = JSON.parse(passportDataAndSecret);
-        const { isRegistered, csca } =
-          await isUserRegisteredWithAlternativeCSCA(passportData, secret, {
-            getCommitmentTree(docCategory) {
-              return useProtocolStore.getState()[docCategory].commitment_tree;
-            },
-            getAltCSCA(docCategory) {
-              if (docCategory === 'aadhaar') {
-                const publicKeys =
-                  useProtocolStore.getState().aadhaar.public_keys;
-                // Convert string[] to Record<string, string> format expected by AlternativeCSCA
-                return publicKeys
-                  ? Object.fromEntries(publicKeys.map(key => [key, key]))
-                  : {};
-              }
+        const passportData = await loadPassportData();
+        const secret = getPrivateKeyFromMnemonic(mnemonic.phrase);
 
-              return useProtocolStore.getState()[docCategory].alternative_csca;
-            },
+        if (!passportData || !secret) {
+          console.warn('Failed to load passport data or secret');
+          trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_AUTH, {
+            reason: 'no_passport_data_or_secret',
           });
+          navigation.navigate({ name: 'Home', params: {} });
+          setRestoring(false);
+          return false;
+        }
+
+        const passportDataParsed = JSON.parse(passportData);
+
+        const { isRegistered, csca } =
+          await isUserRegisteredWithAlternativeCSCA(
+            passportDataParsed,
+            secret as string,
+            {
+              getCommitmentTree(docCategory) {
+                return useProtocolStore.getState()[docCategory].commitment_tree;
+              },
+              getAltCSCA(docCategory) {
+                if (docCategory === 'aadhaar') {
+                  const publicKeys =
+                    useProtocolStore.getState().aadhaar.public_keys;
+                  // Convert string[] to Record<string, string> format expected by AlternativeCSCA
+                  return publicKeys
+                    ? Object.fromEntries(publicKeys.map(key => [key, key]))
+                    : {};
+                }
+
+                return useProtocolStore.getState()[docCategory]
+                  .alternative_csca;
+              },
+            },
+          );
         if (!isRegistered) {
           console.warn(
             'Secret provided did not match a registered ID. Please try again.',
           );
-          trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED);
+          trackEvent(
+            BackupEvents.CLOUD_RESTORE_FAILED_PASSPORT_NOT_REGISTERED,
+            {
+              reason: 'document_not_registered',
+              hasCSCA: !!csca,
+            },
+          );
           navigation.navigate({ name: 'Home', params: {} });
           setRestoring(false);
           return false;
@@ -118,7 +143,10 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
         if (isCloudRestore && !cloudBackupEnabled) {
           toggleCloudBackupEnabled();
         }
-        reStorePassportDataWithRightCSCA(passportData, csca as string);
+        await reStorePassportDataWithRightCSCA(
+          passportDataParsed,
+          csca as string,
+        );
         await markCurrentDocumentAsRegistered(selfClient);
         trackEvent(BackupEvents.CLOUD_RESTORE_SUCCESS);
         trackEvent(BackupEvents.ACCOUNT_RECOVERY_COMPLETED);
@@ -126,7 +154,10 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
         setRestoring(false);
         return true;
       } catch (e: unknown) {
-        console.error(e);
+        console.error(
+          'Restore account error:',
+          e instanceof Error ? e.message : 'Unknown error',
+        );
         trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_UNKNOWN);
         setRestoring(false);
         return false;
@@ -146,7 +177,7 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
 
   // DISABLED FOR NOW: Turnkey functionality
   // const onRestoreFromTurnkeyPress = useCallback(async () => {
-  //   setRestoring(true);
+  //   setRestoringFromTurnkey(true);
   //   try {
   //     const mnemonicPhrase = await getMnemonic();
   //     const mnemonic: Mnemonic = {
@@ -157,7 +188,11 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
   //       },
   //       entropy: '',
   //     };
-  //     const success = await restoreAccountFlow(mnemonic);
+  //     const success = await restoreAccountFlow(
+  //       mnemonic,
+  //       false,
+  //       setRestoringFromTurnkey,
+  //     );
   //     if (success) {
   //       setTurnkeyBackupEnabled(true);
   //     }
@@ -165,19 +200,22 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
   //     console.error('Turnkey restore error:', error);
   //     trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_UNKNOWN);
   //   } finally {
-  //     setRestoring(false);
+  //     setRestoringFromTurnkey(false);
   //   }
   // }, [getMnemonic, restoreAccountFlow, setTurnkeyBackupEnabled, trackEvent]);
 
   const onRestoreFromCloudPress = useCallback(async () => {
-    setRestoring(true);
+    setRestoringFromCloud(true);
     try {
       const mnemonic = await download();
-      await restoreAccountFlow(mnemonic, true);
+      await restoreAccountFlow(mnemonic, true, setRestoringFromCloud);
     } catch (error) {
-      console.error('Cloud restore error:', error);
+      console.error(
+        'Cloud restore error:',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
       trackEvent(BackupEvents.CLOUD_RESTORE_FAILED_UNKNOWN);
-      setRestoring(false);
+      setRestoringFromCloud(false);
     }
   }, [download, restoreAccountFlow, trackEvent]);
 
@@ -218,23 +256,23 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
               onPress={onRestoreFromTurnkeyPress}
               testID="button-from-turnkey"
               disabled={
-                restoring ||
+                restoringFromTurnkey ||
                 !biometricsAvailable ||
                 (authState === AuthState.Authenticated &&
                   turnkeyWallets.length === 0)
               }
             >
-              {restoring ? 'Restoring' : 'Restore'} from Turnkey
-              {restoring ? '…' : ''}
+              {restoringFromTurnkey ? 'Restoring' : 'Restore'} from Turnkey
+              {restoringFromTurnkey ? '…' : ''}
             </PrimaryButton> */}
             <PrimaryButton
               trackEvent={BackupEvents.CLOUD_BACKUP_STARTED}
               onPress={onRestoreFromCloudPress}
               testID="button-from-teststorage"
-              disabled={restoring || !biometricsAvailable}
+              disabled={restoringFromCloud || !biometricsAvailable}
             >
-              {restoring ? 'Restoring' : 'Restore'} from {STORAGE_NAME}
-              {restoring ? '…' : ''}
+              {restoringFromCloud ? 'Restoring' : 'Restore'} from {STORAGE_NAME}
+              {restoringFromCloud ? '…' : ''}
             </PrimaryButton>
             <XStack gap={64} alignItems="center" justifyContent="space-between">
               <Separator flexGrow={1} />
@@ -244,7 +282,6 @@ const AccountRecoveryChoiceScreen: React.FC = () => {
             <SecondaryButton
               trackEvent={BackupEvents.MANUAL_RECOVERY_SELECTED}
               onPress={handleManualRecoveryPress}
-              disabled={restoring}
             >
               <XStack alignItems="center" justifyContent="center">
                 <Keyboard height={25} width={40} color={slate500} />
