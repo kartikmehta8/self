@@ -127,6 +127,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     event NameAndYobOfacRootUpdated(uint256 nameAndYobOfacRoot);
     /// @notice Emitted when the GCP root CA pubkey hash is updated.
     event GCPRootCAPubkeyHashUpdated(uint256 gcpRootCAPubkeyHash);
+    /// @notice Emitted when the GCP JWT verifier address is updated.
+    event GCPJWTVerifierUpdated(address gcpJwtVerifier);
+    /// @notice Emitted when the TEE address is updated.
+    event TEEUpdated(address tee);
     /// @notice Emitted when an identity commitment is successfully registered.
     event CommitmentRegistered(
         bytes32 indexed attestationId,
@@ -445,6 +449,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /// @param verifier The new GCP JWT verifier address.
     function updateGCPJWTVerifier(address verifier) external onlyProxy onlyOwner {
         _gcpJwtVerifier = verifier;
+        emit GCPJWTVerifierUpdated(verifier);
     }
 
     /// @notice Updates the TEE address.
@@ -452,6 +457,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /// @param teeAddress The new TEE address.
     function updateTEE(address teeAddress) external onlyProxy onlyOwner {
         _tee = teeAddress;
+        emit TEEUpdated(teeAddress);
     }
 
     /// @notice (DEV) Force-adds an identity commitment.
