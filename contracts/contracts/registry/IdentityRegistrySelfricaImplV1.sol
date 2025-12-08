@@ -69,6 +69,9 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
 
     /// @notice Address of the TEE authorized to register pubkey commitments.
     address internal _tee;
+
+    /// @notice The expected hash of the GCP root CA public key for JWT verification.
+    uint256 internal _gcpRootCAPubkeyHash;
 }
 
 /**
@@ -108,9 +111,6 @@ interface IPCR0Manager {
 contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, IIdentityRegistryKycV1 {
     using InternalLeanIMT for LeanIMTData;
 
-    /// @notice The expected hash of the GCP root CA public key for JWT verification.
-    uint256 public constant GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501;
-
     // ====================================================
     // Events
     // ====================================================
@@ -125,6 +125,8 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     event NameAndDobOfacRootUpdated(uint256 nameAndDobOfacRoot);
     /// @notice Emitted when the name and year of birth OFAC root is updated.
     event NameAndYobOfacRootUpdated(uint256 nameAndYobOfacRoot);
+    /// @notice Emitted when the GCP root CA pubkey hash is updated.
+    event GCPRootCAPubkeyHashUpdated(uint256 gcpRootCAPubkeyHash);
     /// @notice Emitted when an identity commitment is successfully registered.
     event CommitmentRegistered(
         bytes32 indexed attestationId,
@@ -322,6 +324,14 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     }
 
     /**
+     * @notice Retrieves the GCP root CA pubkey hash.
+     * @return The current GCP root CA pubkey hash.
+     */
+    function getGCPRootCAPubkeyHash() external view onlyProxy returns (uint256) {
+        return _gcpRootCAPubkeyHash;
+    }
+
+    /**
      * @notice Checks if the provided pubkey commitment is stored in the registry.
      * @param pubkeyCommitment The pubkey commitment to verify.
      * @return True if the pubkey commitment is stored in the registry, false otherwise.
@@ -392,8 +402,18 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         emit NameAndYobOfacRootUpdated(nameAndYobOfacRoot);
     }
 
+    /**
+     * @notice Updates the GCP root CA pubkey hash.
+     * @dev Callable only via a proxy and restricted to the contract owner.
+     * @param gcpRootCAPubkeyHash The new GCP root CA pubkey hash value.
+     */
+    function updateGCPRootCAPubkeyHash(uint256 gcpRootCAPubkeyHash) external virtual onlyProxy onlyOwner {
+        _gcpRootCAPubkeyHash = gcpRootCAPubkeyHash;
+        emit GCPRootCAPubkeyHashUpdated(gcpRootCAPubkeyHash);
+    }
+
     /// @notice Registers a pubkey via GCP JWT proof.
-    /// @dev Verifies the proof, checks root CA hash matches constant, validates image hash against PCR0Manager.
+    /// @dev Verifies the proof, checks root CA hash matches stored value, validates image hash against PCR0Manager.
     /// @param pA Groth16 proof element A.
     /// @param pB Groth16 proof element B.
     /// @param pC Groth16 proof element C.
@@ -408,7 +428,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         if (!IGCPJWTVerifier(_gcpJwtVerifier).verifyProof(pA, pB, pC, pubSignals)) revert INVALID_PROOF();
 
         // Check if the root CA pubkey hash is valid
-        if (pubSignals[0] != GCP_ROOT_CA_PUBKEY_HASH) revert INVALID_ROOT_CA();
+        if (pubSignals[0] != _gcpRootCAPubkeyHash) revert INVALID_ROOT_CA();
 
         // Check if the TEE image hash is valid
         bytes memory imageHash = GCPJWTHelper.unpackAndConvertImageHash(pubSignals[4], pubSignals[5], pubSignals[6]);

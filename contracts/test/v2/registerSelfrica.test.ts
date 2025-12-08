@@ -36,12 +36,17 @@ describe("Selfrica Registration test", function () {
   let snapshotId: string;
   let attestationIdBytes32: string;
 
+  const GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501n;
+
   before(async () => {
     deployedActors = await deploySystemFixturesV2();
     attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
     // Set the owner as the TEE for all tests
     await deployedActors.registrySelfrica.updateTEE(await deployedActors.owner.getAddress());
+
+    // Set the GCP root CA pubkey hash
+    await deployedActors.registrySelfrica.updateGCPRootCAPubkeyHash(GCP_ROOT_CA_PUBKEY_HASH);
 
     console.log("🎉 System deployment and initial setup completed!");
   });
@@ -61,7 +66,6 @@ describe("Selfrica Registration test", function () {
     let mockVerifier: any;
     let mockProof: any;
     let mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint];
-    const GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501n;
     let snapshotId: string;
 
     before(async () => {
@@ -183,16 +187,28 @@ describe("Selfrica Registration test", function () {
   });
 
   describe("GCP JWT Pubkey Registration", () => {
-    const GCP_ROOT_CA_PUBKEY_HASH = 21107503781769611051785921462832133421817512022858926231578334326320168810501n;
     const mockProof = {
       a: [1n, 2n] as [bigint, bigint],
       b: [[1n, 2n], [3n, 4n]] as [[bigint, bigint], [bigint, bigint]],
       c: [1n, 2n] as [bigint, bigint],
     };
 
-    it("should have correct GCP_ROOT_CA_PUBKEY_HASH constant", async () => {
-      const contractHash = await deployedActors.registrySelfrica.GCP_ROOT_CA_PUBKEY_HASH();
+    it("should have correct GCP root CA pubkey hash", async () => {
+      const contractHash = await deployedActors.registrySelfrica.getGCPRootCAPubkeyHash();
       expect(contractHash).to.equal(GCP_ROOT_CA_PUBKEY_HASH);
+    });
+
+    it("should allow owner to update GCP root CA pubkey hash", async () => {
+      const newHash = 12345n;
+      await deployedActors.registrySelfrica.updateGCPRootCAPubkeyHash(newHash);
+      const contractHash = await deployedActors.registrySelfrica.getGCPRootCAPubkeyHash();
+      expect(contractHash).to.equal(newHash);
+    });
+
+    it("should not allow non-owner to update GCP root CA pubkey hash", async () => {
+      await expect(
+        deployedActors.registrySelfrica.connect(deployedActors.user1).updateGCPRootCAPubkeyHash(12345n),
+      ).to.be.revertedWithCustomError(deployedActors.registrySelfrica, "OwnableUnauthorizedAccount");
     });
 
     it("should fail with INVALID_IMAGE when image hash not in PCR0Manager", async () => {
