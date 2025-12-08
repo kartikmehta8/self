@@ -261,6 +261,14 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         return _tee;
     }
 
+    /**
+     * @notice Retrieves the GCP root CA pubkey hash.
+     * @return The current GCP root CA pubkey hash.
+     */
+    function gcpRootCAPubkeyHash() external view onlyProxy returns (uint256) {
+        return _gcpRootCAPubkeyHash;
+    }
+
     /// @notice Checks if a specific nullifier is registered.
     /// @param nullifier The nullifier to be checked.
     /// @return True if the nullifier has been registered, false otherwise.
@@ -325,14 +333,6 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
      */
     function checkOfacRoots(uint256 nameAndDobRoot, uint256 nameAndYobRoot) external view onlyProxy returns (bool) {
         return _nameAndDobOfacRoot == nameAndDobRoot && _nameAndYobOfacRoot == nameAndYobRoot;
-    }
-
-    /**
-     * @notice Retrieves the GCP root CA pubkey hash.
-     * @return The current GCP root CA pubkey hash.
-     */
-    function getGCPRootCAPubkeyHash() external view onlyProxy returns (uint256) {
-        return _gcpRootCAPubkeyHash;
     }
 
     /**
@@ -416,6 +416,22 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         emit GCPRootCAPubkeyHashUpdated(gcpRootCAPubkeyHash);
     }
 
+    /// @notice Updates the GCP JWT verifier contract address.
+    /// @dev Callable only by the contract owner.
+    /// @param verifier The new GCP JWT verifier address.
+    function updateGCPJWTVerifier(address verifier) external onlyProxy onlyOwner {
+        _gcpJwtVerifier = verifier;
+        emit GCPJWTVerifierUpdated(verifier);
+    }
+
+    /// @notice Updates the TEE address.
+    /// @dev Callable only by the contract owner.
+    /// @param teeAddress The new TEE address.
+    function updateTEE(address teeAddress) external onlyProxy onlyOwner {
+        _tee = teeAddress;
+        emit TEEUpdated(teeAddress);
+    }
+
     /// @notice Registers a pubkey via GCP JWT proof.
     /// @dev Verifies the proof, checks root CA hash matches stored value, validates image hash against PCR0Manager.
     /// @param pA Groth16 proof element A.
@@ -442,22 +458,6 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256 pubkeyCommitment = GCPJWTHelper.unpackAndDecodeHexPubkey(pubSignals[1], pubSignals[2], pubSignals[3]);
         _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
         emit PubkeyCommitmentRegistered(pubkeyCommitment);
-    }
-
-    /// @notice Updates the GCP JWT verifier contract address.
-    /// @dev Callable only by the contract owner.
-    /// @param verifier The new GCP JWT verifier address.
-    function updateGCPJWTVerifier(address verifier) external onlyProxy onlyOwner {
-        _gcpJwtVerifier = verifier;
-        emit GCPJWTVerifierUpdated(verifier);
-    }
-
-    /// @notice Updates the TEE address.
-    /// @dev Callable only by the contract owner.
-    /// @param teeAddress The new TEE address.
-    function updateTEE(address teeAddress) external onlyProxy onlyOwner {
-        _tee = teeAddress;
-        emit TEEUpdated(teeAddress);
     }
 
     /// @notice (DEV) Force-adds an identity commitment.
