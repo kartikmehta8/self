@@ -40,6 +40,9 @@ describe("Selfrica Registration test", function () {
     deployedActors = await deploySystemFixturesV2();
     attestationIdBytes32 = ethers.zeroPadValue(ethers.toBeHex(BigInt(KYC_ATTESTATION_ID)), 32);
 
+    // Set the owner as the TEE for all tests
+    await deployedActors.registrySelfrica.updateTEE(await deployedActors.owner.getAddress());
+
     console.log("🎉 System deployment and initial setup completed!");
   });
 
@@ -215,6 +218,59 @@ describe("Selfrica Registration test", function () {
     it("should allow owner to update GCP JWT verifier", async () => {
       const newVerifier = ethers.Wallet.createRandom().address;
       await deployedActors.registrySelfrica.updateGCPJWTVerifier(newVerifier);
+    });
+
+    describe("TEE Access Control", () => {
+      it("should not allow non-TEE to register pubkey commitment", async () => {
+        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        ];
+
+        await expect(
+          deployedActors.registrySelfrica.connect(deployedActors.user1).registerPubkeyCommitment(
+            mockProof.a, mockProof.b, mockProof.c, mockPubSignals
+          ),
+        ).to.be.revertedWithCustomError(deployedActors.registrySelfrica, "ONLY_TEE_CAN_ACCESS");
+      });
+
+      it("should not allow non-owner to update TEE", async () => {
+        await expect(
+          deployedActors.registrySelfrica.connect(deployedActors.user1).updateTEE(
+            ethers.Wallet.createRandom().address
+          ),
+        ).to.be.revertedWithCustomError(deployedActors.registrySelfrica, "OwnableUnauthorizedAccount");
+      });
+
+      it("should allow owner to update TEE", async () => {
+        const newTee = ethers.Wallet.createRandom().address;
+        await deployedActors.registrySelfrica.updateTEE(newTee);
+        expect(await deployedActors.registrySelfrica.tee()).to.equal(newTee);
+      });
+
+      it("should fail with TEE_NOT_SET when TEE address is zero", async () => {
+        // Deploy minimal fresh registry to test uninitialized TEE state
+        const freshImpl = await (await ethers.getContractFactory("IdentityRegistrySelfricaImplV1", {
+          libraries: { PoseidonT3: deployedActors.poseidonT3.target },
+        })).deploy();
+
+        const initData = freshImpl.interface.encodeFunctionData("initialize", [
+          ethers.ZeroAddress,
+          deployedActors.pcr0Manager.target,
+        ]);
+        const freshProxy = await (await ethers.getContractFactory("IdentityRegistry"))
+          .deploy(freshImpl.target, initData);
+
+        const freshRegistry = await ethers.getContractAt("IdentityRegistrySelfricaImplV1", freshProxy.target);
+        await freshRegistry.updateGCPJWTVerifier(deployedActors.gcpJwtVerifier.target);
+
+        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        ];
+
+        await expect(
+          freshRegistry.registerPubkeyCommitment(mockProof.a, mockProof.b, mockProof.c, mockPubSignals),
+        ).to.be.revertedWithCustomError(freshRegistry, "TEE_NOT_SET");
+      });
     });
 
     describe("with MockGCPJWTVerifier", () => {

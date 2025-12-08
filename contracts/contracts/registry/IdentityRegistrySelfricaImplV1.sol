@@ -66,6 +66,9 @@ abstract contract IdentityRegistrySelfricaStorageV1 is ImplRoot {
 
     /// @notice Address of the GCP JWT verifier contract.
     address internal _gcpJwtVerifier;
+
+    /// @notice Address of the TEE authorized to register pubkey commitments.
+    address internal _tee;
 }
 
 /**
@@ -156,6 +159,10 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     error HUB_NOT_SET();
     /// @notice Thrown when a function is accessed by an address other than the designated hub.
     error ONLY_HUB_CAN_ACCESS();
+    /// @notice Thrown when the TEE is not set.
+    error TEE_NOT_SET();
+    /// @notice Thrown when a function is accessed by an address other than the designated TEE.
+    error ONLY_TEE_CAN_ACCESS();
     /// @notice Thrown when attempting to register a commitment that has already been registered.
     error REGISTERED_COMMITMENT();
     /// @notice Thrown when the hub address is set to the zero address.
@@ -178,6 +185,16 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     modifier onlyHub() {
         if (address(_hub) == address(0)) revert HUB_NOT_SET();
         if (msg.sender != address(_hub)) revert ONLY_HUB_CAN_ACCESS();
+        _;
+    }
+
+    /**
+     * @notice Modifier to restrict access to functions to only the TEE.
+     * @dev Reverts if the TEE is not set or if the caller is not the TEE.
+     */
+    modifier onlyTEE() {
+        if (address(_tee) == address(0)) revert TEE_NOT_SET();
+        if (msg.sender != address(_tee)) revert ONLY_TEE_CAN_ACCESS();
         _;
     }
 
@@ -228,6 +245,14 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
      */
     function PCR0Manager() external view onlyProxy returns (address) {
         return _PCR0Manager;
+    }
+
+    /**
+     * @notice Retrieves the TEE address.
+     * @return The current TEE address.
+     */
+    function tee() external view onlyProxy returns (address) {
+        return _tee;
     }
 
     /// @notice Checks if a specific nullifier is registered.
@@ -378,7 +403,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
         uint256[7] calldata pubSignals
-    ) external onlyProxy {
+    ) external onlyProxy onlyTEE {
         // Check if the proof is valid
         if (!IGCPJWTVerifier(_gcpJwtVerifier).verifyProof(pA, pB, pC, pubSignals)) revert INVALID_PROOF();
 
@@ -400,6 +425,13 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     /// @param verifier The new GCP JWT verifier address.
     function updateGCPJWTVerifier(address verifier) external onlyProxy onlyOwner {
         _gcpJwtVerifier = verifier;
+    }
+
+    /// @notice Updates the TEE address.
+    /// @dev Callable only by the contract owner.
+    /// @param teeAddress The new TEE address.
+    function updateTEE(address teeAddress) external onlyProxy onlyOwner {
+        _tee = teeAddress;
     }
 
     /// @notice (DEV) Force-adds an identity commitment.
