@@ -115,24 +115,24 @@ library CircuitAttributeHandlerV2 {
         } else if (attestationId == AttestationId.KYC) {
             return
                 FieldPositions({
-                    issuingStateStart: 50,
-                    issuingStateEnd: 57,
-                    nameStart: 66,
-                    nameEnd: 105,
+                    issuingStateStart: 999,
+                    issuingStateEnd: 999,
+                    nameStart: 78,
+                    nameEnd: 141,
                     documentNumberStart: 30,
-                    documentNumberEnd: 49,
+                    documentNumberEnd: 61,
                     nationalityStart: 0,
                     nationalityEnd: 2,
-                    dateOfBirthStart: 106,
-                    dateOfBirthEnd: 113,
-                    genderStart: 160,
-                    genderEnd: 165,
-                    expiryDateStart: 58,
-                    expiryDateEnd: 65,
-                    olderThanStart: 268,
-                    olderThanEnd: 270,
-                    ofacStart: 266,
-                    ofacEnd: 267
+                    dateOfBirthStart: 142,
+                    dateOfBirthEnd: 149,
+                    genderStart: 226,
+                    genderEnd: 232,
+                    expiryDateStart: 70,
+                    expiryDateEnd: 77,
+                    olderThanStart: 334,
+                    olderThanEnd: 334,
+                    ofacStart: 332,
+                    ofacEnd: 333
                 });
         } else {
             revert("Invalid attestation ID");

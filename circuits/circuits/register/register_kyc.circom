@@ -44,5 +44,3 @@ template REGISTER_KYC() {
 
     signal output pubkey_hash <== Poseidon(2)([verifyIdCommSig.Ax, verifyIdCommSig.Ay]);
 }
-
-component main = REGISTER_KYC();

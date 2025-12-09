@@ -70,7 +70,7 @@ describe("Selfrica Registration test", function () {
 
     before(async () => {
       registerSecret = "12345";
-      selfricaData = generateMockKycRegisterInput(undefined, true, registerSecret);
+      selfricaData = await generateMockKycRegisterInput(undefined, true, registerSecret);
       registerProof = await generateRegisterSelfricaProof(registerSecret, selfricaData);
 
       // Deploy and set mock GCP JWT verifier

@@ -197,18 +197,18 @@ library Formatter {
         return bytesArray;
     }
 
-    function fieldElementsToBytesKyc(uint256[9] memory publicSignals) internal pure returns (bytes memory) {
-        for (uint256 i = 0; i < 9; i++) {
+    function fieldElementsToBytesKyc(uint256[11] memory publicSignals) internal pure returns (bytes memory) {
+        for (uint256 i = 0; i < 11; i++) {
             if (publicSignals[i] >= SNARK_SCALAR_FIELD) {
                 revert InvalidFieldElement();
             }
         }
 
-        uint8[9] memory bytesCount = [31, 31, 31, 31, 31, 31, 31, 31, 23];
-        bytes memory bytesArray = new bytes(271);
+        uint8[11] memory bytesCount = [31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 25];
+        bytes memory bytesArray = new bytes(335);
 
         uint256 index = 0;
-        for (uint256 i = 0; i < 9; i++) {
+        for (uint256 i = 0; i < 11; i++) {
             uint256 element = publicSignals[i];
             for (uint8 j = 0; j < bytesCount[i]; j++) {
                 bytesArray[index++] = bytes1(uint8(element & 0xff));

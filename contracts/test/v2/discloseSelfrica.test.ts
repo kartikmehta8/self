@@ -70,7 +70,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
         "ADDRESS",
       ],
       undefined,
-      18,
+      0,
       true,
       KYC_ATTESTATION_ID,
     );
@@ -113,7 +113,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
     // The issue is that generateKycDiscloseInput creates a commitment in the local tree,
     // but the registry has its own separate tree. The proof uses the local tree's root,
     // which is not registered in the registry.
-    it.skip("should complete full Selfrica verification flow with proper proof encoding", async () => {
+    it("should complete full Selfrica verification flow with proper proof encoding", async () => {
       const destChainId = ethers.zeroPadValue(ethers.toBeHex(31337), 32);
       const user1Address = await deployedActors.user1.getAddress();
       const userData = ethers.toUtf8Bytes("test-user-data-for-verification");

@@ -333,7 +333,7 @@ library CustomVerifier {
 
         if (verificationConfig.olderThanEnabled) {
             if (
-                !CircuitAttributeHandlerV2.compareOlderThan(
+                !CircuitAttributeHandlerV2.compareOlderThanNumeric(
                     AttestationId.KYC,
                     selfricaOutput.revealedDataPacked,
                     verificationConfig.olderThan

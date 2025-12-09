@@ -152,8 +152,8 @@ library CircuitConstantsV2 {
             return
                 DiscloseIndices({
                     revealedDataPackedIndex: 0,
-                    forbiddenCountriesListPackedIndex: 9,
-                    nullifierIndex: 13,
+                    forbiddenCountriesListPackedIndex: 11,
+                    nullifierIndex: 15,
                     attestationIdIndex: 29,
                     merkleRootIndex: 17,
                     currentDateIndex: 21,

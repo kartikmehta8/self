@@ -131,8 +131,8 @@ library OutputFormatterLib {
         kycOutput.userIdentifier = userIdentifier;
         kycOutput.nullifier = vcAndDiscloseProof.pubSignals[indices.nullifierIndex];
 
-        uint256[9] memory revealedDataPacked;
-        for (uint256 i = 0; i < 9; i++) {
+        uint256[11] memory revealedDataPacked;
+        for (uint256 i = 0; i < 11; i++) {
             revealedDataPacked[i] = vcAndDiscloseProof.pubSignals[indices.revealedDataPackedIndex + i];
         }
         kycOutput.revealedDataPacked = Formatter.fieldElementsToBytesKyc(revealedDataPacked);

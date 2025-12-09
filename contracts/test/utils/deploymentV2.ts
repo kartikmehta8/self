@@ -17,7 +17,7 @@ import RegisterIdVerifierArtifactLocal from "../../artifacts/contracts/verifiers
 import RegisterAadhaarVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_aadhaar_staging.sol/Verifier_register_aadhaar_staging.json";
 import DscVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/dsc/Verifier_dsc_sha256_rsa_65537_4096_staging.sol/Verifier_dsc_sha256_rsa_65537_4096_staging.json";
 import RegisterSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/register/Verifier_register_selfrica_staging.sol/Verifier_register_selfrica_staging.json";
-import GCPJWTVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/gcp_jwt_verifier/Verifier_gcp_jwt_verifier_staging.sol/Verifier_gcp_jwt_verifier_staging.json";
+// import GCPJWTVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/gcp_jwt_verifier/Verifier_gcp_jwt_verifier_staging.sol/Verifier_gcp_jwt_verifier_staging.json";
 import VcAndDiscloseSelfricaVerifierArtifactLocal from "../../artifacts/contracts/verifiers/local/staging/disclose/Verifier_vc_and_disclose_selfrica_staging.sol/Verifier_vc_and_disclose_selfrica_staging.json";
 
 export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
@@ -162,7 +162,8 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   let poseidonT3Factory, poseidonT3, CustomVerifierFactory, customVerifier, GenericFormatterFactory, genericFormatter;
-  let gcpJwtVerifier: any, pcr0Manager: any;
+  // let gcpJwtVerifier: any;
+  let pcr0Manager: any;
   let dscProofVerifierLib: any,
     ofacCheckLib: any,
     outputFormatterLib: any,
@@ -186,12 +187,12 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await genericFormatter.waitForDeployment();
 
     // Deploy GCP JWT Verifier
-    const gcpJwtVerifierFactory = await ethers.getContractFactory(
-      GCPJWTVerifierArtifactLocal.abi,
-      GCPJWTVerifierArtifactLocal.bytecode,
-    );
-    gcpJwtVerifier = await gcpJwtVerifierFactory.connect(owner).deploy();
-    await gcpJwtVerifier.waitForDeployment();
+    // const gcpJwtVerifierFactory = await ethers.getContractFactory(
+    //   GCPJWTVerifierArtifactLocal.abi,
+    //   GCPJWTVerifierArtifactLocal.bytecode,
+    // );
+    // gcpJwtVerifier = await gcpJwtVerifierFactory.connect(owner).deploy();
+    // await gcpJwtVerifier.waitForDeployment();
 
     // Deploy PCR0Manager for testing
     const PCR0ManagerFactory = await ethers.getContractFactory("PCR0Manager");
@@ -380,7 +381,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await updateSelfricaHubTx.wait();
 
     // Configure GCP JWT verifier for Selfrica
-    await registrySelfricaContract.updateGCPJWTVerifier(gcpJwtVerifier.target);
+    // await registrySelfricaContract.updateGCPJWTVerifier(gcpJwtVerifier.target);
   }
 
   let hubContract;
@@ -489,7 +490,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     testSelfVerificationRoot: testSelfVerificationRoot,
     customVerifier: customVerifier,
     poseidonT3: poseidonT3,
-    gcpJwtVerifier: gcpJwtVerifier,
+    // gcpJwtVerifier: gcpJwtVerifier,
     pcr0Manager: pcr0Manager,
     owner: owner as any,
     user1: user1 as any,
