@@ -96,7 +96,7 @@ export interface DeployedActorsV2 {
   testSelfVerificationRoot: TestSelfVerificationRoot;
   customVerifier: any;
   poseidonT3: any;
-  // gcpJwtVerifier: any;
+  gcpJwtVerifier: any;
   pcr0Manager: PCR0Manager;
   owner: Signer;
   user1: Signer;

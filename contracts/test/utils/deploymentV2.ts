@@ -162,7 +162,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
   }
 
   let poseidonT3Factory, poseidonT3, CustomVerifierFactory, customVerifier, GenericFormatterFactory, genericFormatter;
-  // let gcpJwtVerifier: any;
+  let gcpJwtVerifier: any;
   let pcr0Manager: any;
   let dscProofVerifierLib: any,
     ofacCheckLib: any,
@@ -186,13 +186,10 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     genericFormatter = await GenericFormatterFactory.connect(owner).deploy();
     await genericFormatter.waitForDeployment();
 
-    // Deploy GCP JWT Verifier
-    // const gcpJwtVerifierFactory = await ethers.getContractFactory(
-    //   GCPJWTVerifierArtifactLocal.abi,
-    //   GCPJWTVerifierArtifactLocal.bytecode,
-    // );
-    // gcpJwtVerifier = await gcpJwtVerifierFactory.connect(owner).deploy();
-    // await gcpJwtVerifier.waitForDeployment();
+    // Deploy Mock GCP JWT Verifier for testing
+    const gcpJwtVerifierFactory = await ethers.getContractFactory("MockGCPJWTVerifier");
+    gcpJwtVerifier = await gcpJwtVerifierFactory.connect(owner).deploy();
+    await gcpJwtVerifier.waitForDeployment();
 
     // Deploy PCR0Manager for testing
     const PCR0ManagerFactory = await ethers.getContractFactory("PCR0Manager");
@@ -381,7 +378,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     await updateSelfricaHubTx.wait();
 
     // Configure GCP JWT verifier for Selfrica
-    // await registrySelfricaContract.updateGCPJWTVerifier(gcpJwtVerifier.target);
+    await registrySelfricaContract.updateGCPJWTVerifier(gcpJwtVerifier.target);
   }
 
   let hubContract;
@@ -490,7 +487,7 @@ export async function deploySystemFixturesV2(): Promise<DeployedActorsV2> {
     testSelfVerificationRoot: testSelfVerificationRoot,
     customVerifier: customVerifier,
     poseidonT3: poseidonT3,
-    // gcpJwtVerifier: gcpJwtVerifier,
+    gcpJwtVerifier: gcpJwtVerifier,
     pcr0Manager: pcr0Manager,
     owner: owner as any,
     user1: user1 as any,

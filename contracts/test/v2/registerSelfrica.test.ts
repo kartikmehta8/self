@@ -194,14 +194,14 @@ describe("Selfrica Registration test", function () {
     };
 
     it("should have correct GCP root CA pubkey hash", async () => {
-      const contractHash = await deployedActors.registrySelfrica.getGCPRootCAPubkeyHash();
+      const contractHash = await deployedActors.registrySelfrica.gcpRootCAPubkeyHash();
       expect(contractHash).to.equal(GCP_ROOT_CA_PUBKEY_HASH);
     });
 
     it("should allow owner to update GCP root CA pubkey hash", async () => {
       const newHash = 12345n;
       await deployedActors.registrySelfrica.updateGCPRootCAPubkeyHash(newHash);
-      const contractHash = await deployedActors.registrySelfrica.getGCPRootCAPubkeyHash();
+      const contractHash = await deployedActors.registrySelfrica.gcpRootCAPubkeyHash();
       expect(contractHash).to.equal(newHash);
     });
 

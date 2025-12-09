@@ -14,6 +14,7 @@ import { VerifyAll } from "../../typechain-types";
 import { getSMTs } from "../utils/generateProof";
 import { Groth16Proof, PublicSignals, groth16 } from "snarkjs";
 import { VcAndDiscloseProof } from "../utils/types";
+import { stringToBigInt } from "@selfxyz/common/utils/scope";
 
 describe("VerifyAll", () => {
   let deployedActors: DeployedActors;
@@ -102,7 +103,7 @@ describe("VerifyAll", () => {
       registerSecret,
       BigInt(ATTESTATION_ID.E_PASSPORT).toString(),
       deployedActors.mockPassport,
-      "test-scope",
+      stringToBigInt("test-scope").toString(),
       new Array(88).fill("1"),
       "1",
       imt,
@@ -112,7 +113,7 @@ describe("VerifyAll", () => {
       undefined,
       undefined,
       forbiddenCountriesList,
-      (await deployedActors.user1.getAddress()).slice(2),
+      await deployedActors.user1.getAddress(),
     );
     snapshotId = await ethers.provider.send("evm_snapshot", []);
   });
@@ -293,7 +294,7 @@ describe("VerifyAll", () => {
           registerSecret,
           BigInt(ATTESTATION_ID.E_PASSPORT).toString(),
           deployedActors.mockPassport,
-          "test-scope",
+          stringToBigInt("test-scope").toString(),
           new Array(88).fill("1"),
           "1",
           imt,
