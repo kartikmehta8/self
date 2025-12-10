@@ -394,7 +394,7 @@ describe("Unit Tests for IdentityRegistry", () => {
       expect(await registry.getNameAndYobOfacRoot()).to.equal(yobRoot);
     });
 
-    it("should not update OFAC root if caller is not owner", async () => {
+    it("should not update OFAC root if caller does not have OPERATIONS_ROLE", async () => {
       const { registry, user1 } = deployedActors;
       const passportRoot = generateRandomFieldElement();
       const dobRoot = generateRandomFieldElement();
@@ -402,15 +402,15 @@ describe("Unit Tests for IdentityRegistry", () => {
 
       await expect(registry.connect(user1).updatePassportNoOfacRoot(passportRoot)).to.be.revertedWithCustomError(
         registry,
-        "OwnableUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
       await expect(registry.connect(user1).updateNameAndDobOfacRoot(dobRoot)).to.be.revertedWithCustomError(
         registry,
-        "OwnableUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
       await expect(registry.connect(user1).updateNameAndYobOfacRoot(yobRoot)).to.be.revertedWithCustomError(
         registry,
-        "OwnableUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
     });
 
@@ -443,13 +443,13 @@ describe("Unit Tests for IdentityRegistry", () => {
       expect(await registry.getCscaRoot()).to.equal(newCscaRoot);
     });
 
-    it("should not update CSCA root if caller is not owner", async () => {
+    it("should not update CSCA root if caller does not have OPERATIONS_ROLE", async () => {
       const { registry, user1 } = deployedActors;
       const newCscaRoot = generateRandomFieldElement();
 
       await expect(registry.connect(user1).updateCscaRoot(newCscaRoot)).to.be.revertedWithCustomError(
         registry,
-        "OwnableUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
     });
 
