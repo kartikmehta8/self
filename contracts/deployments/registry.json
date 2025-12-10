@@ -37,8 +37,8 @@
     "celo": {
       "chainId": 42220,
       "governance": {
-        "securityMultisig": "",
-        "operationsMultisig": "",
+        "securityMultisig": "0x738f0bb37FD3b6C4Cdf8eb6FcdFaAA0CA208CB4A",
+        "operationsMultisig": "0x067b18e09A10Fa03d027c1D60A098CEbbE5637f0",
         "securityThreshold": "3/5",
         "operationsThreshold": "2/5"
       },
