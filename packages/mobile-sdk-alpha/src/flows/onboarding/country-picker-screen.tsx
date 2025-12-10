@@ -5,7 +5,7 @@
 import { useCallback, useState } from 'react';
 
 import { commonNames } from '@selfxyz/common/constants/countries';
-import { CountryPickerScreen as CountryPickerUI } from '@selfxyz/euclid';
+import { CountryPickerScreen as CountryPickerUI, type SafeArea } from '@selfxyz/euclid';
 
 import { RoundFlag } from '../../components';
 import { useSelfClient } from '../../context';
@@ -13,7 +13,9 @@ import { useCountries } from '../../documents/useCountries';
 import { buttonTap } from '../../haptic';
 import { SdkEvents } from '../../types/events';
 
-const CountryPickerScreen: React.FC = () => {
+const CountryPickerScreen: React.FC<SafeArea> & { statusBar: typeof CountryPickerUI.statusBar } = ({
+  insets,
+}: SafeArea) => {
   const selfClient = useSelfClient();
 
   const [searchValue, setSearchValue] = useState('');
@@ -60,6 +62,7 @@ const CountryPickerScreen: React.FC = () => {
 
   return (
     <CountryPickerUI
+      insets={insets}
       isLoading={loading}
       countries={countryList}
       onCountrySelect={onCountrySelect}
@@ -75,5 +78,5 @@ const CountryPickerScreen: React.FC = () => {
   );
 };
 CountryPickerScreen.displayName = 'CountryPickerScreen';
-
+CountryPickerScreen.statusBar = CountryPickerUI.statusBar;
 export default CountryPickerScreen;
