@@ -30,6 +30,8 @@ export default function Disclosures({ disclosures }: DisclosureProps) {
   // Define the order in which disclosures should appear.
   const ORDERED_KEYS: Array<keyof SelfAppDisclosureConfig> = [
     'issuing_state',
+    'first_name',
+    'last_name',
     'name',
     'passport_number',
     'nationality',
@@ -65,8 +67,14 @@ export default function Disclosures({ disclosures }: DisclosureProps) {
           case 'minimumAge':
             text = `Age is over ${disclosures.minimumAge}`;
             break;
+          case 'first_name':
+              text = 'First Name';
+              break;
+          case 'last_name':
+              text = 'Last Name';
+              break;
           case 'name':
-            text = 'Name';
+            text = 'Full Name';
             break;
           case 'passport_number':
             text = 'Passport Number';

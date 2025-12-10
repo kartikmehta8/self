@@ -29,15 +29,28 @@ export const formatRevealedDataPacked = (
       revealedDataIndices[attestationId].issuingStateEnd + 1
     )
     .toString('utf-8');
-  const name = revealedDataPackedString
-    .subarray(
-      revealedDataIndices[attestationId].nameStart,
-      revealedDataIndices[attestationId].nameEnd + 1
-    )
-    .toString('utf-8')
+  const nameRaw = revealedDataPackedString.subarray(
+    revealedDataIndices[attestationId].nameStart,
+    revealedDataIndices[attestationId].nameEnd + 1
+  ).toString('utf-8');
+  const name = nameRaw
     .replace(/([A-Z])<+([A-Z])/g, '$1 $2')
     .replace(/</g, '')
     .trim();
+
+  // TODO: clarify if always providing those is fine or we need to check
+  // whether this was requested or not
+  let firstName = '';
+  let lastName = '';
+
+  // TODO: disclosing first name reveals also length of the last name
+  if (nameRaw.includes('<<')) {
+    [lastName, firstName] = nameRaw.split('<<');
+
+    firstName = firstName.replace(/</g, ' ').trim();
+    lastName = lastName.replace(/</g, ' ').trim();
+  }
+
   const idNumber = revealedDataPackedString
     .subarray(
       revealedDataIndices[attestationId].idNumberStart,
@@ -126,6 +139,8 @@ export const formatRevealedDataPacked = (
     nullifier: nullifier.toString(),
     forbiddenCountriesListPacked: forbiddenCountriesListPacked,
     issuingState: removeNullBytes(issuingState),
+    firstName: removeNullBytes(firstName),
+    lastName: removeNullBytes(lastName),
     name: removeNullBytes(name),
     idNumber: idNumber,
     nationality: nationality,

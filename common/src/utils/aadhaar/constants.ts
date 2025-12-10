@@ -206,9 +206,13 @@ export function extractField(unpackedData: string[], field: AadhaarField): strin
 /**
  * Helper function to create a selector field for revealing specific data
  * @param fieldsToReveal - Array of field names to reveal
+ * @param customNameSelectorBits - Array of custom name selector bits to apply
  * @returns Selector value as bigint
  */
-export function createSelector(fieldsToReveal: AadhaarField[]): bigint {
+export function createSelector(
+  fieldsToReveal: AadhaarField[],
+  customNameSelectorBits?: number[]
+): bigint {
   const bits = Array(119).fill(0);
 
   for (const field of fieldsToReveal) {
@@ -220,6 +224,12 @@ export function createSelector(fieldsToReveal: AadhaarField[]): bigint {
     const selectorBits = SELECTOR_BITS[field as keyof typeof SELECTOR_BITS];
     for (const bit of selectorBits) {
       bits[bit] = 1;
+    }
+  }
+
+  if (customNameSelectorBits) {
+    for (let i = 0; i < SELECTOR_BITS.NAME.length; i++) {
+      bits[SELECTOR_BITS.NAME[i]] |= customNameSelectorBits[i];
     }
   }
 

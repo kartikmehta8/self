@@ -36,6 +36,7 @@
   "resolutions": {
     "@babel/core": "^7.28.4",
     "@babel/runtime": "^7.28.4",
+    "ethereum-cryptography": "3.2.0",
     "@noble/curves": "1.9.7",
     "@swc/core": "1.7.36",
     "@tamagui/animations-react-native": "1.126.14",

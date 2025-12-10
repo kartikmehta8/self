@@ -119,6 +119,8 @@ export function prepareAadhaarDiscloseData(
   discloseAttributes: {
     dateOfBirth?: boolean;
     name?: boolean;
+    first_name?: boolean;
+    last_name?: boolean;
     gender?: boolean;
     idNumber?: boolean;
     issuingState?: boolean;
@@ -201,6 +203,7 @@ export function prepareAadhaarDiscloseData(
     selectorArr.push('OFAC_NAME_YOB_CHECK');
   }
 
+  // TODO: add custom name selector bits based on first and last name
   const selector = createSelector(selectorArr);
 
   const inputs = {

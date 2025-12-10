@@ -39,6 +39,8 @@ type ProofHistoryDetailScreenProps = {
 
 enum DisclosureType {
   NAME = 'name',
+  FIRST_NAME = 'first_name',
+  LAST_NAME = 'last_name',
   OFAC = 'ofac',
   AGE = 'age',
   ISSUING_STATE = 'issuing_state',
@@ -62,6 +64,12 @@ const ProofHistoryDetailScreen: React.FC<ProofHistoryDetailScreenProps> = ({
     Object.entries(parsedDisclosures).forEach(([key, value]) => {
       if (key === DisclosureType.MINIMUM_AGE && value) {
         result.push(`Age is over ${value}`);
+      }
+      if (key === DisclosureType.FIRST_NAME && value) {
+        result.push(`Disclosed First Name to ${data.appName}`);
+      }
+      if (key === DisclosureType.LAST_NAME && value) {
+        result.push(`Disclosed Last Name to ${data.appName}`);
       }
       if (key === DisclosureType.NAME && value) {
         result.push(`Disclosed Name to ${data.appName}`);

@@ -120,22 +120,57 @@ export function generateTEEInputsDSC(
 
 /*** DISCLOSURE ***/
 
-function getSelectorDg1(document: DocumentCategory, disclosures: SelfAppDisclosureConfig) {
+export function getSelectorDg1(
+  document: DocumentCategory,
+  disclosures: SelfAppDisclosureConfig,
+  mrz?: string
+) {
+  if ((disclosures.first_name || disclosures.last_name) && !mrz) {
+    throw new Error('MRZ is required to generate dynamic selector DG1');
+  }
+
   switch (document) {
     case 'passport':
-      return getSelectorDg1Passport(disclosures);
+      return getSelectorDg1Passport(disclosures, mrz);
     case 'id_card':
-      return getSelectorDg1IdCard(disclosures);
+      return getSelectorDg1IdCard(disclosures, mrz);
   }
 }
 
-function getSelectorDg1Passport(disclosures: SelfAppDisclosureConfig) {
+function getSelectorDg1Passport(disclosures: SelfAppDisclosureConfig, mrz?: string) {
   const selector_dg1 = Array(88).fill('0');
   Object.entries(disclosures).forEach(([attribute, reveal]) => {
     if (['ofac', 'excludedCountries', 'minimumAge'].includes(attribute)) {
       return;
     }
     if (reveal) {
+      if (mrz && (attribute === 'first_name' || attribute === 'last_name')) {
+        const fullNameArray = mrz
+          .slice(attributeToPosition.name[0], attributeToPosition.name[1] + 1)
+          .split('<<');
+        const lastName = fullNameArray[0];
+
+        if (attribute === 'first_name') {
+          selector_dg1.fill(
+            '1',
+            attributeToPosition.name[0] + lastName.length,
+            attributeToPosition.name[1] + 1
+          );
+        }
+
+        if (attribute === 'last_name') {
+          // +2 because "<<" is the delimiter and we want to disclose it, so the consumer
+          // can be sure it's the full last name
+          selector_dg1.fill(
+            '1',
+            attributeToPosition.name[0],
+            attributeToPosition.name[0] + lastName.length + 2
+          );
+        }
+
+        return;
+      }
+
       const [start, end] = attributeToPosition[attribute as keyof typeof attributeToPosition];
       selector_dg1.fill('1', start, end + 1);
     }
@@ -143,13 +178,40 @@ function getSelectorDg1Passport(disclosures: SelfAppDisclosureConfig) {
   return selector_dg1;
 }
 
-function getSelectorDg1IdCard(disclosures: SelfAppDisclosureConfig) {
+function getSelectorDg1IdCard(disclosures: SelfAppDisclosureConfig, mrz?: string) {
   const selector_dg1 = Array(90).fill('0');
   Object.entries(disclosures).forEach(([attribute, reveal]) => {
     if (['ofac', 'excludedCountries', 'minimumAge'].includes(attribute)) {
       return;
     }
     if (reveal) {
+      if (mrz && (attribute === 'first_name' || attribute === 'last_name')) {
+        const fullNameArray = mrz
+          .slice(attributeToPosition_ID.name[0], attributeToPosition_ID.name[1] + 1)
+          .split('<<');
+        const lastName = fullNameArray[0];
+
+        console.log(fullNameArray, lastName);
+
+        if (attribute === 'first_name') {
+          selector_dg1.fill(
+            '1',
+            attributeToPosition_ID.name[0] + lastName.length,
+            attributeToPosition_ID.name[1] + 1
+          );
+        }
+
+        if (attribute === 'last_name') {
+          selector_dg1.fill(
+            '1',
+            attributeToPosition_ID.name[0],
+            attributeToPosition_ID.name[0] + lastName.length + 2
+          );
+        }
+
+        return;
+      }
+
       const [start, end] = attributeToPosition_ID[attribute as keyof typeof attributeToPosition_ID];
       selector_dg1.fill('1', start, end + 1);
     }
@@ -180,7 +242,12 @@ export function generateTEEInputsDiscloseStateless(
   const scope_hash = hashEndpointWithScope(endpoint, scope);
   const document: DocumentCategory = passportData.documentCategory;
 
-  const selector_dg1 = getSelectorDg1(document, disclosures);
+  const selector_dg1 = getSelectorDg1(
+    document,
+    disclosures,
+    // pass MRZ only if first_name or last_name is disclosed
+    disclosures.first_name || disclosures.last_name ? passportData.mrz : undefined
+  );
 
   const majority = disclosures.minimumAge ? disclosures.minimumAge.toString() : DEFAULT_MAJORITY;
   const selector_older_than = disclosures.minimumAge ? '1' : '0';
@@ -236,6 +303,7 @@ export function generateTEEInputsDiscloseStateless(
     endpoint: selfApp.endpoint,
   };
 }
+
 
 export async function generateTEEInputsRegister(
   secret: string,

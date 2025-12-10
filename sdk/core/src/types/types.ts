@@ -34,6 +34,8 @@ export type GenericDiscloseOutput = {
   forbiddenCountriesListPacked: string[];
   issuingState: string;
   name: string;
+  firstName: string;
+  lastName: string;
   idNumber: string;
   nationality: string;
   dateOfBirth: string;

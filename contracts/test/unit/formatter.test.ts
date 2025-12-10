@@ -33,6 +33,240 @@ describe("Formatter", function () {
       expect(contractResult[0]).to.equal("JOHN");
       expect(contractResult[1]).to.equal("SMITH");
     });
+
+    describe("partial name disclosure (first name only)", function () {
+      it("should handle first name disclosure with zeros in last name position", async function () {
+        // Simulates disclosing only first name: last name masked with '0' characters
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        // Masked:   00000000<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        const input = "00000000<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("ANNA MARIA");
+        expect(contractResult[1]).to.equal("00000000");
+      });
+
+      it("should handle first name disclosure with single first name", async function () {
+        // Original: SMITH<<JOHN<<<
+        // Masked:   00000<<JOHN<<<
+        const input = "00000<<JOHN<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("JOHN");
+        expect(contractResult[1]).to.equal("00000");
+      });
+
+      it("should handle first name disclosure with multiple first names", async function () {
+        // Original: DUPONT<<ALPHONSE<HUGHUES<ALBERT<<<
+        // Masked:   000000<<ALPHONSE<HUGHUES<ALBERT<<<
+        const input = "000000<<ALPHONSE<HUGHUES<ALBERT<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("ALPHONSE HUGHUES ALBERT");
+        expect(contractResult[1]).to.equal("000000");
+      });
+    });
+
+    describe("partial name disclosure (last name only)", function () {
+      it("should handle last name disclosure with zeros in first name position", async function () {
+        // Simulates disclosing only last name: first name masked with '0' characters
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        // Masked:   ERIKSSON<<0000000000000000000000000000000
+        const input = "ERIKSSON<<0000000000000000000000000000000";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("0000000000000000000000000000000");
+        expect(contractResult[1]).to.equal("ERIKSSON");
+      });
+
+      it("should handle last name disclosure with single name", async function () {
+        // Original: SMITH<<JOHN<<<
+        // Masked:   SMITH<<0000<<<
+        const input = "SMITH<<0000<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("0000");
+        expect(contractResult[1]).to.equal("SMITH");
+      });
+
+      it("should handle last name disclosure with zeros replacing multiple names", async function () {
+        // Original: DUPONT<<ALPHONSE<HUGHUES<ALBERT<<<
+        // Masked:   DUPONT<<00000000000000000000000<<<
+        const input = "DUPONT<<00000000000000000000000<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("00000000000000000000000");
+        expect(contractResult[1]).to.equal("DUPONT");
+      });
+    });
+
+    describe("partial disclosure", function () {
+      it("should handle empty last name with valid first name", async function () {
+        const input = "<<ANNA<MARIA<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("ANNA MARIA");
+        expect(contractResult[1]).to.equal("");
+      });
+
+      it("should handle last name only with empty first name section", async function () {
+        const input = "ERIKSSON<<<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("");
+        expect(contractResult[1]).to.equal("ERIKSSON");
+      });
+
+      it("should handle all zeros input", async function () {
+        const input = "00000000<<0000000000000000000000<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("0000000000000000000000");
+        expect(contractResult[1]).to.equal("00000000");
+      });
+
+      it("should handle long compound last name with first name disclosure only", async function () {
+        // Original: GARCIA<MARTINEZ<<MARIA<ELENA<<<
+        // Note: compound last names use single < as separator
+        const input = "000000000000000<<MARIA<ELENA<<<";
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("MARIA ELENA");
+        expect(contractResult[1]).to.equal("000000000000000");
+      });
+
+      it("should handle passport-style full name field (39 chars) with first name only", async function () {
+        // Passport name field is positions 5-43 (39 characters)
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        // Masked:   00000000<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        const input = "00000000<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<";
+        expect(input.length).to.equal(39);
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+
+        expect(contractResult[0]).to.equal("ANNA MARIA");
+        expect(contractResult[1]).to.equal("00000000");
+      });
+
+      it("should handle passport-style full name field (39 chars) with last name only", async function () {
+        // Passport name field is positions 5-43 (39 characters)
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+        // Masked:   ERIKSSON<<00000000000000000000000000000
+        const input = "ERIKSSON<<00000000000000000000000000000";
+        expect(input.length).to.equal(39);
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[1]).to.equal("ERIKSSON");
+        expect(contractResult[0]).to.equal("00000000000000000000000000000");
+      });
+    });
+
+    describe("ID card name format (30 chars)", function () {
+      it("should handle ID card first name disclosure only", async function () {
+        // ID card name field is 30 characters (positions 60-89)
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<
+        // Masked:   0000000000ANNA<MARIA<<<<<<<<<<
+        const input = "00000000<<ANNA<MARIA<<<<<<<<<<";
+        expect(input.length).to.equal(30);
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[0]).to.equal("ANNA MARIA");
+        expect(contractResult[1]).to.equal("00000000");
+      });
+
+      it("should handle ID card last name disclosure only", async function () {
+        // ID card name field is 30 characters
+        // Original: ERIKSSON<<ANNA<MARIA<<<<<<<<<<
+        // Masked:   ERIKSSON<<00000000000000000000
+        const input = "ERIKSSON<<00000000000000000000";
+        expect(input.length).to.equal(30);
+        const contractResult = await testFormatter.testFormatName(input);
+        const tsResult = Formatter.formatName(input);
+        expect(contractResult[0]).to.equal(tsResult[0]);
+        expect(contractResult[1]).to.equal(tsResult[1]);
+        expect(contractResult[1]).to.equal("ERIKSSON");
+        expect(contractResult[0]).to.equal("00000000000000000000");
+      });
+    });
+
+    describe("null byte handling", function () {
+      it("should handle null bytes as padding at end of name field", async function () {
+        // When name is shorter than field size, remaining bytes are null
+        // ERIKSSON<<ANNA<MARIA followed by null bytes
+        const input = "ERIKSSON<<ANNA<MARIA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        expect(input.length).to.equal(39);
+        const tsResult = Formatter.formatName(input);
+        // Null bytes in first name section are included as-is
+        expect(tsResult[0]).to.equal("ANNA MARIA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00");
+        expect(tsResult[1]).to.equal("ERIKSSON");
+      });
+
+      it("should handle null bytes mixed with < padding", async function () {
+        // Mix of < and null bytes as padding
+        const input = "ERIKSSON<<ANNA<MARIA<<<\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        expect(input.length).to.equal(39);
+        const tsResult = Formatter.formatName(input);
+        // Stops at << so null bytes don't affect result
+        expect(tsResult[0]).to.equal("ANNA MARIA");
+        expect(tsResult[1]).to.equal("ERIKSSON");
+      });
+
+      it("should handle null bytes in last name position (masked)", async function () {
+        // Null bytes masking last name (binary zeros instead of '0' characters)
+        const input = "\x00\x00\x00\x00\x00\x00\x00\x00<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<";
+        expect(input.length).to.equal(39);
+        const tsResult = Formatter.formatName(input);
+        // lastName includes null bytes since they're not '<'
+        expect(tsResult[0]).to.equal("ANNA MARIA");
+        expect(tsResult[1]).to.equal("\x00\x00\x00\x00\x00\x00\x00\x00");
+      });
+
+      it("should handle null bytes in first name position (masked)", async function () {
+        // Null bytes masking first name (binary zeros instead of '0' characters)
+        const input = "ERIKSSON<<\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        expect(input.length).to.equal(39);
+        const tsResult = Formatter.formatName(input);
+        // firstName includes null bytes since they're not '<'
+        expect(tsResult[0]).to.equal("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00");
+        expect(tsResult[1]).to.equal("ERIKSSON");
+      });
+
+      it("should handle single name with null byte padding", async function () {
+        // Single first name with null bytes after
+        const input = "SMITH<<JOHN\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        expect(input.length).to.equal(39);
+        const tsResult = Formatter.formatName(input);
+        // firstName includes trailing null bytes
+        expect(tsResult[0]).to.equal("JOHN\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00");
+        expect(tsResult[1]).to.equal("SMITH");
+      });
+    });
   });
 
   describe("formatDate", function () {

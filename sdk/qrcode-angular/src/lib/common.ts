@@ -268,6 +268,8 @@ export const countries = {
 export interface SelfAppDisclosureConfig {
   issuing_state?: boolean;
   name?: boolean;
+  first_name?: boolean;
+  last_name?: boolean;
   passport_number?: boolean;
   nationality?: boolean;
   date_of_birth?: boolean;
@@ -646,3 +648,5 @@ export class SelfAppBuilder {
 export function getUniversalLink(selfApp: SelfApp): string {
   return `${REDIRECT_URL}?selfApp=${encodeURIComponent(JSON.stringify(selfApp))}`;
 }
+
+// TODO(flexible-disclosures): we have SelfAppBuilder in sdk-common, common and qrcode-angular - should use the same one
