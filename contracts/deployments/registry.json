@@ -1,6 +1,6 @@
 {
   "$schema": "./registry.schema.json",
-  "lastUpdated": "2025-12-10T05:47:22.844Z",
+  "lastUpdated": "2025-12-10T05:53:12.534Z",
   "contracts": {
     "IdentityVerificationHub": {
       "source": "IdentityVerificationHubImplV2",
@@ -50,8 +50,8 @@
         },
         "IdentityRegistry": {
           "proxy": "0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968",
-          "currentVersion": "1.1.0",
-          "currentImpl": ""
+          "currentVersion": "1.2.0",
+          "currentImpl": "0x81E7F74560FAF7eE8DE3a36A5a68B6cbc429Cd36"
         },
         "IdentityRegistryIdCard": {
           "proxy": "0xeAD1E6Ec29c1f3D33a0662f253a3a94D189566E1",
@@ -123,9 +123,9 @@
         "gitTag": "registry-passport-v1.2.0",
         "deployments": {
           "celo": {
-            "impl": "",
-            "deployedAt": "",
-            "deployedBy": "",
+            "impl": "0x81E7F74560FAF7eE8DE3a36A5a68B6cbc429Cd36",
+            "deployedAt": "2025-12-10T05:53:12.534Z",
+            "deployedBy": "0xCaEe7aAF115F04D836E2D362A7c07F04db436bd0",
             "gitCommit": ""
           }
         }
