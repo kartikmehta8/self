@@ -50,15 +50,18 @@ const config = {
       new RegExp(`^${workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/node_modules/react-dom(/|$)`),
       new RegExp(`^${workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/node_modules/react-native(/|$)`),
       new RegExp(`^${workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/node_modules/scheduler(/|$)`),
+      new RegExp(`^${workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/node_modules/@react-navigation(/|$)`),
       new RegExp('packages/mobile-sdk-alpha/node_modules/react(/|$)'),
       new RegExp('packages/mobile-sdk-alpha/node_modules/react-dom(/|$)'),
       new RegExp('packages/mobile-sdk-alpha/node_modules/react-native(/|$)'),
       new RegExp('packages/mobile-sdk-alpha/node_modules/scheduler(/|$)'),
+      new RegExp('packages/mobile-sdk-alpha/node_modules/@react-navigation(/|$)'),
       // Block the main app's node_modules to avoid collisions
       new RegExp('app/node_modules/react(/|$)'),
       new RegExp('app/node_modules/react-dom(/|$)'),
       new RegExp('app/node_modules/react-native(/|$)'),
       new RegExp('app/node_modules/scheduler(/|$)'),
+      new RegExp('app/node_modules/@react-navigation(/|$)'),
     ],
     // Enable workspace-aware resolution
     enableGlobalPackages: true,
@@ -76,6 +79,9 @@ const config = {
       // Add workspace packages for proper resolution
       '@selfxyz/common': path.resolve(workspaceRoot, 'common'),
       '@selfxyz/mobile-sdk-alpha': path.resolve(workspaceRoot, 'packages/mobile-sdk-alpha'),
+      // Force react-navigation to resolve from demo app's node_modules
+      '@react-navigation/native': path.resolve(projectRoot, 'node_modules/@react-navigation/native'),
+      '@react-navigation/native-stack': path.resolve(projectRoot, 'node_modules/@react-navigation/native-stack'),
       // Crypto polyfills - use custom polyfill with @noble/hashes
       crypto: path.resolve(__dirname, 'src/polyfills/cryptoPolyfill.js'),
       stream: require.resolve('stream-browserify'),

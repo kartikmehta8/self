@@ -5,10 +5,11 @@
 import type React from 'react';
 import { StyleSheet } from 'react-native';
 
-import AadhaarLogo from '../../../svgs/icons/aadhaar.svg';
-import EPassportLogoRounded from '../../../svgs/icons/epassport_rounded.svg';
-import PlusIcon from '../../../svgs/icons/plus.svg';
-import SelfLogo from '../../../svgs/logo.svg';
+import AadhaarLogo from '@selfxyz/mobile-sdk-alpha/svgs/icons/aadhaar.svg';
+import EPassportLogoRounded from '@selfxyz/mobile-sdk-alpha/svgs/icons/epassport_rounded.svg';
+import PlusIcon from '@selfxyz/mobile-sdk-alpha/svgs/icons/plus.svg';
+import SelfLogo from '@selfxyz/mobile-sdk-alpha/svgs/logo.svg';
+
 import { BodyText, RoundFlag, View, XStack, YStack } from '../../components';
 import { black, slate100, slate300, slate400, white } from '../../constants/colors';
 import { advercase, dinot } from '../../constants/fonts';

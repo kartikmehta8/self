@@ -10,12 +10,8 @@ export type ScreenId =
   | 'home'
   | 'generate'
   | 'register'
-  | 'mrz'
-  | 'nfc'
   | 'documents'
-  | 'success'
-  | 'country-selection'
-  | 'id-selection';
+  | 'onboarding';
 
 export type ScreenContext = {
   navigate: (next: ScreenRoute, params?: any) => void;
@@ -43,6 +39,17 @@ export type ScreenRoute = 'home' | ScreenId;
 
 export const screenDescriptors: ScreenDescriptor[] = [
   {
+    id: 'onboarding',
+    title: 'Document Onboarding',
+    subtitle: 'Verify your ID with biometric passport or ID card',
+    sectionTitle: '📸 Verification',
+    status: 'working',
+    load: () => {
+      // Placeholder - actual navigation handled by App.tsx
+      return () => null;
+    },
+  },
+  {
     id: 'generate',
     title: 'Generate Mock Document',
     subtitle: 'Create sample passport data for testing',
@@ -69,73 +76,12 @@ export const screenDescriptors: ScreenDescriptor[] = [
     }),
   },
   {
-    id: 'mrz',
-    title: 'Document MRZ',
-    subtitle: 'Scan passport or ID card using your device camera',
-    sectionTitle: '📸 Scanning',
-    status: 'working',
-    load: () => require('./DocumentCamera').default,
-    getProps: ({ navigate }) => ({
-      onBack: () => navigate('home'),
-      onSuccess: () => navigate('nfc'),
-    }),
-  },
-  {
-    id: 'nfc',
-    title: 'Document NFC',
-    subtitle: 'Read encrypted data from NFC-enabled documents',
-    sectionTitle: '📸 Scanning',
-    status: 'working',
-    load: () => require('./DocumentNFCScan').default,
-    getProps: ({ navigate }) => ({
-      onBack: () => navigate('home'),
-      onNavigate: (screen: string, params?: any) => navigate(screen as ScreenRoute, params),
-    }),
-  },
-  {
-    id: 'success',
-    title: 'Scan Success',
-    subtitle: 'Document verification successful',
-    sectionTitle: '📸 Scanning',
-    status: 'working',
-    load: () => require('./DocumentScanSuccess').default,
-    getProps: ({ navigate }, params?: any) => ({
-      onBack: () => navigate('home'),
-      onNavigate: (screen: string) => navigate(screen as ScreenRoute),
-      document: params?.document,
-    }),
-  },
-  {
     id: 'documents',
     title: 'Document List',
     subtitle: 'View and manage stored documents',
     sectionTitle: '📋 Your Data',
     status: 'working',
     load: () => require('./DocumentsList').default,
-    getProps: ({ navigate, documentCatalog }) => ({
-      onBack: () => navigate('home'),
-      catalog: documentCatalog,
-    }),
-  },
-  {
-    id: 'country-selection',
-    title: 'Country Selection',
-    subtitle: 'Select the country that issued your ID',
-    sectionTitle: '📋 Selection',
-    status: 'working',
-    load: () => require('./CountrySelection').default,
-    getProps: ({ navigate, documentCatalog }) => ({
-      onBack: () => navigate('home'),
-      catalog: documentCatalog,
-    }),
-  },
-  {
-    id: 'id-selection',
-    title: 'ID Selection',
-    subtitle: 'Choose the type of ID you want to verify',
-    sectionTitle: '📋 Selection',
-    status: 'working',
-    load: () => require('./IDSelection').default,
     getProps: ({ navigate, documentCatalog }) => ({
       onBack: () => navigate('home'),
       catalog: documentCatalog,

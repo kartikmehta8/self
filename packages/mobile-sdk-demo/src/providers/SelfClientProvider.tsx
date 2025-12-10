@@ -5,6 +5,7 @@
 import { sha256 } from '@noble/hashes/sha256';
 import type { PropsWithChildren } from 'react';
 import React, { useMemo } from 'react';
+import { useNavigation } from '@react-navigation/native';
 
 import {
   SelfClientProvider as SdkSelfClientProvider,
@@ -19,21 +20,21 @@ import {
 
 import { persistentDocumentsAdapter } from '../utils/documentStore';
 import { getOrCreateSecret } from '../utils/secureStorage';
-import type { ScreenName } from '../navigation/NavigationProvider';
-import { useNavigation } from '../navigation/NavigationProvider';
+
+// Define app screen names
+type AppScreenName = 'Home' | 'Onboarding' | 'Generate' | 'Register' | 'Documents';
 
 /**
- * Maps SDK RouteName values to demo app ScreenName values.
+ * Maps SDK RouteName values to demo app screen names.
  * Routes not in this map are not supported in the demo app.
  */
-const ROUTE_TO_SCREEN_MAP: Partial<Record<RouteName, ScreenName>> = {
+const ROUTE_TO_SCREEN_MAP: Partial<Record<RouteName, AppScreenName>> = {
   Home: 'Home',
-  CountryPicker: 'CountrySelection',
-  IDPicker: 'IDSelection',
-  DocumentCamera: 'MRZ',
-  DocumentNFCScan: 'NFC',
+  CountryPicker: 'Onboarding',
+  IDPicker: 'Onboarding',
+  DocumentCamera: 'Onboarding',
+  DocumentNFCScan: 'Onboarding',
   ManageDocuments: 'Documents',
-  AccountVerifiedSuccess: 'Success',
   // Routes not implemented in demo app:
   // 'DocumentOnboarding': null,
   // 'SaveRecoveryPhrase': null,
@@ -41,15 +42,16 @@ const ROUTE_TO_SCREEN_MAP: Partial<Record<RouteName, ScreenName>> = {
   // 'ComingSoon': null,
   // 'DocumentDataNotFound': null,
   // 'Settings': null,
+  // 'AccountVerifiedSuccess': null,
 } as const;
 
 /**
- * Translates SDK RouteName to demo app ScreenName.
+ * Translates SDK RouteName to demo app screen name.
  *
  * @param routeName - The route name from the SDK
  * @returns The corresponding demo app screen name, or null if not supported
  */
-function translateRouteToScreen(routeName: RouteName): ScreenName | null {
+function translateRouteToScreen(routeName: RouteName): AppScreenName | null {
   return ROUTE_TO_SCREEN_MAP[routeName] ?? null;
 }
 
@@ -164,14 +166,14 @@ export function SelfClientProvider({ children, onNavigate }: SelfClientProviderP
       },
       navigation: {
         goBack: () => {
-          navigation.goBack();
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          }
         },
         goTo: (routeName, params) => {
           const screenName = translateRouteToScreen(routeName);
           if (screenName) {
-            // SDK passes generic Record<string, unknown>, but demo navigation expects specific types
-            // This is safe because we control the route mapping
-            navigation.navigate(screenName, params as any);
+            (navigation.navigate as any)(screenName, params);
           } else {
             console.warn(
               `[SelfClientProvider] SDK route "${routeName}" is not mapped to a demo screen. Ignoring navigation request.`,
@@ -206,52 +208,24 @@ export function SelfClientProvider({ children, onNavigate }: SelfClientProviderP
         },
       },
     }),
-    [],
+    [navigation],
   );
 
   const listeners = useMemo(() => {
     const { map, addListener } = createListenersMap();
 
-    // Auto-navigate from MRZ scan to NFC scan
-    addListener(SdkEvents.DOCUMENT_MRZ_READ_SUCCESS, () => {
-      onNavigate?.('nfc');
-    });
+    // Navigation within the onboarding flow is now handled by the SDK's OnboardingNavigator
+    // We only need to handle navigation events that go outside the onboarding flow
 
-    addListener(SdkEvents.DOCUMENT_COUNTRY_SELECTED, event => {
-      navigation.navigate('IDSelection', {
-        countryCode: event.countryCode,
-        countryName: event.countryName,
-        documentTypes: event.documentTypes,
-      });
-    });
-
-    addListener(SdkEvents.DOCUMENT_TYPE_SELECTED, ({ documentType, countryCode }) => {
-      switch (documentType) {
-        case 'p':
-          navigation.navigate('MRZ');
-          break;
-        case 'i':
-          navigation.navigate('MRZ');
-          break;
-        case 'a':
-          if (countryCode) {
-            // navigation.navigate('AadhaarUpload', { countryCode });
-          }
-          break;
-        default:
-          if (countryCode) {
-            // navigation.navigate('ComingSoon', { countryCode });
-          }
-          break;
-      }
-    });
-
+    // Example: Navigate back to home after successful document scan
     addListener(SdkEvents.DOCUMENT_NFC_SCAN_SUCCESS, () => {
-      onNavigate?.('success');
+      // Could navigate to a success screen or back to home
+      // For now, let the onboarding navigator handle it
+      console.log('[Demo] Document NFC scan successful');
     });
 
     return map;
-  }, [navigation.navigate]);
+  }, []);
 
   return (
     <SdkSelfClientProvider config={config} adapters={adapters} listeners={listeners}>

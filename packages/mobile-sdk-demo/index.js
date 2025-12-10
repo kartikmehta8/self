@@ -6,7 +6,11 @@
  * @format
  */
 
-// CRITICAL: Import crypto polyfill FIRST, before any modules that use crypto/uuid
+// CRITICAL: Import gesture handler FIRST for react-navigation
+// eslint-disable-next-line simple-import-sort/imports
+import 'react-native-gesture-handler';
+
+// CRITICAL: Import crypto polyfill before any modules that use crypto/uuid
 // eslint-disable-next-line simple-import-sort/imports
 import 'react-native-get-random-values';
 

@@ -3,44 +3,58 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { DocumentCatalog, DocumentMetadata, IDDocument } from '@selfxyz/common/utils/types';
 import { loadSelectedDocument, useSelfClient } from '@selfxyz/mobile-sdk-alpha';
+import { OnboardingNavigator } from '@selfxyz/mobile-sdk-alpha/navigators/onboarding/native-stack';
 
 import HomeScreen from './src/screens/HomeScreen';
-import type { ScreenContext, ScreenId, ScreenRoute } from './src/screens';
+import type { ScreenContext, ScreenId } from './src/screens';
 import { screenMap } from './src/screens';
 import SelfClientProvider from './src/providers/SelfClientProvider';
-import { NavigationProvider, useNavigation, type ScreenName } from './src/navigation/NavigationProvider';
 
 type SelectedDocumentState = {
   data: IDDocument;
   metadata: DocumentMetadata;
 };
 
-const routeMap: Record<ScreenId, ScreenName> = {
-  generate: 'Generate',
-  register: 'Register',
-  mrz: 'MRZ',
-  home: 'Home',
-  nfc: 'NFC',
-  documents: 'Documents',
-  'country-selection': 'CountrySelection',
-  'id-selection': 'IDSelection',
-  success: 'Success',
+// Define the root stack param list
+type RootStackParamList = {
+  Home: undefined;
+  Generate: undefined;
+  Register: undefined;
+  Documents: undefined;
+  Onboarding: undefined;
+  // Add other screens as needed
 };
 
-const screenToRoute = Object.entries(routeMap).reduce(
-  (acc, [key, value]) => {
-    acc[value as unknown as ScreenName] = key as unknown as ScreenId;
-    return acc;
-  },
-  {} as Record<ScreenName, ScreenId>,
-);
+export type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-function DemoApp() {
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Map screen IDs to navigation routes
+const getRouteNameFromScreenId = (screenId: ScreenId): keyof RootStackParamList | null => {
+  switch (screenId) {
+    case 'generate':
+      return 'Generate';
+    case 'register':
+      return 'Register';
+    case 'documents':
+      return 'Documents';
+    case 'onboarding':
+      return 'Onboarding';
+    case 'home':
+      return 'Home';
+    default:
+      return null;
+  }
+};
+
+function DemoAppScreens() {
   const selfClient = useSelfClient();
-  const navigation = useNavigation();
 
   const [catalog, setCatalog] = useState<DocumentCatalog>({ documents: [] });
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocumentState | null>(null);
@@ -58,56 +72,118 @@ function DemoApp() {
     }
   }, [selfClient]);
 
-  const navigate = useCallback(
-    (next: ScreenRoute) => {
-      const routeName = routeMap[next];
-      if (routeName) {
-        navigation.navigate(routeName);
-      }
-    },
-    [navigation],
-  );
-
-  const screenContext: ScreenContext = {
-    navigate,
-    goHome: () => navigation.navigate('Home'),
-    documentCatalog: catalog,
-    selectedDocument,
-    refreshDocuments,
-  };
-
   useEffect(() => {
     refreshDocuments();
   }, [refreshDocuments]);
 
-  const renderCurrentScreen = () => {
-    const { currentScreen } = navigation;
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+      initialRouteName="Home"
+    >
+      <Stack.Screen name="Home">
+        {({ navigation }) => {
+          const navigate = (screenId: ScreenId) => {
+            const routeName = getRouteNameFromScreenId(screenId);
+            if (routeName) {
+              navigation.navigate(routeName as any);
+            }
+          };
 
-    if (currentScreen === 'Home') {
-      return <HomeScreen screenContext={screenContext} />;
-    }
+          const goHome = () => navigation.navigate('Home');
 
-    const screenRoute = screenToRoute[currentScreen];
-    if (screenRoute && screenMap[screenRoute]) {
-      const descriptor = screenMap[screenRoute];
-      const ScreenComponent = descriptor.load();
-      const props = descriptor.getProps?.(screenContext) ?? {};
-      return <ScreenComponent {...props} />;
-    }
+          const screenContext: ScreenContext = {
+            navigate,
+            goHome,
+            documentCatalog: catalog,
+            selectedDocument,
+            refreshDocuments,
+          };
 
-    return <HomeScreen screenContext={screenContext} />;
-  };
+          return <HomeScreen screenContext={screenContext} />;
+        }}
+      </Stack.Screen>
 
-  return renderCurrentScreen();
+      <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
+
+      <Stack.Screen name="Generate">
+        {({ navigation }) => {
+          const screenContext: ScreenContext = {
+            navigate: (screenId: ScreenId) => {
+              const routeName = getRouteNameFromScreenId(screenId);
+              if (routeName) {
+                navigation.navigate(routeName as any);
+              }
+            },
+            goHome: () => navigation.navigate('Home'),
+            documentCatalog: catalog,
+            selectedDocument,
+            refreshDocuments,
+          };
+
+          const descriptor = screenMap['generate'];
+          const ScreenComponent = descriptor.load();
+          const props = descriptor.getProps?.(screenContext) ?? {};
+          return <ScreenComponent {...props} />;
+        }}
+      </Stack.Screen>
+
+      <Stack.Screen name="Register">
+        {({ navigation }) => {
+          const screenContext: ScreenContext = {
+            navigate: (screenId: ScreenId) => {
+              const routeName = getRouteNameFromScreenId(screenId);
+              if (routeName) {
+                navigation.navigate(routeName as any);
+              }
+            },
+            goHome: () => navigation.navigate('Home'),
+            documentCatalog: catalog,
+            selectedDocument,
+            refreshDocuments,
+          };
+
+          const descriptor = screenMap['register'];
+          const ScreenComponent = descriptor.load();
+          const props = descriptor.getProps?.(screenContext) ?? {};
+          return <ScreenComponent {...props} />;
+        }}
+      </Stack.Screen>
+
+      <Stack.Screen name="Documents">
+        {({ navigation }) => {
+          const screenContext: ScreenContext = {
+            navigate: (screenId: ScreenId) => {
+              const routeName = getRouteNameFromScreenId(screenId);
+              if (routeName) {
+                navigation.navigate(routeName as any);
+              }
+            },
+            goHome: () => navigation.navigate('Home'),
+            documentCatalog: catalog,
+            selectedDocument,
+            refreshDocuments,
+          };
+
+          const descriptor = screenMap['documents'];
+          const ScreenComponent = descriptor.load();
+          const props = descriptor.getProps?.(screenContext) ?? {};
+          return <ScreenComponent {...props} />;
+        }}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
 }
 
 function App() {
   return (
-    <NavigationProvider>
+    <NavigationContainer>
       <SelfClientProvider>
-        <DemoApp />
+        <DemoAppScreens />
       </SelfClientProvider>
-    </NavigationProvider>
+    </NavigationContainer>
   );
 }
 

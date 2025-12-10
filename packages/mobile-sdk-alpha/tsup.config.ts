@@ -45,6 +45,7 @@ const entry = {
   'hooks/useSafeBottomPadding': 'src/hooks/useSafeBottomPadding.ts',
   stores: 'src/stores/index.ts',
   'utils/utils': 'src/utils/utils.ts',
+  'navigators/onboarding/native-stack': 'src/navigators/onboarding/native-stack.tsx',
   ...flowEntries,
 };
 
@@ -78,6 +79,12 @@ export default defineConfig([
       'lottie-react-native',
       'react-native-haptic-feedback',
       'react-native-localize',
+      'react-native-safe-area-context',
+      'react-native-screens',
+      'react-native-gesture-handler',
+      // React Navigation
+      '@react-navigation/native',
+      '@react-navigation/native-stack',
       // SVG files should be handled by React Native's SVG transformer
       /\.svg$/,
     ],
@@ -129,6 +136,12 @@ export default defineConfig([
       'lottie-react-native',
       'react-native-haptic-feedback',
       'react-native-localize',
+      'react-native-safe-area-context',
+      'react-native-screens',
+      'react-native-gesture-handler',
+      // React Navigation
+      '@react-navigation/native',
+      '@react-navigation/native-stack',
       // SVG files should be handled by React Native's SVG transformer
       /\.svg$/,
     ],
