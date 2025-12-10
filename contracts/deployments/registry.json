@@ -1,6 +1,6 @@
 {
   "$schema": "./registry.schema.json",
-  "lastUpdated": "2025-12-10T05:53:12.534Z",
+  "lastUpdated": "2025-12-10T06:17:50.863Z",
   "contracts": {
     "IdentityVerificationHub": {
       "source": "IdentityVerificationHubImplV2",
@@ -64,8 +64,8 @@
           "currentImpl": "0xbD861A9cecf7B0A9631029d55A8CE1155e50697c"
         },
         "PCR0Manager": {
-          "address": "",
-          "currentVersion": "1.0.0"
+          "address": "0x9743fe2C1c3D2b068c56dE314e9B10DA9c904717",
+          "currentVersion": "1.2.0"
         },
         "VerifyAll": {
           "address": "",
@@ -201,6 +201,22 @@
             "deployedAt": "",
             "deployedBy": "",
             "gitCommit": ""
+          }
+        }
+      }
+    },
+    "PCR0Manager": {
+      "1.2.0": {
+        "initializerVersion": 0,
+        "initializerFunction": "",
+        "changelog": "Multisig governance deployment - migrated from single owner to AccessControl",
+        "gitTag": "pcr0manager-v1.2.0",
+        "deployments": {
+          "celo": {
+            "impl": "0x9743fe2C1c3D2b068c56dE314e9B10DA9c904717",
+            "deployedAt": "2025-12-10T06:17:50.863Z",
+            "deployedBy": "0xCaEe7aAF115F04D836E2D362A7c07F04db436bd0",
+            "gitCommit": "5787cff3bcbea870b50eccd7164fbd45b758568e"
           }
         }
       }

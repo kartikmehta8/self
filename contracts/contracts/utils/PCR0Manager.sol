@@ -9,6 +9,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  *         to booleans. The PCR0 value (the 48-byte SHA384 output) is hashed
  *         using keccak256 and then stored in the mapping.
  *         Only accounts with SECURITY_ROLE can add or remove entries.
+ * @custom:version 1.2.0
  */
 contract PCR0Manager is AccessControl {
     /// @notice Critical operations and role management requiring 3/5 multisig consensus
