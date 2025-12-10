@@ -45,22 +45,22 @@
       "deployments": {
         "IdentityVerificationHub": {
           "proxy": "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF",
-          "currentVersion": "2.12.0",
+          "currentVersion": "2.11.0",
           "currentImpl": ""
         },
         "IdentityRegistry": {
           "proxy": "0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968",
-          "currentVersion": "1.2.0",
+          "currentVersion": "1.1.0",
           "currentImpl": ""
         },
         "IdentityRegistryIdCard": {
           "proxy": "0xeAD1E6Ec29c1f3D33a0662f253a3a94D189566E1",
-          "currentVersion": "1.2.0",
+          "currentVersion": "1.1.0",
           "currentImpl": ""
         },
         "IdentityRegistryAadhaar": {
           "proxy": "0xd603Fa8C8f4694E8DD1DcE1f27C0C3fc91e32Ac4",
-          "currentVersion": "1.2.0",
+          "currentVersion": "1.1.0",
           "currentImpl": ""
         },
         "PCR0Manager": {
