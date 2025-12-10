@@ -12,7 +12,6 @@ import {IIdentityRegistryV1} from "./interfaces/IIdentityRegistryV1.sol";
 import {IRegisterCircuitVerifier} from "./interfaces/IRegisterCircuitVerifier.sol";
 import {IVcAndDiscloseCircuitVerifier} from "./interfaces/IVcAndDiscloseCircuitVerifier.sol";
 import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
-import {ImplRoot} from "./upgradeable/ImplRoot.sol";
 
 /**
  * @notice ⚠️ CRITICAL STORAGE LAYOUT WARNING ⚠️
@@ -43,9 +42,12 @@ import {ImplRoot} from "./upgradeable/ImplRoot.sol";
 /**
  * @title IdentityVerificationHubStorageV1
  * @notice Storage contract for IdentityVerificationHubImplV1.
- * @dev Inherits from ImplRoot to include upgradeability functionality.
+ * @dev Inherits from UUPSUpgradeable and Ownable2StepUpgradeable to include upgradeability functionality.
  */
-abstract contract IdentityVerificationHubStorageV1 is ImplRoot {
+abstract contract IdentityVerificationHubStorageV1 is UUPSUpgradeable, Ownable2StepUpgradeable {
+    // Reserved storage space to allow for layout changes in the future.
+    uint256[50] private __gap;
+
     // ====================================================
     // Storage Variables
     // ====================================================
@@ -61,6 +63,14 @@ abstract contract IdentityVerificationHubStorageV1 is ImplRoot {
 
     /// @notice Mapping from signature type to DSC circuit verifier addresses..
     mapping(uint256 => address) internal _sigTypeToDscCircuitVerifiers;
+
+    /**
+     * @dev Authorizes an upgrade to a new implementation.
+     * Requirements:
+     *   - Must be called through a proxy.
+     *   - Caller must be the owner.
+     */
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyProxy onlyOwner {}
 }
 
 /**
@@ -207,7 +217,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
         uint256[] memory dscCircuitVerifierIds,
         address[] memory dscCircuitVerifierAddresses
     ) external initializer {
-        __ImplRoot_init();
+        __Ownable_init(msg.sender);
         _registry = registryAddress;
         _vcAndDiscloseCircuitVerifier = vcAndDiscloseCircuitVerifierAddress;
         if (registerCircuitVerifierIds.length != registerCircuitVerifierAddresses.length) {
@@ -406,7 +416,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(address registryAddress) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateRegistry(address registryAddress) external virtual onlyProxy onlyOwner {
         _registry = registryAddress;
         emit RegistryUpdated(registryAddress);
     }
@@ -417,7 +427,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      */
     function updateVcAndDiscloseCircuit(
         address vcAndDiscloseCircuitVerifierAddress
-    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    ) external virtual onlyProxy onlyOwner {
         _vcAndDiscloseCircuitVerifier = vcAndDiscloseCircuitVerifierAddress;
         emit VcAndDiscloseCircuitUpdated(vcAndDiscloseCircuitVerifierAddress);
     }
@@ -430,7 +440,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function updateRegisterCircuitVerifier(
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    ) external virtual onlyProxy onlyOwner {
         _sigTypeToRegisterCircuitVerifiers[typeId] = verifierAddress;
         emit RegisterCircuitVerifierUpdated(typeId, verifierAddress);
     }
@@ -440,7 +450,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
      * @param typeId The signature type identifier.
      * @param verifierAddress The new DSC circuit verifier address.
      */
-    function updateDscVerifier(uint256 typeId, address verifierAddress) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateDscVerifier(uint256 typeId, address verifierAddress) external virtual onlyProxy onlyOwner {
         _sigTypeToDscCircuitVerifiers[typeId] = verifierAddress;
         emit DscCircuitVerifierUpdated(typeId, verifierAddress);
     }
@@ -453,7 +463,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function batchUpdateRegisterCircuitVerifiers(
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    ) external virtual onlyProxy onlyOwner {
         if (typeIds.length != verifierAddresses.length) {
             revert LENGTH_MISMATCH();
         }
@@ -471,7 +481,7 @@ contract IdentityVerificationHubImplV1 is IdentityVerificationHubStorageV1, IIde
     function batchUpdateDscCircuitVerifiers(
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    ) external virtual onlyProxy onlyOwner {
         if (typeIds.length != verifierAddresses.length) {
             revert LENGTH_MISMATCH();
         }
