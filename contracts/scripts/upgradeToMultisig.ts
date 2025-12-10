@@ -134,19 +134,25 @@ async function upgradeIdentityVerificationHub() {
     log.info(`Hub proxy address: ${hubProxyAddress}`);
     log.info(`New implementation address: ${newImplementationAddress}`);
 
+    // Encode initializeGovernance() call for the upgrade
+    const hubInterface = new ethers.Interface([
+      "function initializeGovernance() external"
+    ]);
+    const initData = hubInterface.encodeFunctionData("initializeGovernance", []);
+
     if (DRY_RUN) {
       log.info("[DRY RUN] Would call upgradeToAndCall on Hub proxy");
       log.info(`[DRY RUN] Target implementation: ${newImplementationAddress}`);
-      log.info(`[DRY RUN] Upgrade data: 0x (empty - no initialization needed)`);
+      log.info(`[DRY RUN] Upgrade data: ${initData} (initializeGovernance)`);
       return;
     }
 
     // Get the current hub contract - use the current implementation interface
     const hubContract = await ethers.getContractAt("IdentityVerificationHubImplV2", hubProxyAddress);
 
-    // Call upgradeToAndCall with empty data (no re-initialization needed)
-    log.info("Calling upgradeToAndCall on Hub proxy...");
-    const tx = await hubContract.upgradeToAndCall(newImplementationAddress, "0x");
+    // Call upgradeToAndCall with initializeGovernance() data
+    log.info("Calling upgradeToAndCall on Hub proxy with initializeGovernance()...");
+    const tx = await hubContract.upgradeToAndCall(newImplementationAddress, initData);
     const receipt = await tx.wait();
 
     log.success(`✅ Hub upgraded successfully!`);
@@ -219,10 +225,16 @@ async function upgradeRegistryContracts() {
       log.info(`  Proxy address: ${registry.proxyAddress}`);
       log.info(`  New implementation: ${registry.newImplementationAddress}`);
 
+      // Encode initializeGovernance() call for the upgrade
+      const registryInterface = new ethers.Interface([
+        "function initializeGovernance() external"
+      ]);
+      const initData = registryInterface.encodeFunctionData("initializeGovernance", []);
+
       if (DRY_RUN) {
         log.info(`[DRY RUN] Would call upgradeToAndCall on ${registry.name} proxy`);
         log.info(`[DRY RUN] Target implementation: ${registry.newImplementationAddress}`);
-        log.info(`[DRY RUN] Upgrade data: 0x (empty - no initialization needed)`);
+        log.info(`[DRY RUN] Upgrade data: ${initData} (initializeGovernance)`);
         upgradeCount++;
         continue;
       }
@@ -230,8 +242,8 @@ async function upgradeRegistryContracts() {
       // Get the registry contract and call upgrade function
       const registryContract = await ethers.getContractAt(registry.contract, registry.proxyAddress);
 
-      log.info(`Calling upgradeToAndCall on ${registry.name} proxy...`);
-      const tx = await registryContract.upgradeToAndCall(registry.newImplementationAddress, "0x");
+      log.info(`Calling upgradeToAndCall on ${registry.name} proxy with initializeGovernance()...`);
+      const tx = await registryContract.upgradeToAndCall(registry.newImplementationAddress, initData);
       const receipt = await tx.wait();
 
       log.success(`✅ Registry ${registry.name} upgraded successfully!`);

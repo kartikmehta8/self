@@ -647,24 +647,98 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     }
 
     // ========================================================================
-    // Step 14: Create Safe proposal (unless --prepare-only)
+    // Step 14: Encode initializer and detect governance pattern
+    // ========================================================================
+    log.step("Encoding upgrade transaction...");
+    
+    const proxyContract = await hre.ethers.getContractAt(contractName, proxyAddress);
+    
+    // Encode initializer function call
+    let initData = "0x";
+    const targetVersionInfoForInit = getVersionInfo(contractId, newVersion);
+    const initializerName = targetVersionInfoForInit?.initializerFunction || `initializeV${newInitializerVersion}`;
+    
+    try {
+      const iface = proxyContract.interface;
+      const initFragment = iface.getFunction(initializerName);
+      if (initFragment && initFragment.inputs.length === 0) {
+        initData = iface.encodeFunctionData(initializerName, []);
+        log.detail("Initializer", initializerName);
+      }
+    } catch {
+      log.detail("Initializer", "None");
+    }
+
+    // Build upgrade transaction data
+    const upgradeData = proxyContract.interface.encodeFunctionData("upgradeToAndCall", [implementationAddress, initData]);
+
+    // Detect governance pattern
+    log.step("Detecting contract governance pattern...");
+    let isOwnableContract = false;
+    let currentOwner: string | null = null;
+    
+    // Check if contract uses Ownable or AccessControl
+    try {
+      const ownerFragment = proxyContract.interface.getFunction("owner");
+      if (ownerFragment) {
+        isOwnableContract = true;
+        currentOwner = await proxyContract.owner();
+        log.info(`Contract uses Ownable pattern - current owner: ${currentOwner}`);
+      } else {
+        log.info("Contract uses AccessControl pattern");
+      }
+    } catch (e: any) {
+      log.warning(`Could not detect governance pattern: ${e.message}`);
+    }
+
+    // ========================================================================
+    // Step 15: Handle --prepare-only mode or create Safe proposal
     // ========================================================================
     if (prepareOnly) {
-      log.box([
-        "IMPLEMENTATION DEPLOYED",
-        "═".repeat(50),
-        `Contract: ${contractId}`,
-        `Version: ${currentVersion} → ${newVersion}`,
-        `Network: ${network}`,
-        "",
-        "Addresses:",
-        `  Proxy: ${shortenAddress(proxyAddress)}`,
-        `  New Impl: ${shortenAddress(implementationAddress)}`,
-        "",
-        "Next steps:",
-        "  Run without --prepare-only to create Safe proposal",
-        "  Or manually propose via Safe UI",
-      ]);
+      if (isOwnableContract && currentOwner) {
+        log.box([
+          "IMPLEMENTATION DEPLOYED - OWNER EXECUTION REQUIRED",
+          "═".repeat(70),
+          `Contract: ${contractId}`,
+          `Version: ${currentVersion} → ${newVersion}`,
+          `Network: ${network}`,
+          "",
+          "Addresses:",
+          `  Proxy: ${shortenAddress(proxyAddress)}`,
+          `  New Impl: ${shortenAddress(implementationAddress)}`,
+          `  Current Owner: ${currentOwner}`,
+          "",
+          "⚠️  FIRST GOVERNANCE UPGRADE DETECTED",
+          "",
+          "This contract uses Ownable - the current owner must execute",
+          "the upgrade directly. After upgrade, grant SECURITY_ROLE to Safe.",
+          "",
+          "Transaction Data for Owner Execution:",
+          `  To: ${proxyAddress}`,
+          `  Data: ${upgradeData}`,
+          "",
+          "After upgrade completes:",
+          "  1. Grant SECURITY_ROLE to security multisig",
+          "  2. Grant OPERATIONS_ROLE to operations multisig",
+          "  3. Run: npx hardhat run scripts/transferRolesToMultisigs.ts --network " + network,
+        ]);
+      } else {
+        log.box([
+          "IMPLEMENTATION DEPLOYED",
+          "═".repeat(50),
+          `Contract: ${contractId}`,
+          `Version: ${currentVersion} → ${newVersion}`,
+          `Network: ${network}`,
+          "",
+          "Addresses:",
+          `  Proxy: ${shortenAddress(proxyAddress)}`,
+          `  New Impl: ${shortenAddress(implementationAddress)}`,
+          "",
+          "Next steps:",
+          "  Run without --prepare-only to create Safe proposal",
+          "  Or manually propose via Safe UI",
+        ]);
+      }
       return;
     }
 
@@ -681,14 +755,42 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     log.detail("Security multisig", governance.securityMultisig);
     log.detail("Required threshold", governance.securityThreshold);
 
-    // Build upgrade transaction data
-    const proxyContract = await hre.ethers.getContractAt(contractName, proxyAddress);
-
     // Check if Safe has SECURITY_ROLE on the proxy
     log.step("Verifying Safe has SECURITY_ROLE...");
     const SECURITY_ROLE = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("SECURITY_ROLE"));
+    let safeHasRole = false;
+    
+    if (isOwnableContract) {
+      // Contract uses Ownable - owner must execute directly
+      log.warning("⚠️  FIRST GOVERNANCE UPGRADE DETECTED");
+      log.box([
+        "OWNER DIRECT EXECUTION REQUIRED",
+        "═".repeat(70),
+        "",
+        "This is the first upgrade from Ownable to AccessControl.",
+        "The Safe cannot execute this upgrade because it doesn't have",
+        "the owner role yet.",
+        "",
+        `Current owner: ${currentOwner}`,
+        `Proxy address: ${proxyAddress}`,
+        "",
+        "Transaction Data for Owner Execution:",
+        `  To: ${proxyAddress}`,
+        `  Data: ${upgradeData}`,
+        "",
+        "After upgrade completes:",
+        "  1. Grant SECURITY_ROLE to security multisig",
+        "  2. Grant OPERATIONS_ROLE to operations multisig",
+        "  3. Run: npx hardhat run scripts/transferRolesToMultisigs.ts --network " + network,
+        "",
+        "Future upgrades can use Safe proposals.",
+      ]);
+      return;
+    }
+    
+    // Contract uses AccessControl - check if Safe has SECURITY_ROLE
     try {
-      const safeHasRole = await proxyContract.hasRole(SECURITY_ROLE, governance.securityMultisig);
+      safeHasRole = await proxyContract.hasRole(SECURITY_ROLE, governance.securityMultisig);
       if (!safeHasRole) {
         log.error("❌ SECURITY_ROLE CHECK FAILED");
         log.box([
@@ -719,25 +821,32 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
       log.info("Proceeding anyway - ensure Safe has the role before executing");
     }
 
-    // Check for initializer
-    let initData = "0x";
-    const initializerName = `initializeV${newInitializerVersion}`;
-    try {
-      const iface = proxyContract.interface;
-      const initFragment = iface.getFunction(initializerName);
-      if (initFragment && initFragment.inputs.length === 0) {
-        initData = iface.encodeFunctionData(initializerName, []);
-        log.detail("Initializer", initializerName);
-      }
-    } catch {
-      log.detail("Initializer", "None");
+    // ========================================================================
+    // Step 15: Handle Safe proposal or owner direct execution
+    // ========================================================================
+    
+    // Skip Safe proposal if this is an Ownable contract (first upgrade)
+    if (isOwnableContract) {
+      log.step("Skipping Safe proposal - owner must execute directly");
+      log.box([
+        "OWNER DIRECT EXECUTION REQUIRED",
+        "═".repeat(70),
+        "",
+        "Transaction Data:",
+        `  To: ${proxyAddress}`,
+        `  Data: ${upgradeData}`,
+        "",
+        "Execute this transaction from the owner account:",
+        `  ${currentOwner}`,
+        "",
+        "After upgrade completes, grant SECURITY_ROLE to Safe:",
+        `  ${governance.securityMultisig || "Not configured"}`,
+        "",
+        "Future upgrades can use Safe proposals.",
+      ]);
+      return;
     }
 
-    const upgradeData = proxyContract.interface.encodeFunctionData("upgradeToAndCall", [implementationAddress, initData]);
-
-    // ========================================================================
-    // Step 15: Check if caller is Safe owner and auto-propose
-    // ========================================================================
     log.step("Checking if you're a multisig signer...");
 
     const result = await checkOwnerAndPropose(
