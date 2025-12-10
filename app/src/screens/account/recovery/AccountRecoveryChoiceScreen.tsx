@@ -9,7 +9,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { isUserRegisteredWithAlternativeCSCA } from '@selfxyz/common/utils/passports/validate';
-import { isMRZDocument } from '@selfxyz/common/utils/types';
 import {
   markCurrentDocumentAsRegistered,
   useSelfClient,
@@ -92,7 +91,6 @@ const AccountRecoveryChoiceScreen: React.FC<
         hasCSCA: hasCSCA,
       });
       navigation.navigate({ name: 'Home', params: {} });
-      setRestoring(false);
     },
     [trackEvent, navigation],
   );
@@ -134,6 +132,7 @@ const AccountRecoveryChoiceScreen: React.FC<
           );
           if (successDocuments.length === 0) {
             handleRestoreFailed('all_documents_not_registered', false);
+            setRestoring(false);
             return false;
           }
         } else {
