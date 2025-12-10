@@ -34,6 +34,7 @@ import {
   createGitTag,
   gitCommit,
   getLatestVersionInfo,
+  getVersionInfo,
   getGovernanceConfig,
   validateReinitializerVersion,
 } from "./utils";
@@ -310,8 +311,14 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     // ========================================================================
     log.step("Checking reinitializer version...");
 
+    // Check if target version already exists in registry
+    const targetVersionInfo = getVersionInfo(contractId, newVersion);
     const latestVersionInfo = getLatestVersionInfo(contractId);
-    const expectedInitializerVersion = (latestVersionInfo?.info.initializerVersion || 0) + 1;
+    
+    // If target version exists, use its initializerVersion; otherwise increment latest
+    const expectedInitializerVersion = targetVersionInfo
+      ? targetVersionInfo.initializerVersion
+      : (latestVersionInfo?.info.initializerVersion || 0) + 1;
 
     if (contractFilePath) {
       const reinitValidation = validateReinitializerVersion(contractFilePath, expectedInitializerVersion);
