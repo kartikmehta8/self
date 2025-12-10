@@ -6934,6 +6934,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-navigation/bottom-tabs@npm:^7.8.12":
+  version: 7.8.12
+  resolution: "@react-navigation/bottom-tabs@npm:7.8.12"
+  dependencies:
+    "@react-navigation/elements": "npm:^2.9.2"
+    color: "npm:^4.2.3"
+    sf-symbols-typescript: "npm:^2.1.0"
+  peerDependencies:
+    "@react-navigation/native": ^7.1.25
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+    react-native-screens: ">= 4.0.0"
+  checksum: 10c0/ccff30e9bdb4339e39db4966b0a96d22e32d82b9767b328ce1d2eec960b11eadc47200a801108edc46e3e0d42c0774f4baecf4a4ac0fb50402d399677f32e980
+  languageName: node
+  linkType: hard
+
 "@react-navigation/core@npm:^7.13.1":
   version: 7.13.1
   resolution: "@react-navigation/core@npm:7.13.1"
@@ -6969,6 +6986,26 @@ __metadata:
     "@react-native-masked-view/masked-view":
       optional: true
   checksum: 10c0/0e5282f92f2946fd635c2a1c9b444d6d158663ad57669cb87e372587d2313df90cd092737305f999e6223aace75cb7829ef709b1198a8a6bc22aa40821a792e6
+  languageName: node
+  linkType: hard
+
+"@react-navigation/elements@npm:^2.9.2":
+  version: 2.9.2
+  resolution: "@react-navigation/elements@npm:2.9.2"
+  dependencies:
+    color: "npm:^4.2.3"
+    use-latest-callback: "npm:^0.2.4"
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    "@react-native-masked-view/masked-view": ">= 0.2.0"
+    "@react-navigation/native": ^7.1.25
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+  peerDependenciesMeta:
+    "@react-native-masked-view/masked-view":
+      optional: true
+  checksum: 10c0/2d25704b785917034b852656a71993b76b900b890abefbafa33c823e8a2f7d8d2da818819f9a38ff813445b718fb8dafdc14aa8685b33c8b7a13adef533c053a
   languageName: node
   linkType: hard
 
@@ -7795,6 +7832,7 @@ __metadata:
     "@react-native/gradle-plugin": "npm:0.76.9"
     "@react-native/metro-config": "npm:0.76.9"
     "@react-native/typescript-config": "npm:0.76.9"
+    "@react-navigation/bottom-tabs": "npm:^7.8.12"
     "@react-navigation/native": "npm:^7.0.14"
     "@react-navigation/native-stack": "npm:^7.2.0"
     "@robinbobin/react-native-google-drive-api-wrapper": "npm:^2.2.3"

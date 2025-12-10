@@ -201,6 +201,19 @@ module.exports = {
       },
     },
     {
+      // Disable semicolon requirement for TSX files (Prettier config handles this)
+      files: ['**/*.tsx'],
+      rules: {
+        'prettier/prettier': [
+          'warn',
+          {
+            semi: false,
+          },
+          { usePrettierrc: true },
+        ],
+      },
+    },
+    {
       // Disable export sorting for files with dependency issues
       files: [
         'src/components/navbar/BaseNavBar.tsx',
