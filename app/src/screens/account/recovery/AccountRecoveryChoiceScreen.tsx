@@ -167,6 +167,7 @@ const AccountRecoveryChoiceScreen: React.FC<
               'Secret provided did not match a registered ID. Please try again.',
             );
             handleRestoreFailed('document_not_registered', !!csca);
+            setRestoring(false);
             return false;
           }
           if (isCloudRestore && !cloudBackupEnabled) {

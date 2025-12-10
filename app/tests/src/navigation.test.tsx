@@ -38,6 +38,7 @@ describe('navigation', () => {
         'AadhaarUploadSuccess',
         'AccountRecovery',
         'AccountRecoveryChoice',
+        'AccountRestore',
         'AccountVerifiedSuccess',
         'CloudBackupSettings',
         'ComingSoon',
