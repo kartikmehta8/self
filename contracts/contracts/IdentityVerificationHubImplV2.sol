@@ -19,6 +19,14 @@ import {IDscCircuitVerifier} from "./interfaces/IDscCircuitVerifier.sol";
 import {CircuitConstantsV2} from "./constants/CircuitConstantsV2.sol";
 import {Formatter} from "./libraries/Formatter.sol";
 
+/**
+ * @title IdentityVerificationHubImplV2
+ * @notice Main hub for identity verification in the Self Protocol
+ * @dev This contract orchestrates multi-step verification processes including document attestation,
+ * zero-knowledge proofs, OFAC compliance, and attribute disclosure control.
+ *
+ * @custom:version 2.12.0
+ */
 contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub
     struct IdentityVerificationHubStorage {
@@ -45,7 +53,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         0xf9b5980dcec1a8b0609576a1f453bb2cad4732a0ea02bb89154d44b14a306c00;
 
     /// @notice The AADHAAR registration window around the current block timestamp.
-    uint256 public AADHAAR_REGISTRATION_WINDOW = 20;
+    uint256 public AADHAAR_REGISTRATION_WINDOW;
 
     /**
      * @notice Returns the storage struct for the main IdentityVerificationHub.
@@ -218,6 +226,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Constructor that disables initializers for the implementation contract.
      * @dev This prevents the implementation contract from being initialized directly.
      * The actual initialization should only happen through the proxy.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
     constructor() {
         _disableInitializers();
@@ -240,7 +249,23 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._circuitVersion = 2;
 
+        // Initialize Aadhaar registration window
+        AADHAAR_REGISTRATION_WINDOW = 20;
+
         emit HubInitializedV2();
+    }
+
+    /**
+     * @notice Initializes governance for upgraded contracts.
+     * @dev Used when upgrading from Ownable to AccessControl governance.
+     * This function sets up AccessControl roles on an already-initialized contract.
+     * It does NOT modify existing state (hub, roots, etc.).
+     *
+     * SECURITY: This function can only be called once - enforced by reinitializer(12).
+     * The previous version used reinitializer(11), so this upgrade uses version 12.
+     */
+    function initializeGovernance() external reinitializer(12) {
+        __ImplRoot_init();
     }
 
     // ====================================================
@@ -329,7 +354,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the AADHAAR registration window.
      * @param window The new AADHAAR registration window.
      */
-    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyOwner {
+    function setAadhaarRegistrationWindow(uint256 window) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         AADHAAR_REGISTRATION_WINDOW = window;
     }
 
@@ -372,7 +397,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyOwner {
+    function updateRegistry(
+        bytes32 attestationId,
+        address registryAddress
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registries[attestationId] = registryAddress;
         emit RegistryUpdated(attestationId, registryAddress);
@@ -385,7 +413,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function updateVcAndDiscloseCircuit(
         bytes32 attestationId,
         address vcAndDiscloseCircuitVerifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._discloseVerifiers[attestationId] = vcAndDiscloseCircuitVerifierAddress;
         emit VcAndDiscloseCircuitUpdated(attestationId, vcAndDiscloseCircuitVerifierAddress);
@@ -401,7 +429,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registerCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit RegisterCircuitVerifierUpdated(typeId, verifierAddress);
@@ -417,7 +445,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32 attestationId,
         uint256 typeId,
         address verifierAddress
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._dscCircuitVerifiers[attestationId][typeId] = verifierAddress;
         emit DscCircuitVerifierUpdated(typeId, verifierAddress);
@@ -433,7 +461,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }
@@ -454,7 +482,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes32[] calldata attestationIds,
         uint256[] calldata typeIds,
         address[] calldata verifierAddresses
-    ) external virtual onlyProxy onlyOwner {
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         if (attestationIds.length != typeIds.length || attestationIds.length != verifierAddresses.length) {
             revert LengthMismatch();
         }
