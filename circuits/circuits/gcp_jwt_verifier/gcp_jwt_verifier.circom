@@ -6,6 +6,7 @@ include "../utils/passport/customHashers.circom";
 include "../utils/gcp_jwt/extractAndValidatePubkey.circom";
 include "../utils/gcp_jwt/verifyCertificateSignature.circom";
 include "../utils/gcp_jwt/verifyJSONFieldExtraction.circom";
+include "../utils/gcp_jwt/singleOccurance.circom";
 include "circomlib/circuits/comparators.circom";
 include "@openpassport/zk-email-circuits/utils/array.circom";
 include "@openpassport/zk-email-circuits/utils/bytes.circom";
@@ -109,6 +110,21 @@ template GCPJWTVerifier(
 
     signal payload[maxPayloadLength];
     payload <== jwtVerifier.payload;
+
+    component singleOccurance = SingleOccurance(maxPayloadLength, 12);
+    singleOccurance.in <== payload;
+    singleOccurance.word[0] <== 105; // 'i'
+    singleOccurance.word[1] <== 109; // 'm'
+    singleOccurance.word[2] <== 97;  // 'a'
+    singleOccurance.word[3] <== 103; // 'g'
+    singleOccurance.word[4] <== 101; // 'e'
+    singleOccurance.word[5] <== 95;  // '_'
+    singleOccurance.word[6] <== 100; // 'd'
+    singleOccurance.word[7] <== 105; // 'i'
+    singleOccurance.word[8] <== 103; // 'g'
+    singleOccurance.word[9] <== 101; // 'e'
+    singleOccurance.word[10] <== 115; // 's'
+    singleOccurance.word[11] <== 116; // 't'
 
     // Extract and validate x5c[0] Public Key
     ExtractAndValidatePubkey(signatureAlgorithm, n, k, MAX_CERT_LENGTH, MAX_PUBKEY_PREFIX, MAX_PUBKEY_LENGTH)(
