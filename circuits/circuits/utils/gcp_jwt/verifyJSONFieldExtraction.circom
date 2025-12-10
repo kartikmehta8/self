@@ -116,10 +116,11 @@ template ExtractAndVerifyJSONField(
 	is_closing_bracket.in[1] <== 93;  // ']'
 
     // if closing_bracket is the final character then key_offset - value_offset must be 4 (":[") else 3 (":")
-    signal difference <== 3 + is_closing_bracket.out;
+    signal difference <== 3 + is_bracket.out;
     component bindKeyWithValue = IsEqual();
     bindKeyWithValue.in[0] <== difference;
-    bindKeyWithValue.in[1] <== value_offset - key_offset;
+    bindKeyWithValue.in[1] <== value_offset - (key_offset + key_length);
+    bindKeyWithValue.out === 1;
 
 	component is_comma = IsEqual();
 	is_comma.in[0] <== char_after_quote;
