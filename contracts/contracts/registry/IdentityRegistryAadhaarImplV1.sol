@@ -72,9 +72,6 @@ abstract contract IdentityRegistryAadhaarStorageV1 is ImplRoot {
  * @dev Inherits from IdentityRegistryAadhaarStorageV1 and implements IIdentityRegistryAadhaarV1.
  *
  * @custom:version 1.2.0
- * @custom:version-history
- * - v1.1.0 (Initializer v1): Initial deployment with Ownable2StepUpgradeable governance
- * - v1.2.0 (Initializer v2): Migrated to AccessControlUpgradeable with multi-tier governance (SECURITY_ROLE, OPERATIONS_ROLE)
  */
 contract IdentityRegistryAadhaarImplV1 is IdentityRegistryAadhaarStorageV1, IIdentityRegistryAadhaarV1 {
     using InternalLeanIMT for LeanIMTData;

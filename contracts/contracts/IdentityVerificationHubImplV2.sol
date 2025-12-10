@@ -26,9 +26,6 @@ import {Formatter} from "./libraries/Formatter.sol";
  * zero-knowledge proofs, OFAC compliance, and attribute disclosure control.
  *
  * @custom:version 2.12.0
- * @custom:version-history
- * - v2.11.0 (Initializer v11): V2 hub deployment with Ownable2StepUpgradeable governance
- * - v2.12.0 (Initializer v12): Governance upgrade - migrated to AccessControlUpgradeable with multi-tier governance (SECURITY_ROLE, OPERATIONS_ROLE)
  */
 contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub

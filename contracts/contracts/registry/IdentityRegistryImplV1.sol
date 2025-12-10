@@ -84,9 +84,6 @@ abstract contract IdentityRegistryStorageV1 is ImplRoot {
  * @dev Inherits from IdentityRegistryStorageV1 and implements IIdentityRegistryV1.
  *
  * @custom:version 1.2.0
- * @custom:version-history
- * - v1.1.0 (Initializer v1): Initial deployment with Ownable2StepUpgradeable governance
- * - v1.2.0 (Initializer v2): Migrated to AccessControlUpgradeable with multi-tier governance (SECURITY_ROLE, OPERATIONS_ROLE)
  */
 contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV1 {
     using InternalLeanIMT for LeanIMTData;
