@@ -103,15 +103,11 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   (Simulates current production: V2 with old ImplRoot)");
 
       const MockOwnableHubFactory = await ethers.getContractFactory("MockOwnableHub");
-      oldHubProxy = await upgrades.deployProxy(
-        MockOwnableHubFactory,
-        [],
-        {
-          kind: "uups",
-          initializer: "initialize",
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"]
-        }
-      ) as unknown as MockOwnableHub;
+      oldHubProxy = (await upgrades.deployProxy(MockOwnableHubFactory, [], {
+        kind: "uups",
+        initializer: "initialize",
+        unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"],
+      })) as unknown as MockOwnableHub;
 
       await oldHubProxy.waitForDeployment();
       console.log(`   ✅ HubV2: ${await oldHubProxy.getAddress()}`);
@@ -125,15 +121,20 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
 
       const MockOwnableRegistryFactory = await ethers.getContractFactory("MockOwnableRegistry");
 
-      oldRegistryProxy = await upgrades.deployProxy(
+      oldRegistryProxy = (await upgrades.deployProxy(
         MockOwnableRegistryFactory,
         [ethers.ZeroAddress], // hubAddress
         {
           kind: "uups",
           initializer: "initialize",
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "external-library-linking"]
-        }
-      ) as unknown as MockOwnableRegistry;
+          unsafeAllow: [
+            "constructor",
+            "state-variable-immutable",
+            "state-variable-assignment",
+            "external-library-linking",
+          ],
+        },
+      )) as unknown as MockOwnableRegistry;
 
       await oldRegistryProxy.waitForDeployment();
       console.log(`   ✅ Registry: ${await oldRegistryProxy.getAddress()}`);
@@ -186,19 +187,15 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   To:   IdentityVerificationHubImplV2 (real contract with new AccessControl ImplRoot)");
 
       const HubV2Factory = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
-        libraries: { CustomVerifier: await customVerifier.getAddress() }
+        libraries: { CustomVerifier: await customVerifier.getAddress() },
       });
 
-      upgradedHub = await upgrades.upgradeProxy(
-        await oldHubProxy.getAddress(),
-        HubV2Factory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for Ownable → AccessControl
-          unsafeAllow: ["constructor", "external-library-linking"],
-          call: { fn: "initializeGovernance", args: [] } // Initialize governance roles (reinitializer)
-        }
-      ) as unknown as IdentityVerificationHubImplV2;
+      upgradedHub = (await upgrades.upgradeProxy(await oldHubProxy.getAddress(), HubV2Factory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for Ownable → AccessControl
+        unsafeAllow: ["constructor", "external-library-linking"],
+        call: { fn: "initializeGovernance", args: [] }, // Initialize governance roles (reinitializer)
+      })) as unknown as IdentityVerificationHubImplV2;
 
       console.log(`   ✅ Upgraded to: ${await upgradedHub.getAddress()}`);
 
@@ -223,19 +220,15 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("   To:   IdentityRegistryImplV1 (real contract with new AccessControl ImplRoot)");
 
       const RegistryFactory = await ethers.getContractFactory("IdentityRegistryImplV1", {
-        libraries: { PoseidonT3: await poseidonT3.getAddress() }
+        libraries: { PoseidonT3: await poseidonT3.getAddress() },
       });
 
-      upgradedRegistry = await upgrades.upgradeProxy(
-        await oldRegistryProxy.getAddress(),
-        RegistryFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for Ownable → AccessControl
-          unsafeAllow: ["constructor", "external-library-linking"],
-          call: { fn: "initializeGovernance", args: [] } // Initialize governance roles
-        }
-      ) as unknown as IdentityRegistryImplV1;
+      upgradedRegistry = (await upgrades.upgradeProxy(await oldRegistryProxy.getAddress(), RegistryFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for Ownable → AccessControl
+        unsafeAllow: ["constructor", "external-library-linking"],
+        call: { fn: "initializeGovernance", args: [] }, // Initialize governance roles
+      })) as unknown as IdentityRegistryImplV1;
 
       console.log(`   ✅ Upgraded to: ${await upgradedRegistry.getAddress()}`);
 
@@ -260,18 +253,14 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
       console.log("\n🆔 Deploying ID Card Registry (AccessControl from start)...");
 
       const IdCardRegistryFactory = await ethers.getContractFactory("IdentityRegistryIdCardImplV1", {
-        libraries: { PoseidonT3: await poseidonT3.getAddress() }
+        libraries: { PoseidonT3: await poseidonT3.getAddress() },
       });
 
-      idCardRegistryProxy = await upgrades.deployProxy(
-        IdCardRegistryFactory,
-        [await upgradedHub.getAddress()],
-        {
-          kind: "uups",
-          initializer: "initialize",
-          unsafeAllow: ["constructor", "external-library-linking"]
-        }
-      ) as unknown as IdentityRegistryIdCardImplV1;
+      idCardRegistryProxy = (await upgrades.deployProxy(IdCardRegistryFactory, [await upgradedHub.getAddress()], {
+        kind: "uups",
+        initializer: "initialize",
+        unsafeAllow: ["constructor", "external-library-linking"],
+      })) as unknown as IdentityRegistryIdCardImplV1;
 
       await idCardRegistryProxy.waitForDeployment();
       console.log(`   ✅ ID Card Registry: ${await idCardRegistryProxy.getAddress()}`);
@@ -379,41 +368,45 @@ describe("🚀 PRODUCTION UPGRADE: Ownable → AccessControl Governance", functi
   describe("🚫 Phase 7: Verify Deployer Has ZERO Control", function () {
     it("should prevent deployer from updating HubV2", async function () {
       console.log("\n🚫 Verifying deployer CANNOT update HubV2...");
-      await expect(
-        upgradedHub.connect(deployer).updateRegistry(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(upgradedHub, "AccessControlUnauthorizedAccount");
+      await expect(upgradedHub.connect(deployer).updateRegistry(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        upgradedHub,
+        "AccessControlUnauthorizedAccount",
+      );
       console.log("   ✅ Deployer blocked ✓");
     });
 
     it("should prevent deployer from updating Registry", async function () {
       console.log("\n🚫 Verifying deployer CANNOT update Registry...");
       await expect(
-        upgradedRegistry.connect(deployer).updateCscaRoot("0x" + "44".repeat(32))
+        upgradedRegistry.connect(deployer).updateCscaRoot("0x" + "44".repeat(32)),
       ).to.be.revertedWithCustomError(upgradedRegistry, "AccessControlUnauthorizedAccount");
       console.log("   ✅ Deployer blocked ✓");
     });
 
     it("should prevent deployer from managing PCR0", async function () {
       console.log("\n🚫 Verifying deployer CANNOT manage PCR0...");
-      await expect(
-        pcr0Manager.connect(deployer).addPCR0("0x" + "55".repeat(48))
-      ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
+      await expect(pcr0Manager.connect(deployer).addPCR0("0x" + "55".repeat(48))).to.be.revertedWithCustomError(
+        pcr0Manager,
+        "AccessControlUnauthorizedAccount",
+      );
       console.log("   ✅ Deployer blocked ✓");
     });
 
     it("should prevent ANY unauthorized user from operations", async function () {
       console.log("\n🚫 Verifying unauthorized users blocked...");
-      await expect(
-        upgradedHub.connect(user2).updateRegistry(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(upgradedHub, "AccessControlUnauthorizedAccount");
+      await expect(upgradedHub.connect(user2).updateRegistry(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        upgradedHub,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
-        upgradedRegistry.connect(user2).updateCscaRoot("0x" + "66".repeat(32))
+        upgradedRegistry.connect(user2).updateCscaRoot("0x" + "66".repeat(32)),
       ).to.be.revertedWithCustomError(upgradedRegistry, "AccessControlUnauthorizedAccount");
 
-      await expect(
-        pcr0Manager.connect(user2).addPCR0("0x" + "77".repeat(48))
-      ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
+      await expect(pcr0Manager.connect(user2).addPCR0("0x" + "77".repeat(48))).to.be.revertedWithCustomError(
+        pcr0Manager,
+        "AccessControlUnauthorizedAccount",
+      );
       console.log("   ✅ All unauthorized access blocked ✓");
     });
   });

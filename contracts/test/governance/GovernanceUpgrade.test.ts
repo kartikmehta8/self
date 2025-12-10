@@ -54,8 +54,8 @@ describe("Governance Upgrade Tests", function () {
       // This simulates an existing deployed contract that needs to be upgraded
       const IdentityVerificationHubV2 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
       // Deploy implementation and proxy manually to bypass OpenZeppelin validation
@@ -78,7 +78,7 @@ describe("Governance Upgrade Tests", function () {
 
       // Force import the proxy into OpenZeppelin's system for upgrade management
       await upgrades.forceImport(await proxy.getAddress(), IdentityVerificationHubV2, {
-        kind: "uups"
+        kind: "uups",
       });
     });
 
@@ -92,21 +92,17 @@ describe("Governance Upgrade Tests", function () {
       // Deploy new implementation with governance using the same library instance
       const IdentityVerificationHubV3 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
       // Upgrade to governance system (no initialization call needed for upgrades)
-      const upgradedHub = await upgrades.upgradeProxy(
-        await hubProxy.getAddress(),
-        IdentityVerificationHubV3,
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        }
-      );
+      const upgradedHub = await upgrades.upgradeProxy(await hubProxy.getAddress(), IdentityVerificationHubV3, {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking"],
+      });
 
       // After upgrade, the contract now has governance capabilities
       const hubWithGovernance = upgradedHub as unknown as IdentityVerificationHubImplV2;
@@ -137,22 +133,18 @@ describe("Governance Upgrade Tests", function () {
 
       const IdentityVerificationHubV3 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
       // The upgrade should succeed without throwing storage layout errors
       // OpenZeppelin's upgrades plugin validates storage compatibility automatically
-      const upgradedContract = await upgrades.upgradeProxy(
-        await hubProxy.getAddress(),
-        IdentityVerificationHubV3,
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        }
-      );
+      const upgradedContract = await upgrades.upgradeProxy(await hubProxy.getAddress(), IdentityVerificationHubV3, {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking"],
+      });
 
       // Verify the upgrade was successful
       expect(await upgradedContract.getAddress()).to.equal(await hubProxy.getAddress());
@@ -168,20 +160,16 @@ describe("Governance Upgrade Tests", function () {
       // Upgrade using the same library instance to avoid redeployment
       const IdentityVerificationHubV3 = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
-      await upgrades.upgradeProxy(
-        await hubProxy.getAddress(),
-        IdentityVerificationHubV3,
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        }
-      );
+      await upgrades.upgradeProxy(await hubProxy.getAddress(), IdentityVerificationHubV3, {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking"],
+      });
 
       // Verify state is preserved - roles should still exist
       const finalHasCriticalRole = await hubProxy.hasRole(SECURITY_ROLE, deployer.address);
@@ -195,8 +183,8 @@ describe("Governance Upgrade Tests", function () {
       // This simulates upgrading an existing registry contract to governance
       const IdentityRegistryV1 = await ethers.getContractFactory("IdentityRegistryImplV1", {
         libraries: {
-          PoseidonT3: await poseidonT3.getAddress()
-        }
+          PoseidonT3: await poseidonT3.getAddress(),
+        },
       });
 
       // Deploy implementation and proxy manually to bypass OpenZeppelin validation
@@ -216,7 +204,7 @@ describe("Governance Upgrade Tests", function () {
 
       // Force import the proxy into OpenZeppelin's system for upgrade management
       await upgrades.forceImport(await proxy.getAddress(), IdentityRegistryV1, {
-        kind: "uups"
+        kind: "uups",
       });
     });
 
@@ -230,20 +218,16 @@ describe("Governance Upgrade Tests", function () {
       // Upgrade to governance using the shared library instance
       const IdentityRegistryV2 = await ethers.getContractFactory("IdentityRegistryImplV1", {
         libraries: {
-          PoseidonT3: await poseidonT3.getAddress()
-        }
+          PoseidonT3: await poseidonT3.getAddress(),
+        },
       });
 
-      await upgrades.upgradeProxy(
-        await registryProxy.getAddress(),
-        IdentityRegistryV2,
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        }
-      );
+      await upgrades.upgradeProxy(await registryProxy.getAddress(), IdentityRegistryV2, {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking"],
+      });
 
       // After upgrade, the contract now has governance capabilities
       // For this test, we'll simulate that the migration script has already run
@@ -278,10 +262,7 @@ describe("Governance Upgrade Tests", function () {
       const mockRegistry = ethers.Wallet.createRandom().address;
 
       const VerifyAll = await ethers.getContractFactory("VerifyAll");
-      verifyAll = await VerifyAll.deploy(
-        mockHub,
-        mockRegistry
-      );
+      verifyAll = await VerifyAll.deploy(mockHub, mockRegistry);
       await verifyAll.waitForDeployment();
     });
 
@@ -310,17 +291,13 @@ describe("Governance Upgrade Tests", function () {
       const testPCR0 = "0x" + "00".repeat(48); // 48 zero bytes (valid PCR0 format)
 
       // Critical multisig should be able to add PCR0 (testing governance functionality)
-      await expect(
-        pcr0Manager.connect(securityMultisig).addPCR0(testPCR0)
-      ).to.emit(pcr0Manager, "PCR0Added");
+      await expect(pcr0Manager.connect(securityMultisig).addPCR0(testPCR0)).to.emit(pcr0Manager, "PCR0Added");
 
       // Verify PCR0 was added successfully
       expect(await pcr0Manager.isPCR0Set(testPCR0)).to.be.true;
 
       // Critical multisig should be able to remove PCR0 (testing full CRUD operations)
-      await expect(
-        pcr0Manager.connect(securityMultisig).removePCR0(testPCR0)
-      ).to.emit(pcr0Manager, "PCR0Removed");
+      await expect(pcr0Manager.connect(securityMultisig).removePCR0(testPCR0)).to.emit(pcr0Manager, "PCR0Removed");
 
       // Verify PCR0 was removed successfully
       expect(await pcr0Manager.isPCR0Set(testPCR0)).to.be.false;
@@ -333,9 +310,10 @@ describe("Governance Upgrade Tests", function () {
       const testPCR0 = "0x" + "00".repeat(48);
 
       // Random user should not be able to add PCR0 (testing access control enforcement)
-      await expect(
-        pcr0Manager.connect(user).addPCR0(testPCR0)
-      ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
+      await expect(pcr0Manager.connect(user).addPCR0(testPCR0)).to.be.revertedWithCustomError(
+        pcr0Manager,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should allow role transfer and then critical multisig to update VerifyAll addresses", async function () {
@@ -351,14 +329,10 @@ describe("Governance Upgrade Tests", function () {
       const newRegistryAddress = ethers.Wallet.createRandom().address;
 
       // Critical multisig should be able to update hub address
-      await expect(
-        verifyAll.connect(securityMultisig).setHub(newHubAddress)
-      ).to.not.be.reverted;
+      await expect(verifyAll.connect(securityMultisig).setHub(newHubAddress)).to.not.be.reverted;
 
       // Critical multisig should be able to update registry address
-      await expect(
-        verifyAll.connect(securityMultisig).setRegistry(newRegistryAddress)
-      ).to.not.be.reverted;
+      await expect(verifyAll.connect(securityMultisig).setRegistry(newRegistryAddress)).to.not.be.reverted;
 
       // Verify addresses were updated correctly
       expect(await verifyAll.hub()).to.equal(newHubAddress);
@@ -372,9 +346,10 @@ describe("Governance Upgrade Tests", function () {
       const newHubAddress = ethers.Wallet.createRandom().address;
 
       // Random user should not be able to update hub address (testing access control)
-      await expect(
-        verifyAll.connect(user).setHub(newHubAddress)
-      ).to.be.revertedWithCustomError(verifyAll, "AccessControlUnauthorizedAccount");
+      await expect(verifyAll.connect(user).setHub(newHubAddress)).to.be.revertedWithCustomError(
+        verifyAll,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -398,17 +373,15 @@ describe("Governance Upgrade Tests", function () {
       const newStandardUser = user.address;
 
       // Critical multisig (admin) should be able to grant standard role
-      await expect(
-        pcr0Manager.connect(securityMultisig).grantRole(OPERATIONS_ROLE, newStandardUser)
-      ).to.not.be.reverted;
+      await expect(pcr0Manager.connect(securityMultisig).grantRole(OPERATIONS_ROLE, newStandardUser)).to.not.be
+        .reverted;
 
       // Verify role was granted successfully
       expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, newStandardUser)).to.be.true;
 
       // Critical multisig should be able to revoke role (testing full role management)
-      await expect(
-        pcr0Manager.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, newStandardUser)
-      ).to.not.be.reverted;
+      await expect(pcr0Manager.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, newStandardUser)).to.not.be
+        .reverted;
 
       // Verify role was revoked successfully
       expect(await pcr0Manager.hasRole(OPERATIONS_ROLE, newStandardUser)).to.be.false;
@@ -420,13 +393,14 @@ describe("Governance Upgrade Tests", function () {
 
       // Standard multisig should not be able to grant roles (lacks admin privileges)
       await expect(
-        pcr0Manager.connect(operationsMultisig).grantRole(OPERATIONS_ROLE, user.address)
+        pcr0Manager.connect(operationsMultisig).grantRole(OPERATIONS_ROLE, user.address),
       ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
 
       // Random user should not be able to grant roles (no privileges at all)
-      await expect(
-        pcr0Manager.connect(user).grantRole(OPERATIONS_ROLE, user.address)
-      ).to.be.revertedWithCustomError(pcr0Manager, "AccessControlUnauthorizedAccount");
+      await expect(pcr0Manager.connect(user).grantRole(OPERATIONS_ROLE, user.address)).to.be.revertedWithCustomError(
+        pcr0Manager,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -436,14 +410,10 @@ describe("Governance Upgrade Tests", function () {
       // This contract inherits from ImplRoot and exposes the upgrade functionality for testing
       const TestContract = await ethers.getContractFactory("MockImplRoot");
 
-      testProxy = await upgrades.deployProxy(
-        TestContract,
-        [],
-        {
-          kind: "uups",
-          initializer: "exposed__ImplRoot_init()"
-        }
-      );
+      testProxy = await upgrades.deployProxy(TestContract, [], {
+        kind: "uups",
+        initializer: "exposed__ImplRoot_init()",
+      });
 
       await testProxy.waitForDeployment();
     });
@@ -459,13 +429,9 @@ describe("Governance Upgrade Tests", function () {
       const NewImplementation = await ethers.getContractFactory("MockImplRoot");
 
       // The upgrade should succeed when called by critical multisig
-      const upgradeTx = await upgrades.upgradeProxy(
-        await testProxy.getAddress(),
-        NewImplementation,
-        {
-          kind: "uups"
-        }
-      );
+      const upgradeTx = await upgrades.upgradeProxy(await testProxy.getAddress(), NewImplementation, {
+        kind: "uups",
+      });
 
       await upgradeTx.waitForDeployment();
       expect(await upgradeTx.getAddress()).to.equal(await testProxy.getAddress());
@@ -481,7 +447,7 @@ describe("Governance Upgrade Tests", function () {
       // The upgrade should fail when attempted without SECURITY_ROLE
       // This tests the _authorizeUpgrade function's access control directly
       await expect(
-        testProxy.connect(operationsMultisig).exposed_authorizeUpgrade(ethers.ZeroAddress)
+        testProxy.connect(operationsMultisig).exposed_authorizeUpgrade(ethers.ZeroAddress),
       ).to.be.revertedWithCustomError(testProxy, "AccessControlUnauthorizedAccount");
     });
   });

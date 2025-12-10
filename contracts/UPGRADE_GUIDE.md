@@ -29,10 +29,10 @@ The script outputs instructions to submit to the Safe multisig. Once 3/5 signers
 
 ## Governance Roles
 
-| Role | Threshold | Purpose |
-|------|-----------|---------|
-| `SECURITY_ROLE` | 3/5 | Contract upgrades, role management |
-| `OPERATIONS_ROLE` | 2/5 | CSCA root updates, OFAC list updates |
+| Role              | Threshold | Purpose                              |
+| ----------------- | --------- | ------------------------------------ |
+| `SECURITY_ROLE`   | 3/5       | Contract upgrades, role management   |
+| `OPERATIONS_ROLE` | 2/5       | CSCA root updates, OFAC list updates |
 
 ---
 
@@ -46,6 +46,7 @@ The script outputs instructions to submit to the Safe multisig. Once 3/5 signers
 4. Add any new storage fields **at the end** of the storage struct
 
 **Example:**
+
 ```solidity
 /**
  * @title IdentityVerificationHubImplV2
@@ -73,6 +74,7 @@ npx hardhat upgrade --contract <ContractName> --network <network> --changelog "D
 ```
 
 **Options:**
+
 - `--contract` - Contract name (e.g., `IdentityVerificationHub`)
 - `--network` - Target network (`celo`, `sepolia`, `localhost`)
 - `--changelog` - Brief description of changes
@@ -95,11 +97,13 @@ The script automatically:
 ### Step 4: Multisig Approval
 
 **If you're a Safe signer:**
+
 - Script auto-proposes the transaction
 - Other signers approve in Safe UI
 - Execute once threshold (3/5) is met
 
 **If you're not a signer:**
+
 - Script outputs transaction data for manual submission
 - Copy data to Safe Transaction Builder
 - Signers approve and execute
@@ -110,14 +114,14 @@ The script automatically:
 
 The upgrade script performs these automatic checks:
 
-| Check | What it Does | Failure Behavior |
-|-------|--------------|------------------|
-| Version validation | Ensures semantic version increment | Blocks upgrade |
-| Reinitializer check | Verifies modifier matches version | Blocks upgrade |
-| Storage layout | Detects breaking storage changes | Blocks upgrade |
-| Bytecode comparison | Warns if code unchanged | Prompts confirmation |
-| Safe role verification | Confirms Safe has `SECURITY_ROLE` | Blocks upgrade |
-| Constructor check | Flags `_disableInitializers()` | Prompts confirmation |
+| Check                  | What it Does                       | Failure Behavior     |
+| ---------------------- | ---------------------------------- | -------------------- |
+| Version validation     | Ensures semantic version increment | Blocks upgrade       |
+| Reinitializer check    | Verifies modifier matches version  | Blocks upgrade       |
+| Storage layout         | Detects breaking storage changes   | Blocks upgrade       |
+| Bytecode comparison    | Warns if code unchanged            | Prompts confirmation |
+| Safe role verification | Confirms Safe has `SECURITY_ROLE`  | Blocks upgrade       |
+| Constructor check      | Flags `_disableInitializers()`     | Prompts confirmation |
 
 ---
 
@@ -184,12 +188,14 @@ If issues occur after upgrade:
 ## Environment Setup
 
 Required in `.env`:
+
 ```bash
 CELO_RPC_URL=https://forno.celo.org
 PRIVATE_KEY=0x...  # Deployer wallet (needs ETH for gas)
 ```
 
 Optional for contract verification:
+
 ```bash
 CELOSCAN_API_KEY=...
 ETHERSCAN_API_KEY=...
@@ -199,10 +205,10 @@ ETHERSCAN_API_KEY=...
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Version matches current" | Update `@custom:version` in contract |
-| "Reinitializer mismatch" | Update `reinitializer(N)` to next version |
-| "Storage layout incompatible" | Don't remove/reorder storage variables |
-| "Safe not indexed" | Submit manually via Safe UI |
-| "Bytecode unchanged" | Ensure you saved contract changes |
+| Issue                         | Solution                                  |
+| ----------------------------- | ----------------------------------------- |
+| "Version matches current"     | Update `@custom:version` in contract      |
+| "Reinitializer mismatch"      | Update `reinitializer(N)` to next version |
+| "Storage layout incompatible" | Don't remove/reorder storage variables    |
+| "Safe not indexed"            | Submit manually via Safe UI               |
+| "Bytecode unchanged"          | Ensure you saved contract changes         |

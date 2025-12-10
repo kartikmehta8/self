@@ -397,7 +397,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @notice Updates the registry address.
      * @param registryAddress The new registry address.
      */
-    function updateRegistry(bytes32 attestationId, address registryAddress) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+    function updateRegistry(
+        bytes32 attestationId,
+        address registryAddress
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
         IdentityVerificationHubStorage storage $ = _getIdentityVerificationHubStorage();
         $._registries[attestationId] = registryAddress;
         emit RegistryUpdated(attestationId, registryAddress);

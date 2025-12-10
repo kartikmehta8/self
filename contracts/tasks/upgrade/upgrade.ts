@@ -88,7 +88,7 @@ async function checkOwnerAndPropose(
   to: string,
   data: string,
   network: SupportedNetwork,
-  hre: HardhatRuntimeEnvironment
+  hre: HardhatRuntimeEnvironment,
 ): Promise<{ isOwner: boolean; proposed: boolean; safeTxHash?: string; error?: string }> {
   try {
     // Dynamic import Safe SDK
@@ -133,9 +133,7 @@ async function checkOwnerAndPropose(
       return { isOwner: false, proposed: false, error: `Could not fetch Safe info: ${errorMsg}` };
     }
 
-    const isOwner = safeInfo.owners
-      .map((o: string) => o.toLowerCase())
-      .includes(signerAddress.toLowerCase());
+    const isOwner = safeInfo.owners.map((o: string) => o.toLowerCase()).includes(signerAddress.toLowerCase());
 
     if (!isOwner) {
       return { isOwner: false, proposed: false };
@@ -286,14 +284,18 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
         log.error(`Contract file has invalid version ${contractFileVersion}`);
         const suggestions = suggestNextVersion(currentVersion);
         log.info(`Current version: ${currentVersion}`);
-        log.info(`Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`);
+        log.info(
+          `Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`,
+        );
         return;
       }
     } else {
       log.error("Contract file version matches current - update @custom:version in contract first");
       const suggestions = suggestNextVersion(currentVersion);
       log.info(`Current version: ${currentVersion}`);
-      log.info(`Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`);
+      log.info(
+        `Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`,
+      );
       return;
     }
 
@@ -314,7 +316,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     // Check if target version already exists in registry
     const targetVersionInfo = getVersionInfo(contractId, newVersion);
     const latestVersionInfo = getLatestVersionInfo(contractId);
-    
+
     // If target version exists, use its initializerVersion; otherwise increment latest
     const expectedInitializerVersion = targetVersionInfo
       ? targetVersionInfo.initializerVersion
@@ -494,22 +496,24 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     // ========================================================================
     if (dryRun) {
       log.step("DRY RUN - Skipping deployment and proposal");
-      log.box([
-        "DRY RUN SUMMARY",
-        "─".repeat(50),
-        `Contract: ${contractId}`,
-        `Version: ${currentVersion} → ${newVersion}`,
-        `Network: ${network}`,
-        `Proxy: ${proxyAddress}`,
-        "",
-        "What would happen:",
-        "1. Deploy new implementation contract",
-        "2. Update registry.json",
-        "3. Create git commit and tag",
-        prepareOnly ? "" : "4. Create Safe proposal for multisig approval",
-        "",
-        "Run without --dry-run to execute.",
-      ].filter(Boolean));
+      log.box(
+        [
+          "DRY RUN SUMMARY",
+          "─".repeat(50),
+          `Contract: ${contractId}`,
+          `Version: ${currentVersion} → ${newVersion}`,
+          `Network: ${network}`,
+          `Proxy: ${proxyAddress}`,
+          "",
+          "What would happen:",
+          "1. Deploy new implementation contract",
+          "2. Update registry.json",
+          "3. Create git commit and tag",
+          prepareOnly ? "" : "4. Create Safe proposal for multisig approval",
+          "",
+          "Run without --dry-run to execute.",
+        ].filter(Boolean),
+      );
       return;
     }
 
@@ -606,7 +610,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
         deployedAt: new Date().toISOString(),
         deployedBy: deployerAddress,
         gitCommit: "",
-      }
+      },
     );
     log.success("Registry updated");
 
@@ -650,14 +654,14 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     // Step 14: Encode initializer and detect governance pattern
     // ========================================================================
     log.step("Encoding upgrade transaction...");
-    
+
     const proxyContract = await hre.ethers.getContractAt(contractName, proxyAddress);
-    
+
     // Encode initializer function call
     let initData = "0x";
     const targetVersionInfoForInit = getVersionInfo(contractId, newVersion);
     const initializerName = targetVersionInfoForInit?.initializerFunction || `initializeV${newInitializerVersion}`;
-    
+
     try {
       const iface = proxyContract.interface;
       const initFragment = iface.getFunction(initializerName);
@@ -670,13 +674,16 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     }
 
     // Build upgrade transaction data
-    const upgradeData = proxyContract.interface.encodeFunctionData("upgradeToAndCall", [implementationAddress, initData]);
+    const upgradeData = proxyContract.interface.encodeFunctionData("upgradeToAndCall", [
+      implementationAddress,
+      initData,
+    ]);
 
     // Detect governance pattern
     log.step("Detecting contract governance pattern...");
     let isOwnableContract = false;
     let currentOwner: string | null = null;
-    
+
     // Check if contract uses Ownable or AccessControl
     try {
       const ownerFragment = proxyContract.interface.getFunction("owner");
@@ -759,7 +766,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     log.step("Verifying Safe has SECURITY_ROLE...");
     const SECURITY_ROLE = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("SECURITY_ROLE"));
     let safeHasRole = false;
-    
+
     if (isOwnableContract) {
       // Contract uses Ownable - owner must execute directly
       log.warning("⚠️  FIRST GOVERNANCE UPGRADE DETECTED");
@@ -787,7 +794,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
       ]);
       return;
     }
-    
+
     // Contract uses AccessControl - check if Safe has SECURITY_ROLE
     try {
       safeHasRole = await proxyContract.hasRole(SECURITY_ROLE, governance.securityMultisig);
@@ -824,7 +831,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
     // ========================================================================
     // Step 15: Handle Safe proposal or owner direct execution
     // ========================================================================
-    
+
     // Skip Safe proposal if this is an Ownable contract (first upgrade)
     if (isOwnableContract) {
       log.step("Skipping Safe proposal - owner must execute directly");
@@ -855,7 +862,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
       proxyAddress,
       upgradeData,
       network,
-      hre
+      hre,
     );
 
     if (result.isOwner && result.proposed) {
@@ -891,7 +898,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
         governance.securityMultisig,
         governance.securityThreshold,
         proxyAddress,
-        upgradeData
+        upgradeData,
       );
     } else {
       // Not an owner
@@ -910,7 +917,7 @@ task("upgrade", "Deploy new implementation and create Safe proposal for upgrade"
         governance.securityMultisig,
         governance.securityThreshold,
         proxyAddress,
-        upgradeData
+        upgradeData,
       );
     }
   });
@@ -927,7 +934,7 @@ function outputManualSubmissionData(
   safeAddress: string,
   threshold: string,
   proxyAddress: string,
-  upgradeData: string
+  upgradeData: string,
 ): void {
   const chainPrefix = getChainPrefix(network);
   const safeUrl = `https://app.safe.global/apps/open?safe=${chainPrefix}:${safeAddress}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`;

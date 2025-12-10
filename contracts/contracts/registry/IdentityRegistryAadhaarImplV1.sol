@@ -378,7 +378,10 @@ contract IdentityRegistryAadhaarImplV1 is IdentityRegistryAadhaarStorageV1, IIde
     /// @dev Caller must be the owner. Provides sibling nodes for proof of position.
     /// @param oldLeaf The identity commitment to remove.
     /// @param siblingNodes An array of sibling nodes for Merkle proof generation.
-    function devRemoveCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function devRemoveCommitment(
+        uint256 oldLeaf,
+        uint256[] calldata siblingNodes
+    ) external onlyProxy onlyRole(SECURITY_ROLE) {
         uint256 imt_root = _identityCommitmentIMT._remove(oldLeaf, siblingNodes);
         _rootTimestamps[imt_root] = block.timestamp;
         emit DevCommitmentRemoved(oldLeaf, imt_root, block.timestamp);

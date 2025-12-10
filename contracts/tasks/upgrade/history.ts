@@ -5,13 +5,7 @@
  */
 
 import { task, types } from "hardhat/config";
-import {
-  log,
-  readRegistry,
-  getContractDefinition,
-  compareVersions,
-  shortenAddress,
-} from "./utils";
+import { log, readRegistry, getContractDefinition, compareVersions, shortenAddress } from "./utils";
 import { CONTRACT_IDS, ContractId } from "./types";
 
 interface HistoryTaskArgs {
@@ -67,7 +61,7 @@ task("upgrade:history", "Show deployment history for a contract")
     for (const version of versionNumbers) {
       const info = versions[version];
       const isCurrent = Object.values(registry.networks).some(
-        (n) => n.deployments[contractId]?.currentVersion === version
+        (n) => n.deployments[contractId]?.currentVersion === version,
       );
 
       console.log(`\n  ${isCurrent ? "→" : " "} v${version} (Initializer v${info.initializerVersion})`);

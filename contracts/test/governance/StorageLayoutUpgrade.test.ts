@@ -1,11 +1,7 @@
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import {
-  MockOwnableHub,
-  MockUpgradedHub,
-  MockOwnableRegistry,
-} from "../../typechain-types";
+import { MockOwnableHub, MockUpgradedHub, MockOwnableRegistry } from "../../typechain-types";
 
 /**
  * ERC-7201 Namespaced Storage Upgrade Tests
@@ -51,15 +47,11 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       const MockOwnableHubFactory = await ethers.getContractFactory("MockOwnableHub");
 
       // Deploy as upgradeable proxy using OpenZeppelin
-      ownableHubProxy = await upgrades.deployProxy(
-        MockOwnableHubFactory,
-        [],
-        {
-          kind: "uups",
-          initializer: "initialize",
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"]
-        }
-      ) as unknown as MockOwnableHub;
+      ownableHubProxy = (await upgrades.deployProxy(MockOwnableHubFactory, [], {
+        kind: "uups",
+        initializer: "initialize",
+        unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"],
+      })) as unknown as MockOwnableHub;
 
       await ownableHubProxy.waitForDeployment();
       console.log(`   ✅ OLD Hub deployed at: ${await ownableHubProxy.getAddress()}`);
@@ -84,15 +76,17 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
       console.log("   📦 Deploying NEW AccessControl implementation...");
 
       // Perform the upgrade
-      upgradedHub = await upgrades.upgradeProxy(
-        await ownableHubProxy.getAddress(),
-        MockUpgradedHubFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "missing-public-upgradeto", "missing-initializer"]
-        }
-      ) as unknown as MockUpgradedHub;
+      upgradedHub = (await upgrades.upgradeProxy(await ownableHubProxy.getAddress(), MockUpgradedHubFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
+        unsafeAllow: [
+          "constructor",
+          "state-variable-immutable",
+          "state-variable-assignment",
+          "missing-public-upgradeto",
+          "missing-initializer",
+        ],
+      })) as unknown as MockUpgradedHub;
 
       console.log(`   ✅ Upgrade completed to: ${await upgradedHub.getAddress()}`);
 
@@ -122,15 +116,17 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
     it("should allow governance functions to work after upgrade", async function () {
       // Perform the upgrade first
       const MockUpgradedHubFactory = await ethers.getContractFactory("MockUpgradedHub");
-      upgradedHub = await upgrades.upgradeProxy(
-        await ownableHubProxy.getAddress(),
-        MockUpgradedHubFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "missing-public-upgradeto", "missing-initializer"]
-        }
-      ) as unknown as MockUpgradedHub;
+      upgradedHub = (await upgrades.upgradeProxy(await ownableHubProxy.getAddress(), MockUpgradedHubFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
+        unsafeAllow: [
+          "constructor",
+          "state-variable-immutable",
+          "state-variable-assignment",
+          "missing-public-upgradeto",
+          "missing-initializer",
+        ],
+      })) as unknown as MockUpgradedHub;
 
       await upgradedHub.initialize();
 
@@ -147,40 +143,46 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
     it("should prevent unauthorized access after upgrade", async function () {
       // Perform the upgrade first
       const MockUpgradedHubFactory = await ethers.getContractFactory("MockUpgradedHub");
-      upgradedHub = await upgrades.upgradeProxy(
-        await ownableHubProxy.getAddress(),
-        MockUpgradedHubFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "missing-public-upgradeto", "missing-initializer"]
-        }
-      ) as unknown as MockUpgradedHub;
+      upgradedHub = (await upgrades.upgradeProxy(await ownableHubProxy.getAddress(), MockUpgradedHubFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
+        unsafeAllow: [
+          "constructor",
+          "state-variable-immutable",
+          "state-variable-assignment",
+          "missing-public-upgradeto",
+          "missing-initializer",
+        ],
+      })) as unknown as MockUpgradedHub;
 
       await upgradedHub.initialize();
 
       // Test that unauthorized users cannot call governance functions
-      await expect(
-        upgradedHub.connect(user).updateRegistry(user.address)
-      ).to.be.revertedWithCustomError(upgradedHub, "AccessControlUnauthorizedAccount");
+      await expect(upgradedHub.connect(user).updateRegistry(user.address)).to.be.revertedWithCustomError(
+        upgradedHub,
+        "AccessControlUnauthorizedAccount",
+      );
 
-      await expect(
-        upgradedHub.connect(user).updateCircuitVersion(3)
-      ).to.be.revertedWithCustomError(upgradedHub, "AccessControlUnauthorizedAccount");
+      await expect(upgradedHub.connect(user).updateCircuitVersion(3)).to.be.revertedWithCustomError(
+        upgradedHub,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should allow role transfer to multisigs", async function () {
       // Perform the upgrade first
       const MockUpgradedHubFactory = await ethers.getContractFactory("MockUpgradedHub");
-      upgradedHub = await upgrades.upgradeProxy(
-        await ownableHubProxy.getAddress(),
-        MockUpgradedHubFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "missing-public-upgradeto", "missing-initializer"]
-        }
-      ) as unknown as MockUpgradedHub;
+      upgradedHub = (await upgrades.upgradeProxy(await ownableHubProxy.getAddress(), MockUpgradedHubFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
+        unsafeAllow: [
+          "constructor",
+          "state-variable-immutable",
+          "state-variable-assignment",
+          "missing-public-upgradeto",
+          "missing-initializer",
+        ],
+      })) as unknown as MockUpgradedHub;
 
       await upgradedHub.initialize();
 
@@ -213,15 +215,11 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
 
       // Deploy Ownable version
       const MockOwnableHubFactory = await ethers.getContractFactory("MockOwnableHub");
-      const ownableHub = await upgrades.deployProxy(
-        MockOwnableHubFactory,
-        [],
-        {
-          kind: "uups",
-          initializer: "initialize",
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"]
-        }
-      ) as unknown as MockOwnableHub;
+      const ownableHub = (await upgrades.deployProxy(MockOwnableHubFactory, [], {
+        kind: "uups",
+        initializer: "initialize",
+        unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment"],
+      })) as unknown as MockOwnableHub;
 
       await ownableHub.waitForDeployment();
 
@@ -235,15 +233,17 @@ describe("ERC-7201 Namespaced Storage Upgrade Tests", function () {
 
       // Upgrade
       const MockUpgradedHubFactory = await ethers.getContractFactory("MockUpgradedHub");
-      const upgradedHub = await upgrades.upgradeProxy(
-        await ownableHub.getAddress(),
-        MockUpgradedHubFactory,
-        {
-          kind: "uups",
-          unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
-          unsafeAllow: ["constructor", "state-variable-immutable", "state-variable-assignment", "missing-public-upgradeto", "missing-initializer"]
-        }
-      ) as unknown as MockUpgradedHub;
+      const upgradedHub = (await upgrades.upgradeProxy(await ownableHub.getAddress(), MockUpgradedHubFactory, {
+        kind: "uups",
+        unsafeSkipStorageCheck: true, // Required for test: simulates Ownable→AccessControl upgrade
+        unsafeAllow: [
+          "constructor",
+          "state-variable-immutable",
+          "state-variable-assignment",
+          "missing-public-upgradeto",
+          "missing-initializer",
+        ],
+      })) as unknown as MockUpgradedHub;
 
       await upgradedHub.initialize();
 

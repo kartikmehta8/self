@@ -21,8 +21,8 @@ describe("Upgrade Safety Validation Tests", function () {
       // Test IdentityVerificationHub storage layout validation
       const IdentityVerificationHub = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
       // OpenZeppelin's validateImplementation should pass for our contracts
@@ -30,8 +30,8 @@ describe("Upgrade Safety Validation Tests", function () {
         upgrades.validateImplementation(IdentityVerificationHub, {
           kind: "uups",
           unsafeAllowLinkedLibraries: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        })
+          unsafeAllow: ["constructor", "external-library-linking"],
+        }),
       ).to.not.be.reverted;
 
       // Deploy PoseidonT3 library for IdentityRegistry
@@ -42,21 +42,20 @@ describe("Upgrade Safety Validation Tests", function () {
       // Test IdentityRegistry storage layout validation
       const IdentityRegistry = await ethers.getContractFactory("IdentityRegistryImplV1", {
         libraries: {
-          PoseidonT3: await poseidonT3.getAddress()
-        }
+          PoseidonT3: await poseidonT3.getAddress(),
+        },
       });
       await expect(
         upgrades.validateImplementation(IdentityRegistry, {
           kind: "uups",
           unsafeAllowLinkedLibraries: true,
-          unsafeAllow: ["constructor", "external-library-linking"]
-        })
+          unsafeAllow: ["constructor", "external-library-linking"],
+        }),
       ).to.not.be.reverted;
     });
   });
 
   describe("Implementation Validation", function () {
-
     it("should validate PCR0Manager implementation", async function () {
       const PCR0Manager = await ethers.getContractFactory("PCR0Manager");
 
@@ -70,10 +69,7 @@ describe("Upgrade Safety Validation Tests", function () {
       const mockRegistry = ethers.Wallet.createRandom().address;
 
       // VerifyAll is not upgradeable, but we can still validate deployment
-      await expect(VerifyAll.deploy(
-        mockHub,
-        mockRegistry
-      )).to.not.be.reverted;
+      await expect(VerifyAll.deploy(mockHub, mockRegistry)).to.not.be.reverted;
     });
   });
 
@@ -94,25 +90,21 @@ describe("Upgrade Safety Validation Tests", function () {
       // Deploy contract with library
       const IdentityVerificationHub = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
       // Should deploy successfully with library linking
-      const proxy = await upgrades.deployProxy(
-        IdentityVerificationHub,
-        [],
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeAllowConstructors: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking", "storage-check"],
-          libraries: {
-            CustomVerifier: await customVerifier.getAddress()
-          }
-        }
-      );
+      const proxy = await upgrades.deployProxy(IdentityVerificationHub, [], {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeAllowConstructors: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking", "storage-check"],
+        libraries: {
+          CustomVerifier: await customVerifier.getAddress(),
+        },
+      });
 
       await expect(proxy.waitForDeployment()).to.not.be.reverted;
     });
@@ -157,16 +149,12 @@ describe("Upgrade Safety Validation Tests", function () {
       const TestContract = await ethers.getContractFactory("MockImplRoot");
 
       // Should deploy as UUPS proxy successfully
-      const proxy = await upgrades.deployProxy(
-        TestContract,
-        [],
-        {
-          kind: "uups",
-          initializer: "exposed__ImplRoot_init()",
-          unsafeAllowConstructors: true,
-          unsafeSkipStorageCheck: true
-        }
-      );
+      const proxy = await upgrades.deployProxy(TestContract, [], {
+        kind: "uups",
+        initializer: "exposed__ImplRoot_init()",
+        unsafeAllowConstructors: true,
+        unsafeSkipStorageCheck: true,
+      });
 
       await expect(proxy.waitForDeployment()).to.not.be.reverted;
     });
@@ -174,16 +162,12 @@ describe("Upgrade Safety Validation Tests", function () {
     it("should validate proxy admin functions work correctly", async function () {
       const TestContract = await ethers.getContractFactory("MockImplRoot");
 
-      const proxy = await upgrades.deployProxy(
-        TestContract,
-        [],
-        {
-          kind: "uups",
-          initializer: "exposed__ImplRoot_init()",
-          unsafeAllowConstructors: true,
-          unsafeSkipStorageCheck: true
-        }
-      );
+      const proxy = await upgrades.deployProxy(TestContract, [], {
+        kind: "uups",
+        initializer: "exposed__ImplRoot_init()",
+        unsafeAllowConstructors: true,
+        unsafeSkipStorageCheck: true,
+      });
 
       await proxy.waitForDeployment();
 
@@ -202,45 +186,37 @@ describe("Upgrade Safety Validation Tests", function () {
 
       const IdentityVerificationHub = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
-      const proxy = await upgrades.deployProxy(
-        IdentityVerificationHub,
-        [],
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeAllowConstructors: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking", "storage-check"],
-          libraries: {
-            CustomVerifier: await customVerifier.getAddress()
-          }
-        }
-      );
+      const proxy = await upgrades.deployProxy(IdentityVerificationHub, [], {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeAllowConstructors: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking", "storage-check"],
+        libraries: {
+          CustomVerifier: await customVerifier.getAddress(),
+        },
+      });
 
       await proxy.waitForDeployment();
 
       // Upgrade and measure gas
       const NewImplementation = await ethers.getContractFactory("IdentityVerificationHubImplV2", {
         libraries: {
-          CustomVerifier: await customVerifier.getAddress()
-        }
+          CustomVerifier: await customVerifier.getAddress(),
+        },
       });
 
-      const upgradeTx = await upgrades.upgradeProxy(
-        await proxy.getAddress(),
-        NewImplementation,
-        {
-          kind: "uups",
-          unsafeAllowLinkedLibraries: true,
-          unsafeAllowConstructors: true,
-          unsafeSkipStorageCheck: true,
-          unsafeAllow: ["constructor", "external-library-linking", "storage-check"]
-        }
-      );
+      const upgradeTx = await upgrades.upgradeProxy(await proxy.getAddress(), NewImplementation, {
+        kind: "uups",
+        unsafeAllowLinkedLibraries: true,
+        unsafeAllowConstructors: true,
+        unsafeSkipStorageCheck: true,
+        unsafeAllow: ["constructor", "external-library-linking", "storage-check"],
+      });
 
       const receipt = await upgradeTx.deploymentTransaction()?.wait();
 

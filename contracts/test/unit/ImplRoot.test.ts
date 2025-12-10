@@ -34,8 +34,10 @@ describe("ImplRoot", () => {
       await mockImplRoot.exposed__ImplRoot_init();
 
       // Then try to initialize again - this should fail
-      await expect(mockImplRoot.exposed__ImplRoot_init())
-        .to.be.revertedWithCustomError(mockImplRoot, "InvalidInitialization");
+      await expect(mockImplRoot.exposed__ImplRoot_init()).to.be.revertedWithCustomError(
+        mockImplRoot,
+        "InvalidInitialization",
+      );
     });
 
     it("should initialize with deployer having both roles", async () => {
@@ -96,9 +98,8 @@ describe("ImplRoot", () => {
     });
 
     it("should allow critical multisig to grant roles", async () => {
-      await expect(
-        initializedContract.connect(securityMultisig).grantRole(OPERATIONS_ROLE, user1.address)
-      ).to.not.be.reverted;
+      await expect(initializedContract.connect(securityMultisig).grantRole(OPERATIONS_ROLE, user1.address)).to.not.be
+        .reverted;
 
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.true;
     });
@@ -109,22 +110,21 @@ describe("ImplRoot", () => {
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.true;
 
       // Then revoke it
-      await expect(
-        initializedContract.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, user1.address)
-      ).to.not.be.reverted;
+      await expect(initializedContract.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, user1.address)).to.not.be
+        .reverted;
 
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.false;
     });
 
     it("should prevent standard multisig from granting critical role", async () => {
       await expect(
-        initializedContract.connect(operationsMultisig).grantRole(SECURITY_ROLE, user1.address)
+        initializedContract.connect(operationsMultisig).grantRole(SECURITY_ROLE, user1.address),
       ).to.be.revertedWithCustomError(initializedContract, "AccessControlUnauthorizedAccount");
     });
 
     it("should prevent unauthorized users from granting roles", async () => {
       await expect(
-        initializedContract.connect(user1).grantRole(OPERATIONS_ROLE, user1.address)
+        initializedContract.connect(user1).grantRole(OPERATIONS_ROLE, user1.address),
       ).to.be.revertedWithCustomError(initializedContract, "AccessControlUnauthorizedAccount");
     });
 
@@ -134,16 +134,14 @@ describe("ImplRoot", () => {
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.true;
 
       // User1 can renounce their own role
-      await expect(
-        initializedContract.connect(user1).renounceRole(OPERATIONS_ROLE, user1.address)
-      ).to.not.be.reverted;
+      await expect(initializedContract.connect(user1).renounceRole(OPERATIONS_ROLE, user1.address)).to.not.be.reverted;
 
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.false;
     });
 
     it("should prevent users from renouncing others' roles", async () => {
       await expect(
-        initializedContract.connect(user1).renounceRole(SECURITY_ROLE, securityMultisig.address)
+        initializedContract.connect(user1).renounceRole(SECURITY_ROLE, securityMultisig.address),
       ).to.be.revertedWithCustomError(initializedContract, "AccessControlBadConfirmation");
     });
   });
@@ -206,16 +204,14 @@ describe("ImplRoot", () => {
       await initializedContract.connect(deployer).grantRole(SECURITY_ROLE, securityMultisig.address);
 
       // Critical multisig should be able to grant OPERATIONS_ROLE
-      await expect(
-        initializedContract.connect(securityMultisig).grantRole(OPERATIONS_ROLE, user1.address)
-      ).to.not.be.reverted;
+      await expect(initializedContract.connect(securityMultisig).grantRole(OPERATIONS_ROLE, user1.address)).to.not.be
+        .reverted;
 
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.true;
 
       // Critical multisig should be able to revoke OPERATIONS_ROLE
-      await expect(
-        initializedContract.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, user1.address)
-      ).to.not.be.reverted;
+      await expect(initializedContract.connect(securityMultisig).revokeRole(OPERATIONS_ROLE, user1.address)).to.not.be
+        .reverted;
 
       expect(await initializedContract.hasRole(OPERATIONS_ROLE, user1.address)).to.be.false;
     });
@@ -244,8 +240,12 @@ describe("ImplRoot", () => {
       await contract.connect(deployer).grantRole(OPERATIONS_ROLE, operationsMultisig.address);
 
       console.log("✅ Step 3: Roles granted to multisigs");
-      console.log(`   - Critical multisig has SECURITY_ROLE: ${await contract.hasRole(SECURITY_ROLE, securityMultisig.address)}`);
-      console.log(`   - Standard multisig has OPERATIONS_ROLE: ${await contract.hasRole(OPERATIONS_ROLE, operationsMultisig.address)}`);
+      console.log(
+        `   - Critical multisig has SECURITY_ROLE: ${await contract.hasRole(SECURITY_ROLE, securityMultisig.address)}`,
+      );
+      console.log(
+        `   - Standard multisig has OPERATIONS_ROLE: ${await contract.hasRole(OPERATIONS_ROLE, operationsMultisig.address)}`,
+      );
 
       // 4. Verify multisigs can operate (check role permissions)
       expect(await contract.hasRole(SECURITY_ROLE, securityMultisig.address)).to.be.true;

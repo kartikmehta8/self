@@ -129,7 +129,10 @@ contract MigratePCR0ManagerTest is Test {
 
         // Multisigs have roles
         assertTrue(pcr0Manager.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE");
-        assertTrue(pcr0Manager.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE");
+        assertTrue(
+            pcr0Manager.hasRole(OPERATIONS_ROLE, operationsMultisig),
+            "Standard multisig missing OPERATIONS_ROLE"
+        );
 
         // Multisig can manage, deployer cannot
         vm.startPrank(securityMultisig);

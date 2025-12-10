@@ -22,10 +22,7 @@ contract VerifyAll is AccessControl {
     /// @notice Initializes the contract with hub and registry addresses
     /// @param hubAddress The address of the IdentityVerificationHub contract
     /// @param registryAddress The address of the IdentityRegistry contract
-    constructor(
-        address hubAddress,
-        address registryAddress
-    ) {
+    constructor(address hubAddress, address registryAddress) {
         hub = IIdentityVerificationHubV1(hubAddress);
         registry = IIdentityRegistryV1(registryAddress);
 

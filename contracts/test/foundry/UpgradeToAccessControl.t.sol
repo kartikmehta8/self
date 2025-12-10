@@ -208,26 +208,74 @@ contract UpgradeToAccessControlTest is Test {
         console2.log("Hub state: 4/4 variables preserved");
 
         // Passport Registry state verification (6 variables)
-        assertEq(passportRegistry.getIdentityCommitmentMerkleRoot(), preState.passportIdentityRoot, "Passport identity root changed");
-        assertEq(passportRegistry.getDscKeyCommitmentMerkleRoot(), preState.passportDscKeyRoot, "Passport DSC key root changed");
-        assertEq(passportRegistry.getPassportNoOfacRoot(), preState.passportPassportNoOfacRoot, "Passport passport# OFAC root changed");
-        assertEq(passportRegistry.getNameAndDobOfacRoot(), preState.passportNameDobOfacRoot, "Passport name+DOB OFAC root changed");
-        assertEq(passportRegistry.getNameAndYobOfacRoot(), preState.passportNameYobOfacRoot, "Passport name+YOB OFAC root changed");
+        assertEq(
+            passportRegistry.getIdentityCommitmentMerkleRoot(),
+            preState.passportIdentityRoot,
+            "Passport identity root changed"
+        );
+        assertEq(
+            passportRegistry.getDscKeyCommitmentMerkleRoot(),
+            preState.passportDscKeyRoot,
+            "Passport DSC key root changed"
+        );
+        assertEq(
+            passportRegistry.getPassportNoOfacRoot(),
+            preState.passportPassportNoOfacRoot,
+            "Passport passport# OFAC root changed"
+        );
+        assertEq(
+            passportRegistry.getNameAndDobOfacRoot(),
+            preState.passportNameDobOfacRoot,
+            "Passport name+DOB OFAC root changed"
+        );
+        assertEq(
+            passportRegistry.getNameAndYobOfacRoot(),
+            preState.passportNameYobOfacRoot,
+            "Passport name+YOB OFAC root changed"
+        );
         assertEq(passportRegistry.getCscaRoot(), preState.passportCscaRoot, "Passport CSCA root changed");
         console2.log("Passport Registry: 6/6 variables preserved");
 
         // ID Card Registry state verification (5 variables)
-        assertEq(idCardRegistry.getIdentityCommitmentMerkleRoot(), preState.idCardIdentityRoot, "ID Card identity root changed");
-        assertEq(idCardRegistry.getDscKeyCommitmentMerkleRoot(), preState.idCardDscKeyRoot, "ID Card DSC key root changed");
-        assertEq(idCardRegistry.getNameAndDobOfacRoot(), preState.idCardNameDobOfacRoot, "ID Card name+DOB OFAC root changed");
-        assertEq(idCardRegistry.getNameAndYobOfacRoot(), preState.idCardNameYobOfacRoot, "ID Card name+YOB OFAC root changed");
+        assertEq(
+            idCardRegistry.getIdentityCommitmentMerkleRoot(),
+            preState.idCardIdentityRoot,
+            "ID Card identity root changed"
+        );
+        assertEq(
+            idCardRegistry.getDscKeyCommitmentMerkleRoot(),
+            preState.idCardDscKeyRoot,
+            "ID Card DSC key root changed"
+        );
+        assertEq(
+            idCardRegistry.getNameAndDobOfacRoot(),
+            preState.idCardNameDobOfacRoot,
+            "ID Card name+DOB OFAC root changed"
+        );
+        assertEq(
+            idCardRegistry.getNameAndYobOfacRoot(),
+            preState.idCardNameYobOfacRoot,
+            "ID Card name+YOB OFAC root changed"
+        );
         assertEq(idCardRegistry.getCscaRoot(), preState.idCardCscaRoot, "ID Card CSCA root changed");
         console2.log("ID Card Registry: 5/5 variables preserved");
 
         // Aadhaar Registry state verification (3 variables)
-        assertEq(aadhaarRegistry.getIdentityCommitmentMerkleRoot(), preState.aadhaarIdentityRoot, "Aadhaar identity root changed");
-        assertEq(aadhaarRegistry.getNameAndDobOfacRoot(), preState.aadhaarNameDobOfacRoot, "Aadhaar name+DOB OFAC root changed");
-        assertEq(aadhaarRegistry.getNameAndYobOfacRoot(), preState.aadhaarNameYobOfacRoot, "Aadhaar name+YOB OFAC root changed");
+        assertEq(
+            aadhaarRegistry.getIdentityCommitmentMerkleRoot(),
+            preState.aadhaarIdentityRoot,
+            "Aadhaar identity root changed"
+        );
+        assertEq(
+            aadhaarRegistry.getNameAndDobOfacRoot(),
+            preState.aadhaarNameDobOfacRoot,
+            "Aadhaar name+DOB OFAC root changed"
+        );
+        assertEq(
+            aadhaarRegistry.getNameAndYobOfacRoot(),
+            preState.aadhaarNameYobOfacRoot,
+            "Aadhaar name+YOB OFAC root changed"
+        );
         console2.log("Aadhaar Registry: 3/3 variables preserved");
 
         console2.log("TOTAL: 18/18 state variables VERIFIED - NO storage collisions!");
@@ -276,11 +324,26 @@ contract UpgradeToAccessControlTest is Test {
 
         // Multisigs should have roles
         assertTrue(hub.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on Hub");
-        assertTrue(hub.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on Hub");
-        assertTrue(passportRegistry.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on Passport");
-        assertTrue(passportRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on Passport");
-        assertTrue(idCardRegistry.hasRole(SECURITY_ROLE, securityMultisig), "Critical multisig missing SECURITY_ROLE on ID Card");
-        assertTrue(idCardRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig), "Standard multisig missing OPERATIONS_ROLE on ID Card");
+        assertTrue(
+            hub.hasRole(OPERATIONS_ROLE, operationsMultisig),
+            "Standard multisig missing OPERATIONS_ROLE on Hub"
+        );
+        assertTrue(
+            passportRegistry.hasRole(SECURITY_ROLE, securityMultisig),
+            "Critical multisig missing SECURITY_ROLE on Passport"
+        );
+        assertTrue(
+            passportRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig),
+            "Standard multisig missing OPERATIONS_ROLE on Passport"
+        );
+        assertTrue(
+            idCardRegistry.hasRole(SECURITY_ROLE, securityMultisig),
+            "Critical multisig missing SECURITY_ROLE on ID Card"
+        );
+        assertTrue(
+            idCardRegistry.hasRole(OPERATIONS_ROLE, operationsMultisig),
+            "Standard multisig missing OPERATIONS_ROLE on ID Card"
+        );
 
         console2.log("Multisigs have full control");
         console2.log("Deployer has ZERO control");

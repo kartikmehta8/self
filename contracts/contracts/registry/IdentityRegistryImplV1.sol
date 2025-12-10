@@ -506,7 +506,10 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param oldLeaf The identity commitment to remove.
      * @param siblingNodes An array of sibling nodes for Merkle proof generation.
      */
-    function devRemoveCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function devRemoveCommitment(
+        uint256 oldLeaf,
+        uint256[] calldata siblingNodes
+    ) external onlyProxy onlyRole(SECURITY_ROLE) {
         uint256 imt_root = _removeCommitment(_identityCommitmentIMT, oldLeaf, siblingNodes);
         _rootTimestamps[imt_root] = block.timestamp;
         emit DevCommitmentRemoved(oldLeaf, imt_root, block.timestamp);
@@ -546,7 +549,10 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param oldLeaf The DSC key commitment to remove.
      * @param siblingNodes An array of sibling nodes for Merkle proof generation.
      */
-    function devRemoveDscKeyCommitment(uint256 oldLeaf, uint256[] calldata siblingNodes) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function devRemoveDscKeyCommitment(
+        uint256 oldLeaf,
+        uint256[] calldata siblingNodes
+    ) external onlyProxy onlyRole(SECURITY_ROLE) {
         uint256 imt_root = _removeCommitment(_dscKeyCommitmentIMT, oldLeaf, siblingNodes);
         emit DevDscKeyCommitmentRemoved(oldLeaf, imt_root);
     }
@@ -573,7 +579,10 @@ contract IdentityRegistryImplV1 is IdentityRegistryStorageV1, IIdentityRegistryV
      * @param dscCommitment The DSC key commitment.
      * @param state The new state of the DSC key commitment (true for registered, false for not registered).
      */
-    function devChangeDscKeyCommitmentState(uint256 dscCommitment, bool state) external onlyProxy onlyRole(SECURITY_ROLE) {
+    function devChangeDscKeyCommitmentState(
+        uint256 dscCommitment,
+        bool state
+    ) external onlyProxy onlyRole(SECURITY_ROLE) {
         _isRegisteredDscKeyCommitment[dscCommitment] = state;
         emit DevDscKeyCommitmentStateChanged(dscCommitment, state);
     }

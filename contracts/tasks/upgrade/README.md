@@ -31,12 +31,14 @@ npx hardhat upgrade \
 ```
 
 **Options:**
+
 - `--contract` - Contract to upgrade (IdentityVerificationHub, IdentityRegistry, etc.)
 - `--network` - Target network (celo, sepolia, localhost)
 - `--changelog` - Description of changes
 - `--prepare-only` - Deploy implementation without creating Safe proposal
 
 **What it does:**
+
 1. ✅ Validates `@custom:version` increment
 2. ✅ Checks `reinitializer(N)` matches expected version
 3. ✅ Validates storage layout compatibility
@@ -148,30 +150,30 @@ CELO_RPC_URL=https://...   # RPC endpoint
 
 ## Supported Contracts
 
-| Contract ID | Contract Name | Type |
-|-------------|---------------|------|
+| Contract ID               | Contract Name                 | Type       |
+| ------------------------- | ----------------------------- | ---------- |
 | `IdentityVerificationHub` | IdentityVerificationHubImplV2 | UUPS Proxy |
-| `IdentityRegistry` | IdentityRegistryImplV1 | UUPS Proxy |
-| `IdentityRegistryIdCard` | IdentityRegistryIdCardImplV1 | UUPS Proxy |
+| `IdentityRegistry`        | IdentityRegistryImplV1        | UUPS Proxy |
+| `IdentityRegistryIdCard`  | IdentityRegistryIdCardImplV1  | UUPS Proxy |
 | `IdentityRegistryAadhaar` | IdentityRegistryAadhaarImplV1 | UUPS Proxy |
 
 ## Safety Checks
 
-| Check | What it Does | Failure Behavior |
-|-------|--------------|------------------|
-| Version validation | Ensures semantic version increment | Blocks upgrade |
-| Reinitializer check | Verifies `reinitializer(N)` matches version | Blocks upgrade |
-| Storage layout | Detects breaking storage changes | Blocks upgrade |
-| Bytecode comparison | Warns if code unchanged | Prompts confirmation |
-| Safe role verification | Confirms Safe has SECURITY_ROLE | Blocks upgrade |
-| Constructor check | Flags `_disableInitializers()` | Prompts confirmation |
+| Check                  | What it Does                                | Failure Behavior     |
+| ---------------------- | ------------------------------------------- | -------------------- |
+| Version validation     | Ensures semantic version increment          | Blocks upgrade       |
+| Reinitializer check    | Verifies `reinitializer(N)` matches version | Blocks upgrade       |
+| Storage layout         | Detects breaking storage changes            | Blocks upgrade       |
+| Bytecode comparison    | Warns if code unchanged                     | Prompts confirmation |
+| Safe role verification | Confirms Safe has SECURITY_ROLE             | Blocks upgrade       |
+| Constructor check      | Flags `_disableInitializers()`              | Prompts confirmation |
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Version matches current" | Update `@custom:version` in contract |
-| "Reinitializer mismatch" | Update `reinitializer(N)` to next version |
-| "Storage layout incompatible" | Don't remove/reorder storage variables |
-| "Safe not indexed" | Submit manually via Safe UI |
-| "Bytecode unchanged" | Ensure you saved contract changes |
+| Issue                         | Solution                                  |
+| ----------------------------- | ----------------------------------------- |
+| "Version matches current"     | Update `@custom:version` in contract      |
+| "Reinitializer mismatch"      | Update `reinitializer(N)` to next version |
+| "Storage layout incompatible" | Don't remove/reorder storage variables    |
+| "Safe not indexed"            | Submit manually via Safe UI               |
+| "Bytecode unchanged"          | Ensure you saved contract changes         |

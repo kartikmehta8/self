@@ -68,5 +68,3 @@ contract MockOwnableHub is MockOwnableImplRoot {
         _circuitVersion = version;
     }
 }
-
-

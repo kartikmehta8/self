@@ -100,5 +100,3 @@ contract MockOwnableRegistry is MockOwnableImplRoot {
         return _commitments[commitment];
     }
 }
-
-

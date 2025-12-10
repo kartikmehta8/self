@@ -185,11 +185,17 @@ task("upgrade:propose", "Create Safe transaction to execute the upgrade")
     // Output raw data for copy-paste
     console.log("\n📋 Raw transaction data (copy this for Transaction Builder):");
     console.log("─".repeat(60));
-    console.log(JSON.stringify({
-      to: proxyAddress,
-      value: "0",
-      data: upgradeData,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          to: proxyAddress,
+          value: "0",
+          data: upgradeData,
+        },
+        null,
+        2,
+      ),
+    );
   });
 
 export {};

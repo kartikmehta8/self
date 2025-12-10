@@ -83,7 +83,9 @@ export const log = {
   error: (msg: string) => console.log(`${colors.red}❌${colors.reset} ${msg}`),
   step: (msg: string) => console.log(`\n${colors.magenta}🔄${colors.reset} ${colors.bold}${msg}${colors.reset}`),
   header: (msg: string) =>
-    console.log(`\n${colors.cyan}${"═".repeat(70)}${colors.reset}\n${colors.bold}${msg}${colors.reset}\n${colors.cyan}${"═".repeat(70)}${colors.reset}`),
+    console.log(
+      `\n${colors.cyan}${"═".repeat(70)}${colors.reset}\n${colors.bold}${msg}${colors.reset}\n${colors.cyan}${"═".repeat(70)}${colors.reset}`,
+    ),
   detail: (label: string, value: string) => console.log(`   ${colors.gray}${label}:${colors.reset} ${value}`),
   box: (lines: string[]) => {
     const maxLen = Math.max(...lines.map((l) => l.length));
@@ -209,7 +211,7 @@ export function addVersion(
   network: SupportedNetwork,
   version: string,
   versionInfo: Omit<VersionInfo, "deployments">,
-  deployment: VersionDeployment
+  deployment: VersionDeployment,
 ): void {
   const registry = readRegistry();
 
@@ -379,7 +381,10 @@ export function suggestNextVersion(currentVersion: string): {
 /**
  * Validate that new version is a valid increment of current version
  */
-export function validateVersionIncrement(currentVersion: string, newVersion: string): {
+export function validateVersionIncrement(
+  currentVersion: string,
+  newVersion: string,
+): {
   valid: boolean;
   type: "patch" | "minor" | "major" | null;
   error?: string;
@@ -463,7 +468,7 @@ export function readReinitializerVersion(contractPath: string): number | null {
  */
 export function validateReinitializerVersion(
   contractPath: string,
-  expectedVersion: number
+  expectedVersion: number,
 ): { valid: boolean; actual: number | null; error?: string } {
   const actual = readReinitializerVersion(contractPath);
 
@@ -499,7 +504,7 @@ export function updateContractVersion(contractPath: string, newVersion: string):
 
     // Also update version() function if it exists
     content = content.replace(/function version\(\)[^}]+return\s+"(\d+\.\d+\.\d+)"/, (match) =>
-      match.replace(/"\d+\.\d+\.\d+"/, `"${newVersion}"`)
+      match.replace(/"\d+\.\d+\.\d+"/, `"${newVersion}"`),
     );
 
     if (content !== originalContent) {

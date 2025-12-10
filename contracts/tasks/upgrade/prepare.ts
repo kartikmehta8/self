@@ -48,7 +48,12 @@ interface PrepareTaskArgs {
 
 task("upgrade:prepare", "Validate and deploy a new implementation contract")
   .addParam("contract", `Contract to upgrade (${CONTRACT_IDS.join(", ")})`, undefined, types.string)
-  .addOptionalParam("newVersion", "New version - auto-detected from contract file if not provided", undefined, types.string)
+  .addOptionalParam(
+    "newVersion",
+    "New version - auto-detected from contract file if not provided",
+    undefined,
+    types.string,
+  )
   .addOptionalParam("changelog", "Changelog entry for this version", undefined, types.string)
   .addFlag("dryRun", "Simulate the deployment without actually deploying")
   .addFlag("skipCommit", "Skip auto-commit after deployment")
@@ -116,14 +121,18 @@ task("upgrade:prepare", "Validate and deploy a new implementation contract")
           log.error(`Contract file has invalid version ${contractFileVersion}`);
           const suggestions = suggestNextVersion(currentVersion);
           log.info(`Current version: ${currentVersion}`);
-          log.info(`Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`);
+          log.info(
+            `Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`,
+          );
           return;
         }
       } else {
         log.error("Contract file version matches current - update @custom:version in contract first");
         const suggestions = suggestNextVersion(currentVersion);
         log.info(`Current version: ${currentVersion}`);
-        log.info(`Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`);
+        log.info(
+          `Valid next versions: ${suggestions.patch} (patch), ${suggestions.minor} (minor), ${suggestions.major} (major)`,
+        );
         return;
       }
     }
@@ -331,7 +340,7 @@ task("upgrade:prepare", "Validate and deploy a new implementation contract")
           deployedAt: new Date().toISOString(),
           deployedBy: deployerAddress,
           gitCommit: "", // Will be set after commit
-        }
+        },
       );
       log.success("Registry updated");
 
@@ -355,7 +364,7 @@ task("upgrade:prepare", "Validate and deploy a new implementation contract")
           try {
             createGitTag(
               `${contractId.toLowerCase()}-v${newVersion}`,
-              `${contractId} v${newVersion} - ${changelog || "Upgrade"}`
+              `${contractId} v${newVersion} - ${changelog || "Upgrade"}`,
             );
             log.success(`Created git tag: ${contractId.toLowerCase()}-v${newVersion}`);
           } catch (e) {
