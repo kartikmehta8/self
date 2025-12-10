@@ -1,6 +1,6 @@
 {
   "$schema": "./registry.schema.json",
-  "lastUpdated": "2025-12-10T05:43:58.258Z",
+  "lastUpdated": "2025-12-10T05:45:56.773Z",
   "contracts": {
     "IdentityVerificationHub": {
       "source": "IdentityVerificationHubImplV2",
@@ -55,8 +55,8 @@
         },
         "IdentityRegistryIdCard": {
           "proxy": "0xeAD1E6Ec29c1f3D33a0662f253a3a94D189566E1",
-          "currentVersion": "1.1.0",
-          "currentImpl": ""
+          "currentVersion": "1.2.0",
+          "currentImpl": "0x7d5e4b7D4c3029aF134D50642674Af8F875118a4"
         },
         "IdentityRegistryAadhaar": {
           "proxy": "0xd603Fa8C8f4694E8DD1DcE1f27C0C3fc91e32Ac4",
@@ -153,9 +153,9 @@
         "gitTag": "registry-idcard-v1.2.0",
         "deployments": {
           "celo": {
-            "impl": "",
-            "deployedAt": "",
-            "deployedBy": "",
+            "impl": "0x7d5e4b7D4c3029aF134D50642674Af8F875118a4",
+            "deployedAt": "2025-12-10T05:45:56.772Z",
+            "deployedBy": "0xCaEe7aAF115F04D836E2D362A7c07F04db436bd0",
             "gitCommit": ""
           }
         }
