@@ -1,6 +1,7 @@
 pragma circom 2.1.9;
 
 include "circomlib/circuits/bitify.circom";
+include "circomlib/circuits/babyjub.circom";
 include "../utils/kyc/constants.circom";
 include "../utils/passport/customHashers.circom";
 include "../utils/kyc/verifySignature.circom";
@@ -18,6 +19,16 @@ template REGISTER_KYC() {
     signal input R[2];
     signal input pubKey[2];
     signal input secret;
+
+    //Check if R is on the curve
+    component checkR = BabyCheck();
+    checkR.x <== R[0];
+    checkR.y <== R[1];
+
+    //Check if pubKey is on the curve
+    component checkPubKey = BabyCheck();
+    checkPubKey.x <== pubKey[0];
+    checkPubKey.y <== pubKey[1];
 
     //Calculate msg_hash
     component msg_hasher = PackBytesAndPoseidon(max_length);

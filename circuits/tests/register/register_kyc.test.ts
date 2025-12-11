@@ -15,7 +15,7 @@ describe('REGISTER KYC Circuit Tests', () => {
     this.timeout(0);
     input = await generateMockKycRegisterInput(null, true, undefined);
     circuit = await wasmTester(
-      path.join(__dirname, '../../circuits/register/register_kyc.circom'),
+      path.join(__dirname, '../../circuits/register/instances/register_selfrica.circom'),
       {
         verbose: true,
         logOutput: true,
@@ -52,7 +52,7 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   it('should not verify if the signature is invalid', async function () {
     this.timeout(0);
-    input.s = (BigInt(input.s) + BigInt(1)).toString();
+    input.s = BigInt(input.s) + BigInt(1);
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
@@ -65,7 +65,7 @@ describe('REGISTER KYC Circuit Tests', () => {
   it('should fail if data is tampered', async function () {
     this.timeout(0);
     input = await generateMockKycRegisterInput(null, true, undefined);
-    input.data_padded[5] = (Number(input.data_padded[5]) + 1).toString();
+    input.data_padded[5] = Number(input.data_padded[5]) + 1;
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
@@ -78,7 +78,7 @@ describe('REGISTER KYC Circuit Tests', () => {
   it('should fail if data is not bytes', async function () {
     this.timeout(0);
     input = await generateMockKycRegisterInput(null, true, undefined);
-    input.data_padded[5] = '8000';
+    input.data_padded[5] = 8000;
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
@@ -90,7 +90,7 @@ describe('REGISTER KYC Circuit Tests', () => {
 
   it('should fail if s is greater than subgroup order', async function () {
     this.timeout(0);
-    input.s = "2736030358979909402780800718157159386076813972158567259200215660948447373041";
+    input.s = BigInt("2736030358979909402780800718157159386076813972158567259200215660948447373041");
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
@@ -103,13 +103,42 @@ describe('REGISTER KYC Circuit Tests', () => {
   it('should fail if s is 0', async function () {
     this.timeout(0);
     input = await generateMockKycRegisterInput(null, true, undefined);
-    input.s = '0';
+    input.s = BigInt(0);
     try {
       const w = await circuit.calculateWitness(input);
       await circuit.checkConstraints(w);
       expect.fail('Expected an error but none was thrown.');
     } catch (error) {
       expect(error.message).to.include('Assert Failed');
+    }
+  });
+
+  it("should fail if R is not on the curve", async function () {
+    this.timeout(0);
+    input = await generateMockKycRegisterInput(null, true, undefined);
+    //go beyond the suborder
+    input.R[0] = BigInt(BigInt("9736030358979909402780800718157159386076813972158567259200215660948447373049") + 1n);
+    input.R[1] = BigInt(1);
+    try {
+      const w = await circuit.calculateWitness(input);
+      await circuit.checkConstraints(w);
+      expect.fail('Expected an error but none was thrown.');
+    } catch (error) {
+      expect(error.message).to.include('BabyCheck');
+    }
+  });
+
+  it("should fail if pubKey is not on the curve", async function () {
+    this.timeout(0);
+    input = await generateMockKycRegisterInput(null, true, undefined);
+    input.pubKey[0] = BigInt("2736030358979909402780800718157159386076813972158567259200215660948447373049");
+    input.pubKey[1] = BigInt("2736030358979909402780800718157159386076813972158567259200215660948447373049");
+    try {
+      const w = await circuit.calculateWitness(input);
+      await circuit.checkConstraints(w);
+      expect.fail('Expected an error but none was thrown.');
+    } catch (error) {
+      expect(error.message).to.include('BabyCheck');
     }
   });
 });
