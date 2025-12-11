@@ -54,12 +54,6 @@ template GCPJWTVerifier(
     signal input intermediate_pubkey_offset;
     signal input intermediate_pubkey_actual_size;
 
-    // x5c[2] - Root CA certificate
-    signal input root_cert[MAX_CERT_LENGTH];
-    signal input root_cert_padded_length;
-    signal input root_pubkey_offset;
-    signal input root_pubkey_actual_size;
-
     // Public keys (extracted from certificates)
     signal input leaf_pubkey[kScaled]; // From x5c[0]
     signal input intermediate_pubkey[kScaled]; // From x5c[1]
@@ -131,7 +125,8 @@ template GCPJWTVerifier(
         leaf_cert,
         leaf_pubkey_offset,
         leaf_pubkey_actual_size,
-        leaf_pubkey
+        leaf_pubkey,
+        leaf_cert_padded_length
     );
 
     // Extract and validate x5c[1] public key
@@ -139,7 +134,8 @@ template GCPJWTVerifier(
         intermediate_cert,
         intermediate_pubkey_offset,
         intermediate_pubkey_actual_size,
-        intermediate_pubkey
+        intermediate_pubkey,
+        intermediate_cert_padded_length
     );
 
     // Verify x5c[0] signature using x5c[1] public key
@@ -148,14 +144,6 @@ template GCPJWTVerifier(
         leaf_cert_padded_length,
         intermediate_pubkey,
         leaf_signature
-    );
-
-    // Extract and validate x5c[2] public key
-    ExtractAndValidatePubkey(signatureAlgorithm, n, k, MAX_CERT_LENGTH, MAX_PUBKEY_PREFIX, MAX_PUBKEY_LENGTH)(
-        root_cert,
-        root_pubkey_offset,
-        root_pubkey_actual_size,
-        root_pubkey
     );
 
     // Verify x5c[1] signature using x5c[2] public key

@@ -377,10 +377,10 @@ async function main() {
       intermediate_pubkey_actual_size: intermediateCert.pubkeyLength.toString(),
 
       // x5c[2] - Root certificate
-      root_cert: bufferToByteArray(rootCert.derPadded, MAX_CERT_LENGTH),
-      root_cert_padded_length: rootCert.paddedLength.toString(),
-      root_pubkey_offset: rootCert.pubkeyOffset.toString(),
-      root_pubkey_actual_size: rootCert.pubkeyLength.toString(),
+      // root_cert: bufferToByteArray(rootCert.derPadded, MAX_CERT_LENGTH),
+      // root_cert_padded_length: rootCert.paddedLength.toString(),
+      // root_pubkey_offset: rootCert.pubkeyOffset.toString(),
+      // root_pubkey_actual_size: rootCert.pubkeyLength.toString(),
 
       // Public keys (chunked for RSA circuit)
       leaf_pubkey: pubkeyToChunks(leafCert.publicKey),
@@ -397,9 +397,6 @@ async function main() {
       eat_nonce_0_b64_length: eatNonce0Base64url.length.toString(),
       eat_nonce_0_key_offset: eatNonce0KeyOffset.toString(),
       eat_nonce_0_value_offset: eatNonce0ValueOffset.toString(),
-
-      // EAT nonce[1] (circuit will extract value directly from payload)
-      eat_nonce_1_b64_length: eatNonce1Base64url.length.toString(),
 
       // Container image digest (circuit will extract value directly from payload)
       image_digest_length: imageDigest.length.toString(),
