@@ -45,7 +45,7 @@ interface IdCardLayoutAttributes {
   idDocument: PassportData | AadhaarData | null;
   selected: boolean;
   hidden: boolean;
-  isInactive: boolean;
+  isInactive?: boolean;
 }
 
 // This layout should be fully adaptative. I should perfectly fit in any screen size.
@@ -58,7 +58,7 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
   idDocument,
   selected,
   hidden,
-  isInactive,
+  isInactive = false,
 }) => {
   const navigation = useNavigation();
 
