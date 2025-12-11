@@ -14,11 +14,13 @@ export function brutforceSignatureAlgorithm(passportData: PassportData) {
   const parsedDsc = parseCertificateSimple(passportData.dsc);
   if (parsedDsc.signatureAlgorithm === 'ecdsa') {
     const hashAlgorithm = brutforceHashAlgorithm(passportData, 'ecdsa');
-    return {
-      signatureAlgorithm: 'ecdsa',
-      hashAlgorithm: hashAlgorithm,
-      saltLength: 0,
-    };
+    if (hashAlgorithm) {
+      return {
+        signatureAlgorithm: 'ecdsa',
+        hashAlgorithm: hashAlgorithm,
+        saltLength: 0,
+      };
+    }
   } else if (parsedDsc.signatureAlgorithm === 'rsa') {
     const hashAlgorithm = brutforceHashAlgorithm(passportData, 'rsa');
     if (hashAlgorithm) {
@@ -60,6 +62,7 @@ function brutforceHashAlgorithm(
       return hashFunction;
     }
   }
+  console.log('Failed to brutforce hash algorithm for passport', passportData.dsc, signatureAlgorithm, saltLength);
   return false;
 }
 

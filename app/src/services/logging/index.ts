@@ -17,8 +17,8 @@ const defaultConfig: configLoggerType<
   transportFunctionType<object> | transportFunctionType<object>[],
   defLvlType
 > = {
-  enabled: __DEV__ ? false : true,
-  severity: __DEV__ ? 'debug' : 'warn', //TODO configure this using remote-config
+  enabled: true, //__DEV__ ? false : true,
+  severity: 'debug', // : 'warn', //TODO configure this using remote-config
   transport: [lokiTransport as unknown as transportFunctionType<object>],
   transportOptions: {
     colors: {

@@ -90,6 +90,7 @@ export async function createKeychainOptions(
     accessible: config.accessible,
     ...(config.securityLevel && { securityLevel: config.securityLevel }),
     ...(config.accessControl && { accessControl: config.accessControl }),
+    storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
   };
 
   const getOptions: GetOptions = {
