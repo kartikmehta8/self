@@ -49,6 +49,7 @@ import type { RootStackParamList } from '@/navigation';
 import { usePassport } from '@/providers/passportDataProvider';
 import { useSettingStore } from '@/stores/settingStore';
 import useUserStore from '@/stores/userStore';
+import { isDocumentInactive } from '@/utils/documents';
 
 const HomeScreen: React.FC = () => {
   const selfClient = useSelfClient();
@@ -69,6 +70,9 @@ const HomeScreen: React.FC = () => {
   >({});
   const [loading, setLoading] = useState(true);
   const hasIncrementedOnFocus = useRef(false);
+  const [isSelectedDocumentInactive, setIsSelectedDocumentInactive] = useState<
+    boolean | null
+  >(null);
 
   const { amount: selfPoints } = usePoints();
 
@@ -108,12 +112,32 @@ const HomeScreen: React.FC = () => {
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
+
     try {
       const catalog = await loadDocumentCatalog();
       const docs = await getAllDocuments();
 
       setDocumentCatalog(catalog);
       setAllDocuments(docs);
+
+      if (catalog.selectedDocumentId) {
+        const documentData = docs[catalog.selectedDocumentId];
+
+        if (documentData) {
+          try {
+            setIsSelectedDocumentInactive(
+              await isDocumentInactive(
+                selfClient,
+                documentData.data,
+                documentData.metadata,
+              ),
+            );
+          } catch (error) {
+            // we don't want to block the home screen from loading
+            console.warn('Failed to check if document is inactive:', error);
+          }
+        }
+      }
     } catch (error) {
       console.warn('Failed to load documents:', error);
     }
@@ -254,6 +278,8 @@ const HomeScreen: React.FC = () => {
               return null;
             }
 
+            // const isInactive = await isDocumentInactive(selfClient, documentData.data, secret);
+
             return (
               <Pressable
                 key={metadata.id}
@@ -261,6 +287,7 @@ const HomeScreen: React.FC = () => {
               >
                 <IdCardLayout
                   idDocument={documentData.data}
+                  isInactive={isSelected && isSelectedDocumentInactive === true}
                   selected={isSelected}
                   hidden={true}
                 />

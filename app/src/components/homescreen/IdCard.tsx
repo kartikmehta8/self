@@ -4,19 +4,23 @@
 
 import type { FC } from 'react';
 import React from 'react';
-import { Dimensions } from 'react-native';
+import { Alert, Dimensions, Pressable } from 'react-native';
 import { Separator, Text, XStack, YStack } from 'tamagui';
+import { useNavigation } from '@react-navigation/native';
 
 import type { AadhaarData } from '@selfxyz/common';
 import type { PassportData } from '@selfxyz/common/types/passport';
 import { isAadhaarDocument, isMRZDocument } from '@selfxyz/common/utils/types';
+import { WarningTriangleIcon } from '@selfxyz/euclid/dist/components/icons/WarningTriangleIcon';
 import {
   black,
+  red600,
   slate100,
   slate300,
   slate400,
   slate500,
   white,
+  yellow500,
 } from '@selfxyz/mobile-sdk-alpha/constants/colors';
 import { dinot, plexMono } from '@selfxyz/mobile-sdk-alpha/constants/fonts';
 import AadhaarIcon from '@selfxyz/mobile-sdk-alpha/svgs/icons/aadhaar.svg';
@@ -41,6 +45,7 @@ interface IdCardLayoutAttributes {
   idDocument: PassportData | AadhaarData | null;
   selected: boolean;
   hidden: boolean;
+  isInactive: boolean;
 }
 
 // This layout should be fully adaptative. I should perfectly fit in any screen size.
@@ -53,7 +58,10 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
   idDocument,
   selected,
   hidden,
+  isInactive,
 }) => {
+  const navigation = useNavigation();
+
   // Early return if document is null
   if (!idDocument) {
     return null;
@@ -96,6 +104,54 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
       alignItems="center"
       justifyContent="center"
     >
+      {isInactive && (
+        <Pressable
+          style={{ width: '100%', marginBottom: 16 }}
+          onPress={() => {
+            switch (idDocument.documentCategory) {
+              case 'passport':
+              case 'id_card':
+                navigation.navigate('DocumentOnboarding');
+                break;
+              case 'aadhaar':
+                navigation.navigate('AadhaarUpload', { countryCode: 'IND' });
+                break;
+              default:
+                navigation.navigate('CountryPicker');
+                break;
+            }
+          }}
+        >
+          <XStack
+            backgroundColor={red600}
+            borderRadius={8}
+            padding={16}
+            gap={16}
+          >
+            <YStack padding={8} backgroundColor={white} borderRadius={8}>
+              <WarningTriangleIcon color={yellow500} />
+            </YStack>
+            <YStack gap={4}>
+              <Text
+                color={white}
+                fontFamily={dinot}
+                fontSize={16}
+                fontWeight="500"
+              >
+                Your document is inactive
+              </Text>
+              <Text
+                color={white}
+                fontFamily={dinot}
+                fontSize={14}
+                fontWeight="400"
+              >
+                Tap here to recover your ID
+              </Text>
+            </YStack>
+          </XStack>
+        </Pressable>
+      )}
       <YStack
         width={cardWidth}
         height={cardHeight}
@@ -174,6 +230,29 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
                   letterSpacing={fontSize.xsmall * 0.15}
                 >
                   DEVELOPER
+                </Text>
+              </YStack>
+            )}
+
+            {isInactive && (
+              <YStack
+                marginTop={padding / 4}
+                marginLeft={padding / 2}
+                borderWidth={1}
+                borderColor={red600}
+                backgroundColor={red600}
+                borderRadius={100}
+                paddingHorizontal={padding / 2}
+                alignSelf="flex-start"
+                paddingVertical={padding / 8}
+              >
+                <Text
+                  fontSize={fontSize.xsmall}
+                  color={white}
+                  fontFamily={dinot}
+                  letterSpacing={fontSize.xsmall * 0.15}
+                >
+                  INACTIVE
                 </Text>
               </YStack>
             )}

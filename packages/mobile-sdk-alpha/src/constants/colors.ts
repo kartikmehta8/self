@@ -26,6 +26,8 @@ export const neutral700 = '#404040';
 
 export const red500 = '#EF4444';
 
+export const red600 = '#DC2626';
+
 export const separatorColor = '#E0E0E0';
 
 export const sky500 = '#0EA5E9';
