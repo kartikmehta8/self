@@ -18,7 +18,6 @@ template REGISTER_KYC() {
     signal input R[2];
     signal input pubKey[2];
     signal input secret;
-    signal input attestation_id;
 
     //Calculate msg_hash
     component msg_hasher = PackBytesAndPoseidon(max_length);
@@ -43,4 +42,5 @@ template REGISTER_KYC() {
     signal output commitment <== Poseidon(2)([secret, msg_hasher.out]);
 
     signal output pubkey_hash <== Poseidon(2)([verifyIdCommSig.Ax, verifyIdCommSig.Ay]);
+    signal output attestation_id <== 4;
 }

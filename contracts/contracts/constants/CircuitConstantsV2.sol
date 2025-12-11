@@ -60,10 +60,10 @@ library CircuitConstantsV2 {
     /**
      * @notice Index to access the pubkey commitment in the Selfrica circuit public signals.
      */
-    uint256 constant SELFRICA_NULLIFIER_INDEX = 1;
-    uint256 constant SELFRICA_COMMITMENT_INDEX = 2;
-    uint256 constant SELFRICA_PUBKEY_COMMITMENT_INDEX = 3;
-    uint256 constant SELFRICA_PUBKEY_COMMITMENT_INDEX_DISCLOSE = 16;
+    uint256 constant SELFRICA_NULLIFIER_INDEX = 0;
+    uint256 constant SELFRICA_COMMITMENT_INDEX = 1;
+    uint256 constant SELFRICA_PUBKEY_COMMITMENT_INDEX = 2;
+    uint256 constant SELFRICA_ATTESTATION_ID_INDEX = 3;
 
     // -------------------------------------
     // VC and Disclose Circuit Constants
@@ -154,13 +154,13 @@ library CircuitConstantsV2 {
                     revealedDataPackedIndex: 0,
                     forbiddenCountriesListPackedIndex: 11,
                     nullifierIndex: 15,
-                    attestationIdIndex: 29,
-                    merkleRootIndex: 17,
-                    currentDateIndex: 21,
-                    namedobSmtRootIndex: 18,
-                    nameyobSmtRootIndex: 19,
-                    scopeIndex: 16,
-                    userIdentifierIndex: 20,
+                    attestationIdIndex: 16,
+                    merkleRootIndex: 18,
+                    currentDateIndex: 22,
+                    namedobSmtRootIndex: 19,
+                    nameyobSmtRootIndex: 20,
+                    scopeIndex: 17,
+                    userIdentifierIndex: 21,
                     passportNoSmtRootIndex: 99
                 });
         } else {

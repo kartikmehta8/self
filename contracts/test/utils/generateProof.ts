@@ -204,7 +204,7 @@ export async function generateRegisterAadhaarProof(
 export async function generateRegisterSelfricaProof(
   secret: string,
   //return type of prepareAadhaarTestData
-  inputs: ReturnType<typeof generateMockKycRegisterInput>,
+  inputs: Awaited<ReturnType<typeof generateMockKycRegisterInput>>,
 ): Promise<GenericProofStructStruct> {
   const circuitName = "register_selfrica";
 

@@ -78,8 +78,6 @@ template VC_AND_DISCLOSE_KYC(
     signal input majority_age_ASCII[3];
     signal input secret;
 
-    signal input attestation_id;
-
     // Convert the two decimal inputs back to bit array
     signal disclose_sel[max_length];
 
@@ -135,4 +133,5 @@ template VC_AND_DISCLOSE_KYC(
     var forbidden_countries_list_packed_chunk_length = computeIntChunkLength(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH * country_length);
     signal output forbidden_countries_list_packed[forbidden_countries_list_packed_chunk_length] <== disclose_circuit.forbidden_countries_list_packed;
     signal output nullifier <== Poseidon(2)([secret, scope]);
+    signal output attestation_id <== 4;
 }

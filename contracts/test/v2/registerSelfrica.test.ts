@@ -80,7 +80,7 @@ describe("Selfrica Registration test", function () {
       await deployedActors.registrySelfrica.updateGCPJWTVerifier(mockVerifier.target);
 
       // Get the pubkey commitment from the register proof and pack as hex
-      const pubkeyCommitment = registerProof.pubSignals[registerProof.pubSignals.length - 1];
+      const pubkeyCommitment = registerProof.pubSignals[registerProof.pubSignals.length - 2];
       const [p0, p1, p2] = packUint256ToHexFields(BigInt(pubkeyCommitment));
 
       // Test image hash that unpacks to: d2221a0ee83901980c607ceff2edbedf3f6ce5f437eafa5d89be39e9e7487c04
@@ -127,7 +127,7 @@ describe("Selfrica Registration test", function () {
         "CommitmentRegistered",
       );
 
-      const isRegistered = await deployedActors.registrySelfrica.nullifiers(registerProof.pubSignals[1]);
+      const isRegistered = await deployedActors.registrySelfrica.nullifiers(registerProof.pubSignals[0]);
       expect(isRegistered).to.be.true;
     });
 
@@ -178,7 +178,7 @@ describe("Selfrica Registration test", function () {
 
     it("should fail with InvalidPubkeyCommitment when pubkey commitment is not registered", async () => {
       const newRegisterProof = structuredClone(registerProof);
-      newRegisterProof.pubSignals[3] = 0n;
+      newRegisterProof.pubSignals[2] = 0n;
 
       await expect(
         deployedActors.hub.registerCommitment(attestationIdBytes32, 0n, newRegisterProof),
