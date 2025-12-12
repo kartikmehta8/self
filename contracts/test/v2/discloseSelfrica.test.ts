@@ -14,7 +14,7 @@ import { poseidon2 } from "poseidon-lite";
 
 // Selfrica circuit indices - matches CircuitConstantsV2.getDiscloseIndices(SELFRICA_ID_CARD)
 // See CircuitConstantsV2.sol for full layout documentation
-const SELFRICA_CURRENT_DATE_INDEX = 22;
+const SELFRICA_CURRENT_DATE_INDEX = 21;
 
 describe("Self Verification Flow V2 - Selfrica", () => {
   let deployedActors: DeployedActorsV2;
@@ -304,7 +304,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // scopeIndex for Selfrica is 16
-      clonedPubSignal[17] = 1n;
+      clonedPubSignal[16] = 1n;
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],
@@ -355,7 +355,7 @@ describe("Self Verification Flow V2 - Selfrica", () => {
 
       const clonedPubSignal = structuredClone(baseVcAndDiscloseProof.pubSignals);
       // userIdentifierIndex for Selfrica is 20
-      clonedPubSignal[21] = 1n;
+      clonedPubSignal[20] = 1n;
 
       const encodedProof = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[] pubSignals)"],

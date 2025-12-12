@@ -154,13 +154,13 @@ library CircuitConstantsV2 {
                     revealedDataPackedIndex: 0,
                     forbiddenCountriesListPackedIndex: 11,
                     nullifierIndex: 15,
-                    attestationIdIndex: 16,
-                    merkleRootIndex: 18,
-                    currentDateIndex: 22,
-                    namedobSmtRootIndex: 19,
-                    nameyobSmtRootIndex: 20,
-                    scopeIndex: 17,
-                    userIdentifierIndex: 21,
+                    attestationIdIndex: 29,
+                    merkleRootIndex: 17,
+                    currentDateIndex: 21,
+                    namedobSmtRootIndex: 18,
+                    nameyobSmtRootIndex: 19,
+                    scopeIndex: 16,
+                    userIdentifierIndex: 20,
                     passportNoSmtRootIndex: 99
                 });
         } else {

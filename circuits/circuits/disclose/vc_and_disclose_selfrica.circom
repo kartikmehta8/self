@@ -9,6 +9,7 @@ component main {
         ofac_name_dob_smt_root,
         ofac_name_yob_smt_root,
         user_identifier,
-        current_date
+        current_date,
+        attestation_id
     ]
 } = VC_AND_DISCLOSE_KYC(40, 64, 64, 33);
