@@ -3,7 +3,7 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Linking, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Image, Text, View, XStack, YStack, ZStack } from 'tamagui';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -30,6 +30,9 @@ import LogoInversed from '@/assets/images/logo_inversed.svg';
 import MajongImage from '@/assets/images/majong.png';
 import { PointHistoryList } from '@/components/PointHistoryList';
 import { appsUrl } from '@/consts/links';
+
+// TODO: Replace with actual X campaign URL
+const X_CAMPAIGN_URL = 'https://x.com/selfxyz';
 import { useIncomingPoints, usePoints } from '@/hooks/usePoints';
 import { usePointsGuardrail } from '@/hooks/usePointsGuardrail';
 import type { RootStackParamList } from '@/navigation';
@@ -393,6 +396,26 @@ const Points: React.FC = () => {
       )}
       <Pressable
         onPress={() => {
+          Linking.openURL(X_CAMPAIGN_URL);
+        }}
+      >
+        <YStack style={styles.campaignCard}>
+          <ZStack style={styles.campaignImageContainer}>
+            <Image source={MajongImage} style={styles.campaignImage} />
+            <StarBlackIcon
+              width={24}
+              height={24}
+              style={styles.campaignStarIcon}
+            />
+          </ZStack>
+          <YStack padding={16} paddingBottom={32} gap={10}>
+          <Text style={styles.campaignTitle}>New Year's  Points Booster is live!</Text>
+          <Text style={styles.campaignLink}>Learn more</Text>
+          </YStack>
+        </YStack>
+      </Pressable>
+      <Pressable
+        onPress={() => {
           selfClient.trackEvent(PointEvents.EARN_REFERRAL);
           navigation.navigate('Referral');
         }}
@@ -561,6 +584,39 @@ const styles = StyleSheet.create({
     color: black,
   },
   referralLink: {
+    fontFamily: dinot,
+    fontSize: 16,
+    color: blue600,
+  },
+  campaignCard: {
+    height: 270,
+    backgroundColor: white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: slate200,
+  },
+  campaignImageContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: slate200,
+    height: 170,
+  },
+  campaignImage: {
+    width: '80%',
+    height: '100%',
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  campaignStarIcon: {
+    marginLeft: 16,
+    marginTop: 16,
+  },
+  campaignTitle: {
+    fontFamily: dinot,
+    fontSize: 16,
+    color: black,
+  },
+  campaignLink: {
     fontFamily: dinot,
     fontSize: 16,
     color: blue600,
