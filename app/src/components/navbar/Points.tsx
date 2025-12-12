@@ -30,9 +30,6 @@ import LogoInversed from '@/assets/images/logo_inversed.svg';
 import MajongImage from '@/assets/images/majong.png';
 import { PointHistoryList } from '@/components/PointHistoryList';
 import { appsUrl } from '@/consts/links';
-
-// TODO: Replace with actual X campaign URL
-const X_CAMPAIGN_URL = 'https://x.com/selfxyz';
 import { useIncomingPoints, usePoints } from '@/hooks/usePoints';
 import { usePointsGuardrail } from '@/hooks/usePointsGuardrail';
 import type { RootStackParamList } from '@/navigation';
@@ -51,6 +48,9 @@ import {
 import { usePointEventStore } from '@/stores/pointEventStore';
 import { useSettingStore } from '@/stores/settingStore';
 import { registerModalCallbacks } from '@/utils/modalCallbackRegistry';
+
+// TODO: Replace with actual X campaign URL
+const X_CAMPAIGN_URL = 'https://x.com/selfxyz';
 
 const Points: React.FC = () => {
   const selfClient = useSelfClient();
@@ -409,8 +409,10 @@ const Points: React.FC = () => {
             />
           </ZStack>
           <YStack padding={16} paddingBottom={32} gap={10}>
-          <Text style={styles.campaignTitle}>New Year's  Points Booster is live!</Text>
-          <Text style={styles.campaignLink}>Learn more</Text>
+            <Text style={styles.campaignTitle}>
+              New Year's Points Booster is live!
+            </Text>
+            <Text style={styles.campaignLink}>Learn more</Text>
           </YStack>
         </YStack>
       </Pressable>
