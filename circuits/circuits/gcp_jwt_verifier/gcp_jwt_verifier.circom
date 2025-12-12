@@ -68,7 +68,7 @@ template GCPJWTVerifier(
     // GCP spec: nonce must be 10-74 bytes decoded
     // https://cloud.google.com/confidential-computing/confidential-space/docs/connect-external-resources
     // EAT nonce (payload.eat_nonce[0])
-    var MAX_EAT_NONCE_B64_LENGTH = 74; // Max length for base64url string (74 bytes decoded = 99 b64url chars)
+    var MAX_EAT_NONCE_B64_LENGTH = 99; // Max length for base64url string (74 bytes decoded = 99 b64url chars)
     var MAX_EAT_NONCE_KEY_LENGTH = 10; // Length of "eat_nonce" key (without quotes)
 	var EAT_NONCE_PACKED_CHUNKS = computeIntChunkLength(MAX_EAT_NONCE_B64_LENGTH);
     signal input eat_nonce_0_b64_length; // Length of base64url string
