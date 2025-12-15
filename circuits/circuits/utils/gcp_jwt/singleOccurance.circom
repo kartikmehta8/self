@@ -7,17 +7,17 @@ template SingleOccurance(inputLength, wordLength) {
   signal input word[wordLength];
 
   // stores the matches cumulatively in a window
-  signal match[inputLength - wordLength][wordLength + 1];
+  signal match[inputLength - wordLength + 1][wordLength + 1];
   // equality for each letter match, used in the previous variable
-  signal equals[inputLength - wordLength][wordLength];
+  signal equals[inputLength - wordLength + 1][wordLength];
   // is equal for each window/word match
-  signal matches[inputLength - wordLength];
+  signal matches[inputLength - wordLength + 1];
   // stores the total number of matches
-  signal count[inputLength - wordLength + 1];
+  signal count[inputLength - wordLength + 2];
 
   count[0] <== 0;
 
-  for (var i = 0; i < inputLength - wordLength; i++) {
+  for (var i = 0; i <= inputLength - wordLength; i++) {
     match[i][0] <== 0;
     for (var j = 1; j <= wordLength; j++) {
       equals[i][j - 1] <== IsEqual()([in[i + j - 1], word[j - 1]]);
@@ -27,5 +27,5 @@ template SingleOccurance(inputLength, wordLength) {
     count[i + 1] <== count[i] + matches[i];
   }
 
-  1 === count[inputLength - wordLength];
+  1 === count[inputLength - wordLength + 1];
 }
