@@ -5,17 +5,34 @@ on:
       - dev
       - staging
       - main
-    paths:
-      - "contracts/**"
-      - "common/**"
+
+jobs:
+  detect_changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      contracts_changed: ${{ steps.changes.outputs.contracts_changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            contracts_changed:
+              - 'contracts/**'
+              - 'common/**'
 
 concurrency:
   group: contracts-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
   test_contracts:
-    if: github.event.pull_request.draft == false
+    needs: detect_changes
+    if: github.event.pull_request.draft == false && (needs.detect_changes.outputs.contracts_changed == 'true' || (github.base_ref == 'main' && github.head_ref == 'staging'))
     runs-on: ubuntu-latest
     environment: development
     steps:

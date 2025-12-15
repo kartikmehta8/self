@@ -5,11 +5,28 @@ on:
       - dev
       - staging
       - main
-    paths:
-      - "circuits/**"
 jobs:
+  detect_changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      circuits_changed: ${{ steps.changes.outputs.circuits_changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            circuits_changed:
+              - 'circuits/**'
+
   run_circuit_tests:
-    if: github.event.pull_request.draft == false
+    needs: detect_changes
+    if: github.event.pull_request.draft == false && (needs.detect_changes.outputs.circuits_changed == 'true' || (github.base_ref == 'main' && github.head_ref == 'staging'))
     runs-on: ubuntu-latest
     environment: development
     permissions:
