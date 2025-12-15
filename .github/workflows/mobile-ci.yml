@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   build-deps:
-    runs-on: ["self-hosted","selfxyz-org","ubuntu-22-04"]
+    runs-on: ["self-hosted","selfxyz-org","ubuntu-24-04"]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -406,7 +406,7 @@ jobs:
         working-directory: ./app
 
   build-android:
-    runs-on: ["self-hosted","selfxyz-org","ubuntu-22-04"]
+    runs-on: ["self-hosted","selfxyz-org","ubuntu-24-04"]
     needs: build-deps
     timeout-minutes: 60
     steps:
