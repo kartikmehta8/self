@@ -1,5 +1,14 @@
 // Re-export commonly used constants from constants.ts for optimal tree shaking
 export type { Country3LetterCode } from './constants.js';
+
+// Re-export chain configurations and utilities
+export type { ChainConfig } from './chains.js';
+export {
+  CHAIN_CONFIG,
+  getChainByEndpointType,
+  getChainIdFromEndpointType,
+  isOnchainEndpointType,
+} from './chains.js';
 export {
   API_URL,
   API_URL_STAGING,
