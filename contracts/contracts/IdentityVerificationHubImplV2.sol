@@ -622,6 +622,8 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @return output The formatted verification output.
      * @return destChainId The destination chain identifier.
      * @return userDataToPass The remaining user data to pass through.
+     * @return configId The configuration identifier.
+     * @return userIdentifier The user identifier.
      */
     function _executeVerificationFlow(
         SelfStructs.HubInputHeader memory header,
@@ -916,6 +918,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
     /**
      * @notice Performs scope validation
+     * @dev Validates that the scope in the header matches the scope in the proof
+     * @param headerScope The scope value from the header
+     * @param vcAndDiscloseProof The VC and Disclose proof containing the scope
+     * @param indices The circuit-specific indices for extracting the scope from proof
      */
     function _performScopeCheck(
         uint256 headerScope,
