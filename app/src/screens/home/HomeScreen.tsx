@@ -126,11 +126,7 @@ const HomeScreen: React.FC = () => {
         if (documentData) {
           try {
             setIsSelectedDocumentInactive(
-              await isDocumentInactive(
-                selfClient,
-                documentData.data,
-                documentData.metadata,
-              ),
+              isDocumentInactive(documentData.metadata),
             );
           } catch (error) {
             // we don't want to block the home screen from loading

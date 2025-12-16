@@ -3,8 +3,8 @@
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
 import type { FC } from 'react';
-import React from 'react';
-import { Alert, Dimensions, Pressable } from 'react-native';
+import React, { useCallback } from 'react';
+import { Dimensions, Pressable, StyleSheet } from 'react-native';
 import { Separator, Text, XStack, YStack } from 'tamagui';
 import { useNavigation } from '@react-navigation/native';
 
@@ -33,6 +33,7 @@ import {
   getDocumentAttributes,
   getNameAndSurname,
 } from '@/utils/documentAttributes';
+import { registerModalCallbacks } from '@/utils/modalCallbackRegistry';
 
 // Import the logo SVG as a string
 const logoSvg = `<svg width="47" height="46" viewBox="0 0 47 46" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -61,6 +62,33 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
   isInactive = false,
 }) => {
   const navigation = useNavigation();
+  const navigateToDocumentOnboarding = useCallback(() => {
+    switch (idDocument?.documentCategory) {
+      case 'passport':
+      case 'id_card':
+        navigation.navigate('DocumentOnboarding');
+        break;
+      case 'aadhaar':
+        navigation.navigate('AadhaarUpload', { countryCode: 'IND' });
+        break;
+    }
+  }, [idDocument?.documentCategory, navigation]);
+
+  const handleInactivePress = useCallback(() => {
+    const callbackId = registerModalCallbacks({
+      onButtonPress: navigateToDocumentOnboarding,
+      onModalDismiss: () => {},
+    });
+
+    navigation.navigate('Modal', {
+      titleText: 'Your ID needs to be reactivated to continue',
+      bodyText:
+        'Make sure that you have your document and recovery method ready.',
+      buttonText: 'Continue',
+      secondaryButtonText: 'Not now',
+      callbackId,
+    });
+  }, [navigateToDocumentOnboarding, navigation]);
 
   // Early return if document is null
   if (!idDocument) {
@@ -106,21 +134,8 @@ const IdCardLayout: FC<IdCardLayoutAttributes> = ({
     >
       {isInactive && (
         <Pressable
-          style={{ width: '100%', marginBottom: 16 }}
-          onPress={() => {
-            switch (idDocument.documentCategory) {
-              case 'passport':
-              case 'id_card':
-                navigation.navigate('DocumentOnboarding');
-                break;
-              case 'aadhaar':
-                navigation.navigate('AadhaarUpload', { countryCode: 'IND' });
-                break;
-              default:
-                navigation.navigate('CountryPicker');
-                break;
-            }
-          }}
+          style={styles.inactiveWarningContainer}
+          onPress={handleInactivePress}
         >
           <XStack
             backgroundColor={red600}
@@ -600,3 +615,10 @@ const IdAttribute: FC<IdAttributeProps> = ({
 };
 
 export default IdCardLayout;
+
+const styles = StyleSheet.create({
+  inactiveWarningContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+});

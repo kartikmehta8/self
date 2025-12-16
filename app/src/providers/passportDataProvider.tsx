@@ -811,20 +811,25 @@ export async function storeDocumentWithDeduplication(
   // Store new document using contentHash as service name
   await storeDocumentDirectlyToKeychain(contentHash, passportData);
 
+  const documentCategory =
+    passportData.documentCategory ||
+    inferDocumentCategory(
+      (passportData as PassportData | AadhaarData).documentType,
+    );
+
   // Add to catalog
   const metadata: DocumentMetadata = {
     id: contentHash,
     documentType: passportData.documentType,
-    documentCategory:
-      passportData.documentCategory ||
-      inferDocumentCategory(
-        (passportData as PassportData | AadhaarData).documentType,
-      ),
+    documentCategory,
     data: isMRZDocument(passportData)
       ? (passportData as PassportData).mrz
       : (passportData as AadhaarData).qrData || '', // Store MRZ for passports/IDs, relevant data for aadhaar
     mock: passportData.mock || false,
     isRegistered: false,
+    hasExpirationDate:
+      documentCategory === 'id_card' ||
+      documentCategory === 'passport',
   };
 
   catalog.documents.push(metadata);
