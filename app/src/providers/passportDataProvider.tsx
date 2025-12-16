@@ -828,8 +828,7 @@ export async function storeDocumentWithDeduplication(
     mock: passportData.mock || false,
     isRegistered: false,
     hasExpirationDate:
-      documentCategory === 'id_card' ||
-      documentCategory === 'passport',
+      documentCategory === 'id_card' || documentCategory === 'passport',
   };
 
   catalog.documents.push(metadata);

@@ -38,7 +38,11 @@ import WarningIcon from '@/assets/icons/warning.svg';
 import type { RootStackParamList } from '@/navigation';
 import { navigationScreens } from '@/navigation';
 import { unsafe_clearSecrets } from '@/providers/authProvider';
-import { usePassport } from '@/providers/passportDataProvider';
+import {
+  loadDocumentCatalogDirectlyFromKeychain,
+  saveDocumentCatalogDirectlyToKeychain,
+  usePassport,
+} from '@/providers/passportDataProvider';
 import {
   isNotificationSystemReady,
   requestNotificationPermission,
@@ -513,6 +517,32 @@ const DevSettingsScreen: React.FC<DevSettingsScreenProps> = ({}) => {
     );
   };
 
+  const handleRemoveExpirationDateFlagPress = () => {
+    Alert.alert(
+      'Remove Expiration Date Flag',
+      'Are you sure you want to remove the expiration date flag for the current (selected) document?.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const catalog = await loadDocumentCatalogDirectlyFromKeychain();
+            const selectedDocumentId = catalog.selectedDocumentId;
+            const selectedDocument = catalog.documents.find(
+              document => document.id === selectedDocumentId,
+            );
+
+            if (selectedDocument) {
+              delete selectedDocument.hasExpirationDate;
+
+              await saveDocumentCatalogDirectlyToKeychain(catalog);
+            }
+          },
+        },
+      ],
+    );
+  };
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <YStack
@@ -698,6 +728,11 @@ const DevSettingsScreen: React.FC<DevSettingsScreenProps> = ({}) => {
             {
               label: 'Clear backup events',
               onPress: handleClearBackupEventsPress,
+              dangerTheme: true,
+            },
+            {
+              label: 'Remove expiration date flag',
+              onPress: handleRemoveExpirationDateFlagPress,
               dangerTheme: true,
             },
           ].map(({ label, onPress, dangerTheme }) => (

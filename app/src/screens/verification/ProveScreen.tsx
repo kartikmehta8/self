@@ -21,7 +21,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 
-import { isMRZDocument } from '@selfxyz/common';
+import { isMRZDocument, type DocumentMetadata } from '@selfxyz/common';
 import type { SelfAppDisclosureConfig } from '@selfxyz/common/utils/appType';
 import { formatEndpoint } from '@selfxyz/common/utils/scope';
 import { loadSelectedDocument, useSelfClient } from '@selfxyz/mobile-sdk-alpha';
@@ -53,6 +53,8 @@ import {
   checkDocumentExpiration,
   getDocumentAttributes,
 } from '@/utils/documentAttributes';
+import { registerModalCallbacks } from '@/utils';
+import { isDocumentInactive } from '@/utils/documents';
 import { formatUserId } from '@/utils/formatUserId';
 
 const ProveScreen: React.FC = () => {
@@ -73,6 +75,9 @@ const ProveScreen: React.FC = () => {
   const isDocumentExpiredRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const [hasCheckedForInactiveDocument, setHasCheckedForInactiveDocument] =
+    useState<boolean>(false);
+
   const isContentShorterThanScrollView = useMemo(
     () => scrollViewContentHeight <= scrollViewHeight,
     [scrollViewContentHeight, scrollViewHeight],
@@ -83,8 +88,70 @@ const ProveScreen: React.FC = () => {
 
   const { addProofHistory } = useProofHistoryStore();
   const { loadDocumentCatalog } = usePassport();
+  const navigateToDocumentOnboarding = useCallback(
+    (documentMetadata: DocumentMetadata) => {
+      switch (documentMetadata.documentCategory) {
+        case 'passport':
+        case 'id_card':
+          navigate('DocumentOnboarding');
+          break;
+        case 'aadhaar':
+          navigate('AadhaarUpload', { countryCode: 'IND' });
+          break;
+      }
+    },
+    [navigate],
+  );
 
   useEffect(() => {
+    // Don't check twice
+    if (hasCheckedForInactiveDocument) {
+      return;
+    }
+
+    const checkForInactiveDocument = async () => {
+      const catalog = await loadDocumentCatalog();
+      const selectedDocumentId = catalog.selectedDocumentId;
+
+      for (const documentMetadata of catalog.documents) {
+        if (
+          documentMetadata.id === selectedDocumentId &&
+          isDocumentInactive(documentMetadata)
+        ) {
+          const callbackId = registerModalCallbacks({
+            onButtonPress: () => navigateToDocumentOnboarding(documentMetadata),
+            onModalDismiss: () => navigate('Home' as never),
+          });
+
+          navigate('Modal', {
+            titleText: 'Your ID needs to be reactivated to continue',
+            bodyText:
+              'Make sure that you have your document and recovery method ready.',
+            buttonText: 'Continue',
+            secondaryButtonText: 'Not now',
+            callbackId,
+          });
+
+          return;
+        }
+      }
+
+      setHasCheckedForInactiveDocument(true);
+    };
+
+    checkForInactiveDocument();
+  }, [
+    loadDocumentCatalog,
+    navigateToDocumentOnboarding,
+    navigate,
+    hasCheckedForInactiveDocument,
+  ]);
+
+  useEffect(() => {
+    if (!hasCheckedForInactiveDocument) {
+      return;
+    }
+
     const addHistory = async () => {
       if (provingStore.uuid && selectedApp) {
         const catalog = await loadDocumentCatalog();
@@ -105,18 +172,28 @@ const ProveScreen: React.FC = () => {
       }
     };
     addHistory();
-  }, [addProofHistory, provingStore.uuid, selectedApp, loadDocumentCatalog]);
+  }, [
+    addProofHistory,
+    provingStore.uuid,
+    selectedApp,
+    loadDocumentCatalog,
+    hasCheckedForInactiveDocument,
+  ]);
 
   useEffect(() => {
+    if (!hasCheckedForInactiveDocument) {
+      return;
+    }
+
     if (isContentShorterThanScrollView) {
       setHasScrolledToBottom(true);
     } else {
       setHasScrolledToBottom(false);
     }
-  }, [isContentShorterThanScrollView]);
+  }, [isContentShorterThanScrollView, hasCheckedForInactiveDocument]);
 
   useEffect(() => {
-    if (!isFocused || !selectedApp) {
+    if (!isFocused || !selectedApp || !hasCheckedForInactiveDocument) {
       return;
     }
 
@@ -158,12 +235,16 @@ const ProveScreen: React.FC = () => {
     //removed provingStore from dependencies because it causes infinite re-render on longpressing the button
     //as it sets provingStore.setUserConfirmed()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedApp?.sessionId, isFocused, selfClient]);
+  }, [selectedApp?.sessionId, isFocused, selfClient, hasCheckedForInactiveDocument]);
 
   // Enhance selfApp with user's points address if not already set
   useEffect(() => {
     console.log('useEffect selectedApp', selectedApp);
-    if (!selectedApp || selectedApp.selfDefinedData) {
+    if (
+      !selectedApp ||
+      selectedApp.selfDefinedData ||
+      !hasCheckedForInactiveDocument
+    ) {
       return;
     }
 
@@ -181,7 +262,7 @@ const ProveScreen: React.FC = () => {
     };
 
     enhanceApp();
-  }, [selectedApp, selfClient]);
+  }, [selectedApp, selfClient, hasCheckedForInactiveDocument]);
 
   const disclosureOptions = useMemo(() => {
     return (selectedApp?.disclosures as SelfAppDisclosureConfig) || [];
@@ -221,6 +302,10 @@ const ProveScreen: React.FC = () => {
   );
 
   function onVerify() {
+    if (!hasCheckedForInactiveDocument) {
+      return;
+    }
+
     provingStore.setUserConfirmed(selfClient);
     buttonTap();
     trackEvent(ProofEvents.PROOF_VERIFY_CONFIRMATION_ACCEPTED, {
