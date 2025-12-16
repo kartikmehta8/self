@@ -464,16 +464,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
      * @dev ONLY called by the relayer service. Never called by dApp contracts directly.
      *      The relayer fetches destination contract info offchain and embeds it in the input.
      *
-     * Input Format: | contractVersion (1) | padding (31) | scope (32) | attestationId (32) | destChainId (32) | destDAppAddress (32) | proofPayload... |
-     *      Total: 96 bytes (partial header) + 32 (destChainId) + 32 (destDAppAddress) + proofPayload
-     *
-     * Note: This format does NOT include the destinationContract field from standard same-chain verification.
-     *
-     * Users can track their bridge transaction by pasting the origin tx hash into
-     * LayerZero Scan or Wormhole Scan (no custom messageId needed).
-     *
+     * Input Format: | contractVersion (1) | padding (31) | scope (32) | attestationId (32) | destDAppAddress (32) | proofPayload... |
+     *      Total: 96 bytes (partial header) + 32 (destDAppAddress) + proofPayload
      * @param baseVerificationInput The verification input with embedded multichain data.
-     * @param userContextData The user context data containing configId, userIdentifier, and custom data.
+     * @param userContextData The user context data containing configId, destChainId, userIdentifier, and custom data.
      */
     function verifyMultichain(
         bytes calldata baseVerificationInput,
@@ -482,34 +476,27 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         // Decode multichain-specific input format
         (
             SelfStructs.HubInputHeader memory header,
-            uint256 destChainId,
             address destDAppAddress,
             bytes calldata proofData
         ) = _decodeMultichainInput(baseVerificationInput);
+
+        // Perform full verification (same verification flow as verify())
+        (
+            bytes memory output,
+            uint256 destChainId,
+            bytes memory userDataToPass,
+            bytes32 configId,
+            uint256 userIdentifier
+        ) = _executeVerificationFlow(header, proofData, userContextData);
 
         // Validate this is actually a multichain request
         if (destChainId == block.chainid) {
             revert CannotBridgeToCurrentChain();
         }
 
-        // Perform full verification (same verification flow as verify())
-        (
-            bytes memory output,
-            uint256 extractedChainId,
-            bytes memory userDataToPass,
-            bytes32 configId,
-            uint256 userIdentifier
-        ) = _executeVerificationFlow(header, proofData, userContextData);
-
-        // Ensure extracted chain ID matches embedded one
-        if (extractedChainId != destChainId) {
-            revert InvalidChainId();
-        }
-
         // Bridge the verified output to destination chain
         _handleBridge(destChainId, destDAppAddress, output, userDataToPass);
 
-        // Emit event for tracking (mobile app listens to this for status updates)
         emit DisclosureProofMultichainInitiated(
             destChainId,
             destDAppAddress,
@@ -1366,6 +1353,41 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         destChainId = uint256(bytes32(userContextData[32:64]));
         userIdentifier = uint256(bytes32(userContextData[64:96]));
         remainingData = userContextData[96:];
+    }
+
+    /**
+     * @notice Decodes multichain input to extract header, destDAppAddress, and proof data.
+     * @dev Multichain format: | contractVersion (1) | padding (31) | scope (32) | attestationId (32) | destDAppAddress (32) | proofData |
+     *      Total minimum: 160 bytes (96 header + 32 destDAppAddress + 32 min proofData)
+     *      Note: destChainId is extracted from userContextData, not from baseVerificationInput
+     * @param baseVerificationInput The encoded multichain input
+     * @return header The header containing contractVersion, scope, and attestationId
+     * @return destDAppAddress The destination dApp contract address
+     * @return proofData The proof payload data
+     */
+    function _decodeMultichainInput(
+        bytes calldata baseVerificationInput
+    )
+        internal
+        pure
+        returns (
+            SelfStructs.HubInputHeader memory header,
+            address destDAppAddress,
+            bytes calldata proofData
+        )
+    {
+        if (baseVerificationInput.length < 160) revert InvalidMultichainInput();
+
+        // Decode standard header (first 96 bytes)
+        header.contractVersion = uint8(baseVerificationInput[0]);
+        header.scope = uint256(bytes32(baseVerificationInput[32:64]));
+        header.attestationId = bytes32(baseVerificationInput[64:96]);
+
+        // Decode destination dApp address
+        destDAppAddress = address(uint160(uint256(bytes32(baseVerificationInput[96:128]))));
+
+        // Remaining bytes are proof data
+        proofData = baseVerificationInput[128:];
     }
 
     /**
