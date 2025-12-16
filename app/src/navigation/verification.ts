@@ -6,6 +6,7 @@ import type { NativeStackNavigationOptions } from '@react-navigation/native-stac
 
 import { black, white } from '@selfxyz/mobile-sdk-alpha/constants/colors';
 
+import { DefaultNavBar } from '@/components/navbar/DefaultNavBar';
 import ProofRequestStatusScreen from '@/screens/verification/ProofRequestStatusScreen';
 import ProveScreen from '@/screens/verification/ProveScreen';
 import QRCodeTroubleScreen from '@/screens/verification/QRCodeTroubleScreen';
@@ -42,8 +43,15 @@ const verificationScreens = {
   QRCodeViewFinder: {
     screen: QRCodeViewFinderScreen,
     options: {
-      headerShown: false,
+      headerShown: true,
+      header: DefaultNavBar,
+      headerStyle: {
+        backgroundColor: black,
+      },
+      headerTintColor: white,
+      title: '',
       animation: 'slide_from_bottom',
+      gestureEnabled: false,
     } as NativeStackNavigationOptions,
   },
 };
