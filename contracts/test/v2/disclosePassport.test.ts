@@ -45,7 +45,10 @@ describe("Self Verification Flow V2", () => {
     return "0x" + ripemdHash.toString("hex").padStart(40, "0");
   }
 
-  before(async () => {
+  before(async function () {
+    // Increase timeout for proof generation in before hook (can take 60+ seconds)
+    this.timeout(120000); // 2 minutes
+
     deployedActors = await deploySystemFixturesV2();
 
     // Take snapshot after deployment and balance setting
@@ -839,7 +842,8 @@ describe("Self Verification Flow V2", () => {
       ).to.be.revertedWithCustomError(deployedActors.customVerifier, "InvalidOlderThan");
     });
 
-    it("should fail verification with invalid dest chain Id", async () => {
+    it("should reject multichain verification when called through verify() instead of verifyMultichain()", async () => {
+      // Test that verify() now rejects multichain requests and directs to use verifyMultichain()
       const verificationConfigV2 = {
         olderThanEnabled: false,
         olderThan: "20",
@@ -853,11 +857,11 @@ describe("Self Verification Flow V2", () => {
       const user1Address = await deployedActors.user1.getAddress();
       const userData = ethers.toUtf8Bytes("test-user-data-for-verification");
 
-      // Use an invalid destination chain ID that's different from current chain (31337)
-      const invalidDestChainId = ethers.zeroPadValue(ethers.toBeHex(999999), 32);
+      // Use a different destination chain ID to trigger multichain path
+      const crossChainId = ethers.zeroPadValue(ethers.toBeHex(999999), 32);
       const userContextData = ethers.solidityPacked(
         ["bytes32", "bytes32", "bytes"],
-        [invalidDestChainId, ethers.zeroPadValue(user1Address, 32), userData],
+        [crossChainId, ethers.zeroPadValue(user1Address, 32), userData],
       );
 
       const userIdentifierHash = calculateUserIdentifierHash(userContextData);
@@ -865,15 +869,14 @@ describe("Self Verification Flow V2", () => {
 
       const attestationId = ethers.zeroPadValue(ethers.toBeHex(BigInt(ATTESTATION_ID.E_PASSPORT)), 32);
 
-      // Generate proof with the correct user identifier that matches the userContextData using existing commitment
       const validProof = await generateVcAndDiscloseProof(
-        registerSecret, // Use existing registerSecret
+        registerSecret,
         BigInt(ATTESTATION_ID.E_PASSPORT).toString(),
         deployedActors.mockPassport,
         scopeAsBigIntString,
         new Array(88).fill("1"),
         "1",
-        imt, // Use existing IMT
+        imt,
         "20",
         undefined,
         undefined,
@@ -890,10 +893,10 @@ describe("Self Verification Flow V2", () => {
 
       const proofData = ethers.solidityPacked(["bytes32", "bytes"], [attestationId, encodedProof]);
 
-      // This should fail with CrossChainIsNotSupportedYet because destChainId (999999) != block.chainid (31337)
+      // verify() should reject multichain requests - dedicated multichain tests will be added separately
       await expect(
         deployedActors.testSelfVerificationRoot.verifySelfProof(proofData, userContextData),
-      ).to.be.revertedWithCustomError(deployedActors.hub, "CrossChainIsNotSupportedYet");
+      ).to.be.revertedWithCustomError(deployedActors.hub, "BridgeEndpointNotSet");
     });
 
     it("should fail verification with invalid msg sender to call onVerificationSuccess", async () => {

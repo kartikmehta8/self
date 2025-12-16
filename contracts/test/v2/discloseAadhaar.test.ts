@@ -863,8 +863,9 @@ describe("Self Verification Flow V2 - Aadhaar", () => {
       ).to.be.revertedWithCustomError(deployedActors.customVerifier, "InvalidOlderThan");
     });
 
-    it("should fail verification with invalid dest chain id", async () => {
-      const destChainId = 31338;
+    it("should reject multichain verification when called through verify() instead of verifyMultichain()", async () => {
+      // Test that verify() now rejects multichain requests and directs to use verifyMultichain()
+      const destChainId = 31338; // Different chain ID to trigger multichain path
       const user1Address = await deployedActors.user1.getAddress();
       const userData = "test-user-data-for-verification";
 
@@ -932,9 +933,10 @@ describe("Self Verification Flow V2 - Aadhaar", () => {
 
       const proofData = ethers.solidityPacked(["bytes32", "bytes"], [attestationId, encodedProof]);
 
+      // verify() should now reject multichain requests and direct to use verifyMultichain()
       await expect(
         deployedActors.testSelfVerificationRoot.verifySelfProof(proofData, userContextData),
-      ).to.be.revertedWithCustomError(deployedActors.hubImplV2, "CrossChainIsNotSupportedYet");
+      ).to.be.revertedWithCustomError(deployedActors.hubImplV2, "MultichainRequiresCallingVerifyMultichain");
     });
 
     it("should fail verification with invalid msg sender to call onVerificationSuccess", async () => {
