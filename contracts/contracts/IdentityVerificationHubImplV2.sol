@@ -218,6 +218,9 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @dev Ensures that the ofac roots match.
     error InvalidOfacRoots();
 
+    /// @notice Thrown when public signals array has invalid length.
+    error InvalidPubSignalsLength();
+
     // ====================================================
     // Constructor
     // ====================================================
@@ -807,7 +810,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         }
 
         if (attestationId == AttestationId.E_PASSPORT || attestationId == AttestationId.EU_ID_CARD) {
-            require(registerCircuitProof.pubSignals.length == 3, "Invalid pubSignals length");
+            if (registerCircuitProof.pubSignals.length != 3) revert InvalidPubSignalsLength();
             uint256[3] memory pubSignals = [
                 registerCircuitProof.pubSignals[0],
                 registerCircuitProof.pubSignals[1],
@@ -824,7 +827,7 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
                 revert InvalidRegisterProof();
             }
         } else if (attestationId == AttestationId.AADHAAR) {
-            require(registerCircuitProof.pubSignals.length == 4, "Invalid pubSignals length");
+            if (registerCircuitProof.pubSignals.length != 4) revert InvalidPubSignalsLength();
             uint256[4] memory pubSignals = [
                 registerCircuitProof.pubSignals[0],
                 registerCircuitProof.pubSignals[1],
