@@ -105,20 +105,37 @@ template GCPJWTVerifier(
     signal payload[maxPayloadLength];
     payload <== jwtVerifier.payload;
 
-    component singleOccurance = SingleOccurance(maxPayloadLength, 12);
-    singleOccurance.in <== payload;
-    singleOccurance.word[0] <== 105; // 'i'
-    singleOccurance.word[1] <== 109; // 'm'
-    singleOccurance.word[2] <== 97;  // 'a'
-    singleOccurance.word[3] <== 103; // 'g'
-    singleOccurance.word[4] <== 101; // 'e'
-    singleOccurance.word[5] <== 95;  // '_'
-    singleOccurance.word[6] <== 100; // 'd'
-    singleOccurance.word[7] <== 105; // 'i'
-    singleOccurance.word[8] <== 103; // 'g'
-    singleOccurance.word[9] <== 101; // 'e'
-    singleOccurance.word[10] <== 115; // 's'
-    singleOccurance.word[11] <== 116; // 't'
+    component singleOccuranceImageDigest = SingleOccurance(maxPayloadLength, 14);
+    singleOccuranceImageDigest.in <== payload;
+    singleOccuranceImageDigest.word[0] <== 34; // '"'
+    singleOccuranceImageDigest.word[1] <== 105; // 'i'
+    singleOccuranceImageDigest.word[2] <== 109; // 'm'
+    singleOccuranceImageDigest.word[3] <== 97;  // 'a'
+    singleOccuranceImageDigest.word[4] <== 103; // 'g'
+    singleOccuranceImageDigest.word[5] <== 101; // 'e'
+    singleOccuranceImageDigest.word[6] <== 95;  // '_'
+    singleOccuranceImageDigest.word[7] <== 100; // 'd'
+    singleOccuranceImageDigest.word[8] <== 105; // 'i'
+    singleOccuranceImageDigest.word[9] <== 103; // 'g'
+    singleOccuranceImageDigest.word[10] <== 101; // 'e'
+    singleOccuranceImageDigest.word[11] <== 115; // 's'
+    singleOccuranceImageDigest.word[12] <== 116; // 't'
+    singleOccuranceImageDigest.word[13] <== 34; // '"'
+
+    component singleOccuranceEatNonce = SingleOccurance(maxPayloadLength, 11);
+    singleOccuranceEatNonce.in <== payload;
+    singleOccuranceEatNonce.word[0] <== 34; // '"'
+    singleOccuranceEatNonce.word[1] <== 101; // 'e'
+    singleOccuranceEatNonce.word[2] <== 97;  // 'a'
+    singleOccuranceEatNonce.word[3] <== 116; // 't'
+    singleOccuranceEatNonce.word[4] <== 95;  // '_'
+    singleOccuranceEatNonce.word[5] <== 110; // 'n'
+    singleOccuranceEatNonce.word[6] <== 111; // 'o'
+    singleOccuranceEatNonce.word[7] <== 110; // 'n'
+    singleOccuranceEatNonce.word[8] <== 99; // 'c'
+    singleOccuranceEatNonce.word[9] <== 101; // 'e'
+    singleOccuranceEatNonce.word[10] <== 34; // '"'
+
 
     // Extract and validate x5c[0] Public Key
     ExtractAndValidatePubkey(signatureAlgorithm, n, k, MAX_CERT_LENGTH, MAX_PUBKEY_PREFIX, MAX_PUBKEY_LENGTH)(
