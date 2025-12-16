@@ -25,7 +25,7 @@ import {Formatter} from "./libraries/Formatter.sol";
  * @dev This contract orchestrates multi-step verification processes including document attestation,
  * zero-knowledge proofs, OFAC compliance, and attribute disclosure control.
  *
- * @custom:version 2.12.0
+ * @custom:version 2.13.0
  */
 contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @custom:storage-location erc7201:self.storage.IdentityVerificationHub
@@ -41,8 +41,13 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     struct IdentityVerificationHubV2Storage {
         mapping(bytes32 configId => SelfStructs.VerificationConfigV2) _v2VerificationConfigs;
     }
-    // We should consider to add bridge address
-    // address bridgeAddress;
+
+    /// @custom:storage-location erc7201:self.storage.Bridge
+    struct BridgeStorage {
+        address bridgeEndpoint; // LayerZero/Wormhole endpoint
+        mapping(uint256 chainId => bytes32 destHub) destHubs; // Destination hub addresses
+        mapping(uint256 chainId => uint32 bridgeChainId) chainIds; // Bridge-specific chain IDs
+    }
 
     /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.IdentityVerificationHub")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant IDENTITYVERIFICATIONHUB_STORAGE_LOCATION =
@@ -51,6 +56,10 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.IdentityVerificationHubV2")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant IDENTITYVERIFICATIONHUBV2_STORAGE_LOCATION =
         0xf9b5980dcec1a8b0609576a1f453bb2cad4732a0ea02bb89154d44b14a306c00;
+
+    /// @dev keccak256(abi.encode(uint256(keccak256("self.storage.Bridge")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant BRIDGE_STORAGE_LOCATION =
+        0x9c5d4a9f86c54e3ca5d0c5e5be8f9f5c6d3a2e4b7f8a9c1d2e3f4a5b6c7d8e00;
 
     /// @notice The AADHAAR registration window around the current block timestamp.
     uint256 public AADHAAR_REGISTRATION_WINDOW;
@@ -74,6 +83,17 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     function _getIdentityVerificationHubV2Storage() private pure returns (IdentityVerificationHubV2Storage storage $) {
         assembly {
             $.slot := IDENTITYVERIFICATIONHUBV2_STORAGE_LOCATION
+        }
+    }
+
+    /**
+     * @notice Returns the storage struct for Bridge features.
+     * @dev Uses ERC-7201 storage pattern for upgradeable contracts.
+     * @return $ The Bridge storage struct reference.
+     */
+    function _getBridgeStorage() private pure returns (BridgeStorage storage $) {
+        assembly {
+            $.slot := BRIDGE_STORAGE_LOCATION
         }
     }
 
@@ -134,6 +154,26 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         bytes userDataToPass
     );
 
+    /**
+     * @notice Emitted when a cross-chain verification is initiated and bridged.
+     * @param destChainId The destination chain ID.
+     * @param destDAppAddress The dApp contract address on the destination chain.
+     * @param configId The configuration ID used for verification.
+     * @param userIdentifier The user identifier.
+     * @param output The formatted verification output (GenericDiscloseOutputV2).
+     * @param userDataToPass User data to be passed to the destination dApp.
+     * @param timestamp The block timestamp when the bridge was initiated.
+     */
+    event DisclosureProofMultichainInitiated(
+        uint256 indexed destChainId,
+        address indexed destDAppAddress,
+        bytes32 indexed configId,
+        uint256 userIdentifier,
+        bytes output,
+        bytes userDataToPass,
+        uint256 timestamp
+    );
+
     // ====================================================
     // Errors
     // ====================================================
@@ -182,10 +222,6 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     /// @dev Ensures that the scope value in the header matches the scope value in the proof.
     error ScopeMismatch();
 
-    /// @notice Thrown when cross-chain verification is attempted but not yet supported.
-    /// @dev Cross-chain bridging functionality is not implemented yet.
-    error CrossChainIsNotSupportedYet();
-
     /// @notice Thrown when the input data is too short for decoding.
     /// @dev The input data must be at least 97 bytes (1 + 31 + 32 + 32 + 1 minimum).
     error InputTooShort();
@@ -220,6 +256,29 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
 
     /// @notice Thrown when public signals array has invalid length.
     error InvalidPubSignalsLength();
+
+    /// @notice Thrown when the bridge endpoint is not set.
+    /// @dev Ensures bridge endpoint is configured before cross-chain operations.
+    error BridgeEndpointNotSet();
+
+    /// @notice Thrown when the destination hub is not set for a chain.
+    /// @dev Ensures destination chain is configured before cross-chain operations.
+    error DestinationHubNotSet();
+
+    /// @notice Thrown when mock bridge send fails. TODO: Change for bridge provider error
+    error MockBridgeSendFailed();
+
+    /// @notice Thrown when chain ID validation fails.
+    error InvalidChainId();
+
+    /// @notice Thrown when attempting to bridge to the current chain.
+    error CannotBridgeToCurrentChain();
+
+    /// @notice Thrown when multichain input format is invalid.
+    error InvalidMultichainInput();
+
+    /// @notice Thrown when attempting to use verify() function for multichain proof.
+    error MultichainRequiresCallingVerifyMultichain();
 
     // ====================================================
     // Constructor
@@ -381,7 +440,11 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         ) = _executeVerificationFlow(header, proofData, userContextData);
 
         // Use destChainId and userDataToPass returned from _executeVerificationFlow
-        _handleVerificationResult(destChainId, output, userDataToPass);
+        if (destChainId == block.chainid) {
+            ISelfVerificationRoot(msg.sender).onVerificationSuccess(output, userDataToPass);
+        } else {
+            revert MultichainRequiresCallingVerifyMultichain();
+        }
 
         // Emit verification event for tracking
         emit DisclosureVerified(
@@ -393,6 +456,68 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             userIdentifier,
             output,
             userDataToPass
+        );
+    }
+
+    /**
+     * @notice Multichain verification - performs full verification on Celo, then bridges to destination chain.
+     * @dev ONLY called by the relayer service. Never called by dApp contracts directly.
+     *      The relayer fetches destination contract info offchain and embeds it in the input.
+     *
+     * Input Format: | contractVersion (1) | padding (31) | scope (32) | attestationId (32) | destChainId (32) | destDAppAddress (32) | proofPayload... |
+     *      Total: 96 bytes (partial header) + 32 (destChainId) + 32 (destDAppAddress) + proofPayload
+     *
+     * Note: This format does NOT include the destinationContract field from standard same-chain verification.
+     *
+     * Users can track their bridge transaction by pasting the origin tx hash into
+     * LayerZero Scan or Wormhole Scan (no custom messageId needed).
+     *
+     * @param baseVerificationInput The verification input with embedded multichain data.
+     * @param userContextData The user context data containing configId, userIdentifier, and custom data.
+     */
+    function verifyMultichain(
+        bytes calldata baseVerificationInput,
+        bytes calldata userContextData
+    ) external payable virtual onlyProxy {
+        // Decode multichain-specific input format
+        (
+            SelfStructs.HubInputHeader memory header,
+            uint256 destChainId,
+            address destDAppAddress,
+            bytes calldata proofData
+        ) = _decodeMultichainInput(baseVerificationInput);
+
+        // Validate this is actually a multichain request
+        if (destChainId == block.chainid) {
+            revert CannotBridgeToCurrentChain();
+        }
+
+        // Perform full verification (same verification flow as verify())
+        (
+            bytes memory output,
+            uint256 extractedChainId,
+            bytes memory userDataToPass,
+            bytes32 configId,
+            uint256 userIdentifier
+        ) = _executeVerificationFlow(header, proofData, userContextData);
+
+        // Ensure extracted chain ID matches embedded one
+        if (extractedChainId != destChainId) {
+            revert InvalidChainId();
+        }
+
+        // Bridge the verified output to destination chain
+        _handleBridge(destChainId, destDAppAddress, output, userDataToPass);
+
+        // Emit event for tracking (mobile app listens to this for status updates)
+        emit DisclosureProofMultichainInitiated(
+            destChainId,
+            destDAppAddress,
+            configId,
+            userIdentifier,
+            output,
+            userDataToPass,
+            block.timestamp
         );
     }
 
@@ -494,6 +619,44 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
             $._dscCircuitVerifiers[attestationIds[i]][typeIds[i]] = verifierAddresses[i];
             emit DscCircuitVerifierUpdated(typeIds[i], verifierAddresses[i]);
         }
+    }
+
+    /**
+     * @notice Sets the bridge endpoint address.
+     * @dev Only callable by accounts with SECURITY_ROLE.
+     * @param endpoint The address of the bridge endpoint.
+     */
+    function setBridgeEndpoint(address endpoint) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+        BridgeStorage storage $ = _getBridgeStorage();
+        $.bridgeEndpoint = endpoint;
+    }
+
+    /**
+     * @notice Sets the destination hub address for a specific chain.
+     * @dev Only callable by accounts with SECURITY_ROLE.
+     * @param chainId The destination chain ID.
+     * @param hubAddress The hub address on the destination chain (as bytes32 for multichain compatibility).
+     */
+    function setDestinationHub(
+        uint256 chainId,
+        bytes32 hubAddress
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+        BridgeStorage storage $ = _getBridgeStorage();
+        $.destHubs[chainId] = hubAddress;
+    }
+
+    /**
+     * @notice Sets the bridge-specific chain ID for a destination chain.
+     * @dev Only callable by accounts with SECURITY_ROLE.
+     * @param chainId The standard destination chain ID.
+     * @param bridgeChainId The bridge-specific chain ID.
+     */
+    function setDestinationBridgeChainId(
+        uint256 chainId,
+        uint32 bridgeChainId
+    ) external virtual onlyProxy onlyRole(SECURITY_ROLE) {
+        BridgeStorage storage $ = _getBridgeStorage();
+        $.chainIds[chainId] = bridgeChainId;
     }
 
     // ====================================================
@@ -598,6 +761,26 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
         return generateConfigId(config) == configId;
     }
 
+    /**
+     * @notice Returns the configured bridge endpoint address.
+     * @return The bridge endpoint address.
+     */
+    function bridgeEndpoint() external view virtual onlyProxy returns (address) {
+        BridgeStorage storage $ = _getBridgeStorage();
+        return $.bridgeEndpoint;
+    }
+
+    /**
+     * @notice Returns the destination hub address for a specific chain.
+     * @param chainId The destination chain ID.
+     * @return The hub address on the destination chain.
+     */
+    function destinationHub(uint256 chainId) external view virtual onlyProxy returns (bytes32) {
+        BridgeStorage storage $ = _getBridgeStorage();
+        return $.destHubs[chainId];
+    }
+
+
     // ====================================================
     // Public Functions
     // ====================================================
@@ -670,22 +853,48 @@ contract IdentityVerificationHubImplV2 is ImplRoot {
     }
 
     /**
-     * @notice Handles verification result based on destination chain.
-     * @dev Routes the verification result to the appropriate handler based on whether
-     * the destination is the current chain or requires cross-chain bridging.
-     * @param destChainId The destination chain identifier.
+     * @notice Handles bridging the verification result to the destination chain.
+     * @dev Encodes the message payload and sends it through the configured bridge endpoint.
+     *      Users track via origin tx hash on bridge explorers (LayerZero Scan, Wormhole Scan).
+     * @param destChainId The destination chain ID.
+     * @param destDAppAddress The dApp contract address on the destination chain.
      * @param output The verification output data.
-     * @param userDataToPass The user data to pass to the result handler.
+     * @param userDataToPass The user data to pass to the destination dApp.
      */
-    function _handleVerificationResult(uint256 destChainId, bytes memory output, bytes memory userDataToPass) internal {
-        if (destChainId == block.chainid) {
-            ISelfVerificationRoot(msg.sender).onVerificationSuccess(output, userDataToPass);
-        } else {
-            // Call external bridge
-            // _handleBridge()
-            revert CrossChainIsNotSupportedYet();
+    function _handleBridge(
+        uint256 destChainId,
+        address destDAppAddress,
+        bytes memory output,
+        bytes memory userDataToPass
+    ) internal {
+        BridgeStorage storage $ = _getBridgeStorage();
+
+        // Validate bridge configuration
+        if ($.bridgeEndpoint == address(0)) {
+            revert BridgeEndpointNotSet();
         }
+        if ($.destHubs[destChainId] == bytes32(0)) {
+            revert DestinationHubNotSet();
+        }
+
+        // Encode payload for bridge delivery
+        bytes memory payload = abi.encode(destDAppAddress, output, userDataToPass);
+
+        // TODO: Replace this entire block with actual bridge provider integration
+
+        // MOCK BRIDGE IMPLEMENTATION (FOR TESTING ONLY)
+        // This uses MockBridgeProvider to enable full E2E testing without real bridge
+        (bool success,) = $.bridgeEndpoint.call{value: msg.value}(
+            abi.encodeWithSignature(
+                "sendMessage(uint256,bytes32,bytes)",
+                destChainId,
+                $.destHubs[destChainId],
+                payload
+            )
+        );
+        if (!success) revert MockBridgeSendFailed();
     }
+
 
     /**
      * @notice Unified basic verification function for both passport and ID card proofs.
