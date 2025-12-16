@@ -5,13 +5,25 @@ import type { Country3LetterCode } from '../constants/countries.js';
 import type { UserIdType } from './circuits/uuid.js';
 import { validateUserId } from './circuits/uuid.js';
 import { formatEndpoint } from './scope.js';
+import { getChainIdFromEndpointType } from '../constants/chains.js';
 
 export interface DeferredLinkingTokenResponse {
   campaign_id: string;
   campaign_user_id: string;
   self_app: string; // SelfApp is serialized as a string
 }
-export type EndpointType = 'https' | 'celo' | 'staging_celo' | 'staging_https';
+export type EndpointType =
+  | 'https'           // Offchain API
+  | 'staging_https'   // Offchain API (staging)
+  | 'celo'            // Celo Mainnet (same-chain)
+  | 'staging_celo'    // Celo Sepolia (testnet)
+  | 'base'            // Base Mainnet (multichain)
+  | 'staging_base'    // Base Sepolia (testnet)
+  | 'gnosis'          // Gnosis Mainnet (multichain)
+  | 'optimism';       // Optimism Mainnet (multichain)
+  // TODO: [SOLANA] Add Solana support later
+  // | 'solana'        // Solana Mainnet (multichain)
+  // | 'staging_solana' // Solana Devnet (testnet)
 
 export type Mode = 'register' | 'dsc' | 'vc_and_disclose';
 
@@ -81,11 +93,16 @@ export class SelfAppBuilder {
     if (!config.userId) {
       throw new Error('userId is required');
     }
-    if (config.endpointType === 'https' && !config.endpoint.startsWith('https://')) {
-      throw new Error('endpoint must start with https://');
-    }
-    if (config.endpointType === 'celo' && !config.endpoint.startsWith('0x')) {
-      throw new Error('endpoint must be a valid address');
+    // Validate endpoint format based on type
+    if (config.endpointType === 'https' || config.endpointType === 'staging_https') {
+      if (!config.endpoint.startsWith('https://')) {
+        throw new Error('endpoint must start with https://');
+      }
+    } else {
+      // All onchain types (celo, staging_celo, base, staging_base, gnosis, optimism)
+      if (!config.endpoint.startsWith('0x')) {
+        throw new Error('endpoint must be a valid address');
+      }
     }
     // Validate that localhost endpoints are not allowed
     if (
@@ -104,6 +121,23 @@ export class SelfAppBuilder {
       throw new Error('userId must be a valid UUID or address');
     }
 
+    // Determine chainID based on endpointType
+    let chainID: 42220 | 11142220;
+    try {
+      // For onchain endpoints, get the chain ID from chain config
+      const chainIdFromType = getChainIdFromEndpointType(config.endpointType ?? 'https');
+      // For verification, we always use Celo chain IDs since verification happens on Celo
+      // Multichain endpoints (base, gnosis, optimism) still verify on Celo mainnet
+      if (config.endpointType === 'staging_celo' || config.endpointType === 'staging_base') {
+        chainID = 11142220; // Celo Sepolia
+      } else {
+        chainID = 42220; // Celo Mainnet
+      }
+    } catch {
+      // For https/staging_https endpoints, default to mainnet/testnet based on staging flag
+      chainID = config.endpointType === 'staging_https' ? 11142220 : 42220;
+    }
+
     this.config = {
       sessionId: v4(),
       userIdType: 'uuid',
@@ -113,7 +147,7 @@ export class SelfAppBuilder {
       logoBase64: '',
       deeplinkCallback: '',
       disclosures: {},
-      chainID: config.endpointType === 'staging_celo' ? 11142220 : 42220,
+      chainID,
       version: config.version ?? 2,
       userDefinedData: '',
       selfDefinedData: '',

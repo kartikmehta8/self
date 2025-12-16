@@ -599,11 +599,16 @@ export class SelfAppBuilder {
     if (!config.userId) {
       throw new Error('userId is required');
     }
-    if (config.endpointType === 'https' && !config.endpoint.startsWith('https://')) {
-      throw new Error('endpoint must start with https://');
-    }
-    if (config.endpointType === 'celo' && !config.endpoint.startsWith('0x')) {
-      throw new Error('endpoint must be a valid address');
+    // Validate endpoint format based on type
+    if (config.endpointType === 'https' || config.endpointType === 'staging_https') {
+      if (!config.endpoint.startsWith('https://')) {
+        throw new Error('endpoint must start with https://');
+      }
+    } else {
+      // All onchain types (celo, staging_celo, base, staging_base, gnosis, optimism)
+      if (!config.endpoint.startsWith('0x')) {
+        throw new Error('endpoint must be a valid address');
+      }
     }
     // Validate that localhost endpoints are not allowed
     if (

@@ -4,6 +4,7 @@ import { Buffer } from 'buffer';
 import { WS_DB_RELAYER, WS_DB_RELAYER_STAGING } from '../constants/index.js';
 import { initElliptic } from '../utils/certificate_parsing/elliptic.js';
 import type { EndpointType } from './appType.js';
+import { isOnchainEndpointType } from '../constants/chains.js';
 
 const elliptic = initElliptic();
 const { ec: EC } = elliptic;
@@ -80,7 +81,7 @@ export function getPayload(
       type,
       endpointType: endpointType,
       endpoint: endpoint,
-      onchain: endpointType === 'celo' ? true : false,
+      onchain: isOnchainEndpointType(endpointType),
       circuit: {
         name: circuitName,
         inputs: JSON.stringify(inputs),
@@ -106,7 +107,7 @@ export function getPayload(
 }
 
 export function getWSDbRelayerUrl(endpointType: EndpointType) {
-  return endpointType === 'celo' || endpointType === 'https'
-    ? WS_DB_RELAYER
-    : WS_DB_RELAYER_STAGING;
+  // Production relayer for mainnet chains and production https
+  const productionTypes: EndpointType[] = ['celo', 'https', 'base', 'gnosis', 'optimism'];
+  return productionTypes.includes(endpointType) ? WS_DB_RELAYER : WS_DB_RELAYER_STAGING;
 }
