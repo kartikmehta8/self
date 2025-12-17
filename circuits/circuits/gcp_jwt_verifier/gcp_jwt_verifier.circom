@@ -7,6 +7,7 @@ include "../utils/gcp_jwt/extractAndValidatePubkey.circom";
 include "../utils/gcp_jwt/verifyCertificateSignature.circom";
 include "../utils/gcp_jwt/verifyJSONFieldExtraction.circom";
 include "../utils/gcp_jwt/singleOccurance.circom";
+include "../utils/gcp_jwt/validityChecker.circom";
 include "circomlib/circuits/comparators.circom";
 include "@openpassport/zk-email-circuits/utils/array.circom";
 include "@openpassport/zk-email-circuits/utils/bytes.circom";
@@ -64,6 +65,9 @@ template GCPJWTVerifier(
     signal input leaf_signature[kScaled]; // x5c[0] signature
     signal input intermediate_signature[kScaled]; // x5c[1] signature
 
+    signal input leaf_validity_offset;
+    signal input intermediate_validity_offset;
+    signal input current_date[12];
 
     // GCP spec: nonce must be 10-74 bytes decoded
     // https://cloud.google.com/confidential-computing/confidential-space/docs/connect-external-resources
@@ -136,7 +140,6 @@ template GCPJWTVerifier(
     singleOccuranceEatNonce.word[9] <== 101; // 'e'
     singleOccuranceEatNonce.word[10] <== 34; // '"'
 
-
     // Extract and validate x5c[0] Public Key
     ExtractAndValidatePubkey(signatureAlgorithm, n, k, MAX_CERT_LENGTH, MAX_PUBKEY_PREFIX, MAX_PUBKEY_LENGTH)(
         leaf_cert,
@@ -153,6 +156,20 @@ template GCPJWTVerifier(
         intermediate_pubkey_actual_size,
         intermediate_pubkey,
         intermediate_cert_padded_length
+    );
+
+    ValidityChecker(MAX_CERT_LENGTH)(
+        leaf_cert,
+        leaf_cert_padded_length,
+        leaf_validity_offset,
+        current_date
+    );
+
+    ValidityChecker(MAX_CERT_LENGTH)(
+        intermediate_cert,
+        intermediate_cert_padded_length,
+        intermediate_validity_offset,
+        current_date
     );
 
     // Verify x5c[0] signature using x5c[1] public key
@@ -275,4 +292,4 @@ template GCPJWTVerifier(
     image_hash_packed <== PackBytes(IMAGE_HASH_LENGTH)(image_hash_bytes);
 }
 
-component main = GCPJWTVerifier(1, 120, 35);
+component main { public [current_date] } = GCPJWTVerifier(1, 120, 35);
