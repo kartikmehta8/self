@@ -21,7 +21,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 
-import { isMRZDocument, type DocumentMetadata } from '@selfxyz/common';
+import { type DocumentMetadata, isMRZDocument } from '@selfxyz/common';
 import type { SelfAppDisclosureConfig } from '@selfxyz/common/utils/appType';
 import { formatEndpoint } from '@selfxyz/common/utils/scope';
 import { loadSelectedDocument, useSelfClient } from '@selfxyz/mobile-sdk-alpha';
@@ -49,11 +49,11 @@ import {
 import { getPointsAddress } from '@/services/points';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
 import { ProofStatus } from '@/stores/proofTypes';
+import { registerModalCallbacks } from '@/utils';
 import {
   checkDocumentExpiration,
   getDocumentAttributes,
 } from '@/utils/documentAttributes';
-import { registerModalCallbacks } from '@/utils';
 import { isDocumentInactive } from '@/utils/documents';
 import { formatUserId } from '@/utils/formatUserId';
 
@@ -235,7 +235,12 @@ const ProveScreen: React.FC = () => {
     //removed provingStore from dependencies because it causes infinite re-render on longpressing the button
     //as it sets provingStore.setUserConfirmed()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedApp?.sessionId, isFocused, selfClient, hasCheckedForInactiveDocument]);
+  }, [
+    selectedApp?.sessionId,
+    isFocused,
+    selfClient,
+    hasCheckedForInactiveDocument,
+  ]);
 
   // Enhance selfApp with user's points address if not already set
   useEffect(() => {
