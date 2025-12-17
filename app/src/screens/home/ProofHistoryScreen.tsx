@@ -20,6 +20,8 @@ import {
   black,
   blue100,
   blue600,
+  cyan100,
+  cyan600,
   red500,
   slate50,
   slate200,
@@ -28,6 +30,7 @@ import {
   white,
 } from '@selfxyz/mobile-sdk-alpha/constants/colors';
 import { dinot } from '@selfxyz/mobile-sdk-alpha/constants/fonts';
+import { isOnchainEndpointType } from '@selfxyz/common';
 
 import type { RootStackParamList } from '@/navigation';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
@@ -246,19 +249,47 @@ const ProofHistoryScreen: React.FC = () => {
                     </BodyText>
                     <BodyText style={{ color: slate300, fontSize: 14 }}>
                       {formatDate(item.timestamp)}
+                      {item.multichain?.isMultichain &&
+                        item.multichain.destChainName && (
+                          <BodyText style={{ color: blue600, fontSize: 14 }}>
+                            {' '}
+                            → {item.multichain.destChainName}
+                          </BodyText>
+                        )}
                     </BodyText>
                   </YStack>
-                  {(item.endpointType === 'staging_celo' ||
-                    item.endpointType === 'celo') && (
+                  {item.multichain?.isMultichain ? (
                     <XStack
-                      backgroundColor={blue100}
+                      backgroundColor={cyan100}
                       paddingVertical={2}
                       paddingHorizontal={8}
                       borderRadius={4}
                       alignItems="center"
+                      gap={4}
                     >
-                      <Wallet color={blue600} height={14} width={14} />
+                      <Wallet color={cyan600} height={14} width={14} />
+                      <BodyText
+                        style={{
+                          color: cyan600,
+                          fontSize: 11,
+                          fontWeight: '600',
+                        }}
+                      >
+                        MULTICHAIN
+                      </BodyText>
                     </XStack>
+                  ) : (
+                    isOnchainEndpointType(item.endpointType) && (
+                      <XStack
+                        backgroundColor={blue100}
+                        paddingVertical={2}
+                        paddingHorizontal={8}
+                        borderRadius={4}
+                        alignItems="center"
+                      >
+                        <Wallet color={blue600} height={14} width={14} />
+                      </XStack>
+                    )
                   )}
                   <XStack
                     backgroundColor={blue100}

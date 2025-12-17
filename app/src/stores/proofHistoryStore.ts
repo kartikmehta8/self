@@ -8,7 +8,7 @@ import { create } from 'zustand';
 import { WS_DB_RELAYER } from '@selfxyz/common/constants';
 
 import { database } from '@/stores/database';
-import type { ProofHistory } from '@/stores/proofTypes';
+import type { MultichainStatus, ProofHistory } from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';
 
 interface ProofHistoryState {
@@ -25,6 +25,10 @@ interface ProofHistoryState {
     status: ProofStatus,
     errorCode?: string,
     errorReason?: string,
+  ) => Promise<void>;
+  updateMultichainStatus: (
+    sessionId: string,
+    multichainData: MultichainStatus,
   ) => Promise<void>;
   loadMoreHistory: () => Promise<void>;
   resetHistory: () => void;
@@ -81,6 +85,12 @@ export const useProofHistoryStore = create<ProofHistoryState>()((set, get) => {
         } else if (data.status === 5) {
           get().updateProofStatus(data.request_id, ProofStatus.FAILURE);
         }
+
+        // Handle multichain status updates
+        if (data.is_multichain && data.multichain) {
+          get().updateMultichainStatus(data.request_id, data.multichain);
+        }
+
         websocket.emit('unsubscribe', data.request_id);
       });
     } catch (error) {
@@ -154,6 +164,22 @@ export const useProofHistoryStore = create<ProofHistoryState>()((set, get) => {
         }));
       } catch (error) {
         console.error('Error updating proof status', error);
+      }
+    },
+
+    updateMultichainStatus: async (sessionId, multichainData) => {
+      try {
+        await database.updateMultichainStatus(sessionId, multichainData);
+        // Update multichain status in the state
+        set(state => ({
+          proofHistory: state.proofHistory.map(proof =>
+            proof.sessionId === sessionId
+              ? { ...proof, multichain: multichainData }
+              : proof,
+          ),
+        }));
+      } catch (error) {
+        console.error('Error updating multichain status', error);
       }
     },
 

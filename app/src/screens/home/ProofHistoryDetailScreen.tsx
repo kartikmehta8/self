@@ -25,6 +25,7 @@ import {
   dinot,
   plexMono,
 } from '@selfxyz/mobile-sdk-alpha/constants/fonts';
+import { isOnchainEndpointType } from '@selfxyz/common';
 
 import type { ProofHistory } from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';
@@ -141,7 +142,7 @@ const ProofHistoryDetailScreen: React.FC<ProofHistoryDetailScreenProps> = ({
   const isEthereumAddress = useMemo(() => {
     return (
       /^0x[a-fA-F0-9]+$/.test(data.userId) &&
-      (data.endpointType === 'staging_celo' || data.endpointType === 'celo') &&
+      isOnchainEndpointType(data.endpointType) &&
       data.userIdType === 'hex'
     );
   }, [data.userId, data.endpointType, data.userIdType]);

@@ -22,9 +22,11 @@ import {
 } from '@selfxyz/mobile-sdk-alpha/components';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
 import { black, white } from '@selfxyz/mobile-sdk-alpha/constants/colors';
+import { isOnchainEndpointType } from '@selfxyz/common';
 
 import failAnimation from '@/assets/animations/proof_failed.json';
 import succesAnimation from '@/assets/animations/proof_success.json';
+import { MultichainProgress } from '@/components/MultichainProgress';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
 import {
   buttonTap,
@@ -35,7 +37,13 @@ import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import type { RootStackParamList } from '@/navigation';
 import { getWhiteListedDisclosureAddresses } from '@/services/points/utils';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
+import type { MultichainStatus } from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';
+import {
+  getBridgeExplorerUrl,
+  getChainExplorerUrl,
+  getChainNameFromEndpointType,
+} from '@/utils/bridgeExplorers';
 
 const SuccessScreen: React.FC = () => {
   const selfClient = useSelfClient();
@@ -63,7 +71,15 @@ const SuccessScreen: React.FC = () => {
   const [whitelistedPoints, setWhitelistedPoints] = useState<number | null>(
     null,
   );
+  const [multichainStatus, setMultichainStatus] =
+    useState<MultichainStatus | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if this is a multichain verification
+  const isMultichain =
+    selfApp?.endpointType &&
+    isOnchainEndpointType(selfApp.endpointType) &&
+    !['celo', 'staging_celo'].includes(selfApp.endpointType);
 
   const onOkPress = useCallback(async () => {
     buttonTap();
@@ -208,6 +224,49 @@ const SuccessScreen: React.FC = () => {
     };
   }, [isFocused]);
 
+  // Listen for multichain status updates
+  useEffect(() => {
+    if (!isMultichain || !sessionId) return;
+
+    // Initialize multichain status
+    const destChainName = selfApp?.endpointType
+      ? getChainNameFromEndpointType(selfApp.endpointType)
+      : 'destination chain';
+
+    setMultichainStatus({
+      isMultichain: true,
+      destChainName,
+      origin: { status: 'pending' },
+      bridge: { status: 'pending' },
+      destination: { status: 'pending' },
+    });
+
+    // Set up WebSocket listener for multichain updates
+    const { default: io } = require('socket.io-client');
+    const { WS_DB_RELAYER } = require('@selfxyz/sdk-common');
+
+    const websocket = io(WS_DB_RELAYER, {
+      path: '/',
+      transports: ['websocket'],
+    });
+
+    websocket.emit('subscribe', sessionId);
+
+    websocket.on('status', (message: any) => {
+      const data = typeof message === 'string' ? JSON.parse(message) : message;
+
+      // Update multichain status from WebSocket message
+      if (data.is_multichain && data.multichain_status) {
+        setMultichainStatus(data.multichain_status);
+      }
+    });
+
+    return () => {
+      websocket.emit('unsubscribe', sessionId);
+      websocket.disconnect();
+    };
+  }, [isMultichain, sessionId, selfApp?.endpointType]);
+
   return (
     <ExpandableBottomLayout.Layout backgroundColor={white}>
       <SystemBars style="dark" />
@@ -232,17 +291,22 @@ const SuccessScreen: React.FC = () => {
         backgroundColor={white}
       >
         <View style={styles.content}>
-          <Title size="large">{getTitle(currentState)}</Title>
-          <Info
-            currentState={currentState}
-            appName={appName ?? 'The app'}
-            reason={reason ?? undefined}
-            countdown={countdown}
-            deeplinkCallback={selfApp?.deeplinkCallback?.replace(
-              /^https?:\/\//,
-              '',
-            )}
-          />
+          <Title size="large">{getTitle(currentState, isMultichain)}</Title>
+
+          {isMultichain && multichainStatus ? (
+            <MultichainProgress status={multichainStatus} />
+          ) : (
+            <Info
+              currentState={currentState}
+              appName={appName ?? 'The app'}
+              reason={reason ?? undefined}
+              countdown={countdown}
+              deeplinkCallback={selfApp?.deeplinkCallback?.replace(
+                /^https?:\/\//,
+                '',
+              )}
+            />
+          )}
         </View>
         <PrimaryButton
           trackEvent={ProofEvents.PROOF_RESULT_ACKNOWLEDGED}
@@ -272,7 +336,19 @@ const SuccessScreen: React.FC = () => {
   );
 };
 
-function getTitle(currentState: string) {
+function getTitle(currentState: string, isMultichain?: boolean) {
+  if (isMultichain) {
+    switch (currentState) {
+      case 'completed':
+        return 'Multichain Verification Complete';
+      case 'failure':
+      case 'error':
+        return 'Verification Failed';
+      default:
+        return 'Multichain Verification';
+    }
+  }
+
   switch (currentState) {
     case 'completed':
       return 'Proof Verified';

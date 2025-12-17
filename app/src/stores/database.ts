@@ -4,7 +4,12 @@
 
 import SQLite from 'react-native-sqlite-storage';
 
-import type { ProofDB, ProofDBResult, ProofHistory } from '@/stores/proofTypes';
+import type {
+  MultichainStatus,
+  ProofDB,
+  ProofDBResult,
+  ProofHistory,
+} from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';
 
 const PAGE_SIZE = 20;
@@ -54,8 +59,10 @@ export const database: ProofDB = {
         SELECT * FROM ${TABLE_NAME} WHERE status = '${ProofStatus.PENDING}'
       `);
 
+    const rows = pendingProofs.rows.raw().map(parseProofRow);
+
     return {
-      rows: pendingProofs.rows.raw(),
+      rows,
       total_count: pendingProofs.rows.item(0)?.total_count,
     };
   },
@@ -73,8 +80,11 @@ export const database: ProofDB = {
           SELECT * FROM data`,
       [PAGE_SIZE, offset],
     );
+
+    const rows = results.rows.raw().map(parseProofRow);
+
     return {
-      rows: results.rows.raw(),
+      rows,
       total_count: results.rows.item(0)?.total_count,
     };
   },
@@ -107,10 +117,15 @@ export const database: ProofDB = {
     const db = await openDatabase();
     const timestamp = Date.now();
 
+    // Serialize multichain status if present
+    const multichainData = proof.multichain
+      ? JSON.stringify(proof.multichain)
+      : null;
+
     try {
       const [insertResult] = await db.executeSql(
-        `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId, multichainData)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           proof.appName,
           proof.endpoint || null,
@@ -125,6 +140,7 @@ export const database: ProofDB = {
           proof.userIdType,
           proof.sessionId,
           proof.documentId,
+          multichainData,
         ],
       );
       return {
@@ -133,11 +149,11 @@ export const database: ProofDB = {
         rowsAffected: insertResult.rowsAffected,
       };
     } catch (error) {
-      if ((error as Error).message.includes('no column named documentId')) {
-        await addDocumentIdColumn();
+      if ((error as Error).message.includes('no column named multichainData')) {
+        await addMultichainColumns();
         const [insertResult] = await db.executeSql(
-          `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId, multichainData)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             proof.appName,
             proof.endpoint || null,
@@ -152,6 +168,36 @@ export const database: ProofDB = {
             proof.userIdType,
             proof.sessionId,
             proof.documentId,
+            multichainData,
+          ],
+        );
+        return {
+          id: insertResult.insertId.toString(),
+          timestamp,
+          rowsAffected: insertResult.rowsAffected,
+        };
+      } else if (
+        (error as Error).message.includes('no column named documentId')
+      ) {
+        await addDocumentIdColumn();
+        const [insertResult] = await db.executeSql(
+          `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId, multichainData)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            proof.appName,
+            proof.endpoint || null,
+            proof.endpointType,
+            proof.status,
+            proof.errorCode || null,
+            proof.errorReason || null,
+            timestamp,
+            proof.disclosures,
+            proof.logoBase64 || null,
+            proof.userId,
+            proof.userIdType,
+            proof.sessionId,
+            proof.documentId,
+            multichainData,
           ],
         );
         return {
@@ -164,8 +210,8 @@ export const database: ProofDB = {
       ) {
         await addEndpointColumn();
         const [insertResult] = await db.executeSql(
-          `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT OR IGNORE INTO ${TABLE_NAME} (appName, endpoint, endpointType, status, errorCode, errorReason, timestamp, disclosures, logoBase64, userId, userIdType, sessionId, documentId, multichainData)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             proof.appName,
             proof.endpoint || null,
@@ -180,6 +226,7 @@ export const database: ProofDB = {
             proof.userIdType,
             proof.sessionId,
             proof.documentId,
+            multichainData,
           ],
         );
         return {
@@ -191,6 +238,18 @@ export const database: ProofDB = {
         throw error;
       }
     }
+  },
+  async updateMultichainStatus(
+    sessionId: string,
+    multichainData: MultichainStatus,
+  ) {
+    const db = await openDatabase();
+    const serializedData = JSON.stringify(multichainData);
+
+    await db.executeSql(
+      `UPDATE ${TABLE_NAME} SET multichainData = ? WHERE sessionId = ?`,
+      [serializedData, sessionId],
+    );
   },
   async updateProofStatus(
     status: ProofStatus,
@@ -218,4 +277,30 @@ async function addDocumentIdColumn() {
 async function addEndpointColumn() {
   const db = await openDatabase();
   await db.executeSql(`ALTER TABLE ${TABLE_NAME} ADD COLUMN endpoint TEXT`);
+}
+
+async function addMultichainColumns() {
+  const db = await openDatabase();
+  await db.executeSql(
+    `ALTER TABLE ${TABLE_NAME} ADD COLUMN multichainData TEXT`,
+  );
+}
+
+/**
+ * Parse database row and deserialize multichain data
+ */
+function parseProofRow(row: any): ProofHistory {
+  const parsed: ProofHistory = { ...row };
+
+  // Deserialize multichain data if present
+  if (row.multichainData) {
+    try {
+      parsed.multichain = JSON.parse(row.multichainData);
+    } catch (error) {
+      console.error('Failed to parse multichain data:', error);
+    }
+  }
+
+  delete (parsed as any).multichainData;
+  return parsed;
 }

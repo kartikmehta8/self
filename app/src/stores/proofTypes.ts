@@ -4,6 +4,27 @@
 
 import type { EndpointType, UserIdType } from '@selfxyz/common/utils';
 
+export interface BridgeStatus {
+  status: 'pending' | 'in_progress' | 'complete' | 'failed';
+  protocol?: 'layerzero' | 'wormhole'; // Once determined
+  detail?: string;
+  eta?: string;
+}
+
+export interface ChainStatus {
+  status: 'pending' | 'complete' | 'failed';
+  txHash?: string;
+}
+
+export interface MultichainStatus {
+  isMultichain: boolean;
+  destChainId?: number;
+  destChainName?: string;
+  origin: ChainStatus;
+  bridge: BridgeStatus;
+  destination: ChainStatus;
+}
+
 export interface ProofDB {
   updateStaleProofs: (
     updateProofStatus: (id: string, status: ProofStatus) => Promise<void>,
@@ -19,6 +40,10 @@ export interface ProofDB {
     errorCode: string | undefined,
     errorReason: string | undefined,
     sessionId: string,
+  ) => Promise<void>;
+  updateMultichainStatus: (
+    sessionId: string,
+    multichainData: MultichainStatus,
   ) => Promise<void>;
 }
 
@@ -44,6 +69,7 @@ export interface ProofHistory {
   disclosures: string;
   logoBase64?: string;
   documentId: string;
+  multichain?: MultichainStatus;
 }
 
 export enum ProofStatus {

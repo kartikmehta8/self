@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
-import type { ProofDB, ProofDBResult, ProofHistory } from '@/stores/proofTypes';
+import type {
+  MultichainStatus,
+  ProofDB,
+  ProofDBResult,
+  ProofHistory,
+} from '@/stores/proofTypes';
 import { ProofStatus } from '@/stores/proofTypes';
 
 export const DB_NAME = 'proof_history_db';
@@ -238,6 +243,39 @@ class IndexedDBDatabase implements ProofDB {
             status,
             errorCode,
             errorReason,
+          };
+
+          const updateRequest = store.put(updatedProof);
+          updateRequest.onerror = () => reject(updateRequest.error);
+          updateRequest.onsuccess = () => resolve();
+        } else {
+          resolve(); // No record found, nothing to update
+        }
+      };
+    });
+  }
+
+  async updateMultichainStatus(
+    sessionId: string,
+    multichainData: MultichainStatus,
+  ): Promise<void> {
+    const db = await this.openDatabase();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const sessionIdIndex = store.index('sessionId');
+
+      // First find the record by sessionId
+      const getRequest = sessionIdIndex.get(sessionId);
+
+      getRequest.onerror = () => reject(getRequest.error);
+      getRequest.onsuccess = () => {
+        const existingProof = getRequest.result;
+        if (existingProof) {
+          const updatedProof = {
+            ...existingProof,
+            multichain: multichainData,
           };
 
           const updateRequest = store.put(updatedProof);

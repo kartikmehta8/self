@@ -28,6 +28,7 @@ import {
   white,
 } from '@selfxyz/mobile-sdk-alpha/constants/colors';
 import { dinot, plexMono } from '@selfxyz/mobile-sdk-alpha/constants/fonts';
+import { isOnchainEndpointType } from '@selfxyz/common';
 
 import type { RootStackParamList } from '@/navigation';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
@@ -248,8 +249,7 @@ export const ProofHistoryList: React.FC<ProofHistoryListProps> = ({
                       {formatDate(item.timestamp)}
                     </BodyText>
                   </YStack>
-                  {(item.endpointType === 'staging_celo' ||
-                    item.endpointType === 'celo') && (
+                  {isOnchainEndpointType(item.endpointType) && (
                     <XStack
                       backgroundColor={blue100}
                       paddingVertical={2}
