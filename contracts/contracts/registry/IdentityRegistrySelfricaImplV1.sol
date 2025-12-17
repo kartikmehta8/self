@@ -6,6 +6,7 @@ import {IIdentityRegistryKycV1} from "../interfaces/IIdentityRegistryKycV1.sol";
 import {AttestationId} from "../constants/AttestationId.sol";
 import {ImplRoot} from "../upgradeable/ImplRoot.sol";
 import {GCPJWTHelper} from "../libraries/GCPJWTHelper.sol";
+import {Formatter} from "../libraries/Formatter.sol";
 
 /**
  * @notice ⚠️ CRITICAL STORAGE LAYOUT WARNING ⚠️
@@ -87,7 +88,7 @@ interface IGCPJWTVerifier {
      * @param pubSignals Public signals from the circuit.
      * @return True if the proof is valid, false otherwise.
      */
-    function verifyProof(uint256[2] calldata pA, uint256[2][2] calldata pB, uint256[2] calldata pC, uint256[7] calldata pubSignals) external view returns (bool);
+    function verifyProof(uint256[2] calldata pA, uint256[2][2] calldata pB, uint256[2] calldata pC, uint256[19] calldata pubSignals) external view returns (bool);
 }
 
 /**
@@ -179,6 +180,8 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
     error INVALID_ROOT_CA();
     /// @notice Thrown when the TEE image hash is not registered in the PCR0Manager.
     error INVALID_IMAGE();
+    /// @notice Thrown when the timestamp is invalid.
+    error INVALID_TIMESTAMP();
 
     // ====================================================
     // Modifiers
@@ -442,7 +445,7 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         uint256[2] calldata pA,
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
-        uint256[7] calldata pubSignals
+        uint256[19] calldata pubSignals
     ) external onlyProxy onlyTEE {
         // Check if the proof is valid
         if (!IGCPJWTVerifier(_gcpJwtVerifier).verifyProof(pA, pB, pC, pubSignals)) revert INVALID_PROOF();
@@ -457,6 +460,18 @@ contract IdentityRegistrySelfricaImplV1 is IdentityRegistrySelfricaStorageV1, II
         // Unpack the pubkey and register it
         uint256 pubkeyCommitment = GCPJWTHelper.unpackAndDecodeHexPubkey(pubSignals[1], pubSignals[2], pubSignals[3]);
         _isRegisteredPubkeyCommitment[pubkeyCommitment] = true;
+
+        uint256 currentYear = 2000 + pubSignals[7] * 10 + pubSignals[8];
+        uint256 currentMonth = pubSignals[9] * 10 + pubSignals[10];
+        uint256 currentDay = pubSignals[11] * 10 + pubSignals[12];
+        uint256 currentHour = pubSignals[13] * 10 + pubSignals[14];
+        uint256 currentMinute = pubSignals[15] * 10 + pubSignals[16];
+        uint256 currentSecond = pubSignals[17] * 10 + pubSignals[18];
+        uint256 currentTimestamp = Formatter.toTimeStampWithSeconds(currentYear, currentMonth, currentDay, currentHour, currentMinute, currentSecond);
+
+        if (currentTimestamp + 1 hours < block.timestamp) revert INVALID_TIMESTAMP(); //1 hour in the past
+        if (currentTimestamp > block.timestamp + 1 hours) revert INVALID_TIMESTAMP(); //1 hour in the future
+
         emit PubkeyCommitmentRegistered(pubkeyCommitment);
     }
 

@@ -45,7 +45,6 @@ export type KycRegisterInput = {
     R: [bigint, bigint],
     pubKey: [bigint, bigint],
     secret: string,
-    attestation_id: string,
 }
 
 export type KycDiscloseInput = {
@@ -68,7 +67,6 @@ export type KycDiscloseInput = {
     current_date: string[],
     majority_age_ASCII: number[],
     secret: string,
-    attestation_id: string,
 };
 
 export type KycDisclosePublicInput = {

@@ -6,6 +6,18 @@ import { generateMockKycRegisterInput } from '@selfxyz/common/utils/kyc/generate
 import { generateRegisterSelfricaProof } from "../utils/generateProof";
 import { expect } from "chai";
 
+function getCurrentDateDigitsYYMMDDHHMMSS(): bigint[] {
+  const now = new Date();
+  const pad2 = (n: number) => n.toString().padStart(2, '0');
+  const yy = pad2(now.getUTCFullYear() % 100);
+  const mm = pad2(now.getUTCMonth() + 1);
+  const dd = pad2(now.getUTCDate());
+  const hh = pad2(now.getUTCHours());
+  const min = pad2(now.getUTCMinutes());
+  const ss = pad2(now.getUTCSeconds());
+  return `${yy}${mm}${dd}${hh}${min}${ss}`.split('').map(Number).map(BigInt);
+}
+
 /**
  * Packs a uint256 value into field elements as a 64-character hex string.
  * This mirrors how the GCP JWT circuit outputs pubkey commitments.
@@ -65,7 +77,7 @@ describe("Selfrica Registration test", function () {
     let registerSecret: string;
     let mockVerifier: any;
     let mockProof: any;
-    let mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint];
+    let mockPubSignals: bigint[];
     let snapshotId: string;
 
     before(async () => {
@@ -105,6 +117,7 @@ describe("Selfrica Registration test", function () {
         GCP_ROOT_CA_PUBKEY_HASH,
         p0, p1, p2,
         testImageHash.p0, testImageHash.p1, testImageHash.p2,
+        ...getCurrentDateDigitsYYMMDDHHMMSS(),
       ];
       // Take an EVM snapshot before tests to allow reverting in each test for isolation
       // We will use this snapshot in the afterEach for revert, but store it here.
@@ -212,8 +225,8 @@ describe("Selfrica Registration test", function () {
     });
 
     it("should fail with INVALID_IMAGE when image hash not in PCR0Manager", async () => {
-      const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-        GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+      const mockPubSignals: bigint[] = [
+        GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
       ];
 
       await expect(
@@ -238,8 +251,8 @@ describe("Selfrica Registration test", function () {
 
     describe("TEE Access Control", () => {
       it("should not allow non-TEE to register pubkey commitment", async () => {
-        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        const mockPubSignals: bigint[] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
         ];
 
         await expect(
@@ -279,15 +292,42 @@ describe("Selfrica Registration test", function () {
         const freshRegistry = await ethers.getContractAt("IdentityRegistrySelfricaImplV1", freshProxy.target);
         await freshRegistry.updateGCPJWTVerifier(deployedActors.gcpJwtVerifier.target);
 
-        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        const mockPubSignals: bigint[] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
         ];
 
         await expect(
           freshRegistry.registerPubkeyCommitment(mockProof.a, mockProof.b, mockProof.c, mockPubSignals),
         ).to.be.revertedWithCustomError(freshRegistry, "TEE_NOT_SET");
       });
+
+      it("should fail with INVALID_TIMESTAMP when timestamp is in the past or future", async () => {
+        let mockPubkeyCommitment = 12345678901234567890123456789012n;
+        const [p0, p1, p2] = packUint256ToHexFields(BigInt(mockPubkeyCommitment));
+
+        let previousHourDate = getCurrentDateDigitsYYMMDDHHMMSS();
+        previousHourDate[3 * 2] = previousHourDate[3 * 2] - 1n;
+
+        const mockPubSignals = [
+          GCP_ROOT_CA_PUBKEY_HASH, p0, p1, p2,
+          177384435506496807268973340845468654286294928521500580044819492874465981028n,
+          175298970718174405520284770870231222447414486446296682893283627688949855078n,
+          13360n, ...previousHourDate,
+        ];
+
+        await expect(
+          deployedActors.registrySelfrica.registerPubkeyCommitment(mockProof.a, mockProof.b, mockProof.c, mockPubSignals),
+        ).to.be.revertedWithCustomError(deployedActors.registrySelfrica, "INVALID_TIMESTAMP");
+
+        let nextHourDate = getCurrentDateDigitsYYMMDDHHMMSS();
+        nextHourDate[3 * 2] = nextHourDate[3 * 2] + 1n;
+
+        await expect(
+          deployedActors.registrySelfrica.registerPubkeyCommitment(mockProof.a, mockProof.b, mockProof.c, mockPubSignals),
+        ).to.be.revertedWithCustomError(deployedActors.registrySelfrica, "INVALID_TIMESTAMP");
+      });
     });
+
 
     describe("with MockGCPJWTVerifier", () => {
       let mockVerifier: any;
@@ -305,8 +345,8 @@ describe("Selfrica Registration test", function () {
 
       it("should fail with INVALID_PROOF when verifier rejects proof", async () => {
         await mockVerifier.setShouldVerify(false);
-        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        const mockPubSignals: bigint[] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
         ];
 
         await expect(
@@ -317,8 +357,8 @@ describe("Selfrica Registration test", function () {
       });
 
       it("should fail with INVALID_ROOT_CA when root CA hash does not match", async () => {
-        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-          12345n, 1n, 2n, 3n, 4n, 5n, 6n
+        const mockPubSignals: bigint[] = [
+          12345n, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
         ];
 
         await expect(
@@ -329,8 +369,8 @@ describe("Selfrica Registration test", function () {
       });
 
       it("should fail with INVALID_IMAGE when image hash not in PCR0Manager", async () => {
-        const mockPubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint] = [
-          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n
+        const mockPubSignals: bigint[] = [
+          GCP_ROOT_CA_PUBKEY_HASH, 1n, 2n, 3n, 4n, 5n, 6n, ...getCurrentDateDigitsYYMMDDHHMMSS().map(BigInt),
         ];
 
         await expect(

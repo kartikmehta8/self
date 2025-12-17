@@ -89,7 +89,6 @@ export const generateMockKycRegisterInput = async (secretKey?: bigint, ofac?: bo
     R: sig.R8 as [bigint, bigint],
     pubKey,
     secret: secret || "1234",
-    attestation_id: '4',
   };
 
   return kycRegisterInput;
@@ -131,7 +130,6 @@ export const generateKycDiscloseInput = (
   forbiddenCountriesList?: string[],
   minimumAge?: number,
   updateTree?: boolean,
-  attestationId?: string,
   secret: string = "1234"
 ) => {
   const data = ofac_input ? OFAC_DUMMY_INPUT : NON_OFAC_DUMMY_INPUT;
@@ -184,7 +182,6 @@ export const generateKycDiscloseInput = (
     current_date: currentDate,
     majority_age_ASCII: majorityAgeASCII,
     secret: secret,
-    attestation_id: attestationId || '4',
   };
 
   return circuitInput;
