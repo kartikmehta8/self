@@ -6,7 +6,7 @@ import { v4 } from 'uuid';
 
 import { SelfAppBuilder } from '@selfxyz/common/utils/appType';
 
-import { selfLogoReverseUrl } from '@/consts/links';
+import { appsUrl, selfLogoReverseUrl } from '@/consts/links';
 import { getOrGeneratePointsAddress } from '@/providers/authProvider';
 import { POINTS_API_BASE_URL } from '@/services/points/constants';
 import type { IncomingPoints } from '@/services/points/types';
@@ -166,18 +166,30 @@ export const hasUserDoneThePointsDisclosure = async (): Promise<boolean> => {
   }
 };
 
+const buildPointsDisclosureMetadata = (walletAddress: string) => ({
+  action: 'points-disclosure',
+  issuedAt: new Date().toISOString(),
+  nonce: v4(),
+  wallet: walletAddress.toLowerCase(),
+});
+
 export const pointsSelfApp = async () => {
   const endpoint = '0x829d183faaa675f8f80e8bb25fb1476cd4f7c1f0';
+  const pointsAddress = (await getPointsAddress()).toLowerCase();
+  const disclosureMetadata = buildPointsDisclosureMetadata(pointsAddress);
   const builder = new SelfAppBuilder({
     appName: '✨ Self Points',
     endpoint: endpoint.toLowerCase(),
     endpointType: 'celo',
     scope: 'minimal-disclosure-quest',
-    userId: v4(),
-    userIdType: 'uuid',
+    userId: pointsAddress,
+    userIdType: 'hex',
     disclosures: {},
     logoBase64: selfLogoReverseUrl,
     header: '',
+    deeplinkCallback: appsUrl,
+    userDefinedData: JSON.stringify(disclosureMetadata),
+    selfDefinedData: pointsAddress,
   });
 
   return builder.build();

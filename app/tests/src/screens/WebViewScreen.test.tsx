@@ -86,9 +86,27 @@ const mockPlatform = jest.requireMock('react-native').Platform as {
   select: (specifics: { ios?: unknown; android?: unknown }) => unknown;
 };
 
+const { handleUrl: mockHandleUrl, parseAndValidateUrlParams } =
+  jest.requireMock('@/navigation/deeplinks') as {
+    handleUrl: jest.Mock;
+    parseAndValidateUrlParams: jest.Mock;
+  };
+const { useSelfClient: mockUseSelfClient } = jest.requireMock(
+  '@selfxyz/mobile-sdk-alpha',
+) as { useSelfClient: jest.Mock };
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: jest.fn(),
   useFocusEffect: jest.fn(),
+}));
+
+jest.mock('@selfxyz/mobile-sdk-alpha', () => ({
+  useSelfClient: jest.fn(() => ({ getSelfAppState: jest.fn() })),
+}));
+
+jest.mock('@/navigation/deeplinks', () => ({
+  handleUrl: jest.fn(),
+  parseAndValidateUrlParams: jest.fn(() => ({})),
 }));
 
 jest.mock('@/components/navbar/WebViewNavBar', () => ({
@@ -155,10 +173,13 @@ describe('WebViewScreen URL sanitization and navigation interception', () => {
       goBack: mockGoBack,
       canGoBack: () => true,
     });
+    mockUseSelfClient.mockReturnValue({ getSelfAppState: jest.fn() });
     jest.spyOn(console, 'error').mockImplementation(() => {});
     mockAlert.alert.mockClear();
     mockLinking.canOpenURL.mockReset();
     mockLinking.openURL.mockReset();
+    parseAndValidateUrlParams.mockReturnValue({});
+    mockHandleUrl.mockClear();
   });
 
   afterEach(() => {
@@ -297,6 +318,24 @@ describe('WebViewScreen URL sanitization and navigation interception', () => {
     expect(String(msg)).toContain('Failed to open externally');
     expect(String(msg)).not.toMatch(/Failed to open URL externally/);
   });
+
+  it('intercepts trusted redirect self links carrying selfApp payloads', async () => {
+    const deeplinkUrl = 'https://redirect.self.xyz?selfApp=%7B%7D';
+    parseAndValidateUrlParams.mockReturnValue({
+      selfApp: '{}',
+    });
+    render(<WebViewScreen {...createProps('https://apps.self.xyz')} />);
+    const webview = screen.getByTestId('webview');
+
+    const result = await webview.props.onShouldStartLoadWithRequest?.({
+      url: deeplinkUrl,
+      isTopFrame: true,
+      navigationType: 'click',
+    });
+
+    expect(result).toBe(false);
+    expect(mockHandleUrl).toHaveBeenCalledWith(expect.any(Object), deeplinkUrl);
+  });
 });
 
 describe('WebViewScreen same-origin security', () => {
@@ -321,10 +360,12 @@ describe('WebViewScreen same-origin security', () => {
       goBack: jest.fn(),
       canGoBack: () => true,
     });
+    mockUseSelfClient.mockReturnValue({ getSelfAppState: jest.fn() });
     jest.spyOn(console, 'error').mockImplementation(() => {});
     mockAlert.alert.mockClear();
     mockLinking.canOpenURL.mockReset();
     mockLinking.openURL.mockReset();
+    parseAndValidateUrlParams.mockReturnValue({});
   });
 
   afterEach(() => {

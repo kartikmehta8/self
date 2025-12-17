@@ -5,7 +5,7 @@
 import type { LottieViewProps } from 'lottie-react-native';
 import LottieView from 'lottie-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SystemBars } from 'react-native-edge-to-edge';
 import { ScrollView, Spinner } from 'tamagui';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -36,6 +36,7 @@ import type { RootStackParamList } from '@/navigation';
 import { getWhiteListedDisclosureAddresses } from '@/services/points/utils';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
 import { ProofStatus } from '@/stores/proofTypes';
+import { handleDeeplinkCallbackNavigation } from '@/utils/deeplinkCallbacks';
 
 const SuccessScreen: React.FC = () => {
   const selfClient = useSelfClient();
@@ -94,6 +95,21 @@ const SuccessScreen: React.FC = () => {
     }
     setCountdown(null);
   }
+
+  const navigateWithDeeplinkCallback = useCallback(
+    async (deeplink: string) => {
+      try {
+        await handleDeeplinkCallbackNavigation({
+          deeplinkCallback: deeplink,
+          navigation,
+        });
+      } catch (error) {
+        console.error('Failed to open deep link:', error);
+        onOkPress();
+      }
+    },
+    [navigation, onOkPress],
+  );
 
   useEffect(() => {
     if (isFocused) {
@@ -191,13 +207,15 @@ const SuccessScreen: React.FC = () => {
     } else {
       setCountdown(null);
       if (selfApp?.deeplinkCallback) {
-        Linking.openURL(selfApp.deeplinkCallback).catch(err => {
-          console.error('Failed to open deep link:', err);
-          onOkPress();
-        });
+        navigateWithDeeplinkCallback(selfApp.deeplinkCallback);
       }
     }
-  }, [countdown, selfApp?.deeplinkCallback, onOkPress]);
+  }, [
+    countdown,
+    selfApp?.deeplinkCallback,
+    navigateWithDeeplinkCallback,
+    onOkPress,
+  ]);
 
   useEffect(() => {
     if (!isFocused) {

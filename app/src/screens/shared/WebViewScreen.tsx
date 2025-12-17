@@ -17,6 +17,7 @@ import type { WebViewNavigation } from 'react-native-webview/lib/WebViewTypes';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import {
   charcoal,
   slate200,
@@ -27,6 +28,7 @@ import { WebViewNavBar } from '@/components/navbar/WebViewNavBar';
 import { WebViewFooter } from '@/components/WebViewFooter';
 import { selfUrl } from '@/consts/links';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
+import { handleUrl, parseAndValidateUrlParams } from '@/navigation/deeplinks';
 import type { SharedRoutesParamList } from '@/navigation/types';
 import {
   DISALLOWED_SCHEMES,
@@ -35,6 +37,7 @@ import {
   isTrustedDomain,
   isUserInitiatedTopFrameNavigation,
   shouldAlwaysOpenExternally,
+  type WebViewRequestWithIosProps,
 } from '@/utils/webview';
 
 export interface WebViewScreenParams {
@@ -73,6 +76,7 @@ const styles = StyleSheet.create({
 
 export const WebViewScreen: React.FC<WebViewScreenProps> = ({ route }) => {
   const navigation = useNavigation();
+  const selfClient = useSelfClient();
   const params = route?.params as WebViewScreenParams | undefined;
   const safeParams: WebViewScreenParams = params ?? { url: defaultUrl };
   const { url, title } = safeParams;
@@ -134,6 +138,37 @@ export const WebViewScreen: React.FC<WebViewScreenProps> = ({ route }) => {
       });
     },
     [],
+  );
+
+  const interceptSelfRedirect = useCallback(
+    (req: WebViewNavigation & WebViewRequestWithIosProps) => {
+      const validatedParams = parseAndValidateUrlParams(req.url);
+      const hasSelfParams = Boolean(
+        validatedParams.selfApp || validatedParams.sessionId,
+      );
+      if (!hasSelfParams) {
+        return false;
+      }
+
+      try {
+        const hostname = new URL(req.url).hostname;
+        const isSelfHost =
+          hostname === 'self.xyz' || hostname.endsWith('.self.xyz');
+        if (!isSelfHost || !isTrustedDomain(req.url)) {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+
+      if (!isUserInitiatedTopFrameNavigation(req)) {
+        return false;
+      }
+
+      handleUrl(selfClient, req.url);
+      return true;
+    },
+    [selfClient],
   );
 
   const openUrl = useCallback(async (targetUrl: string) => {
@@ -246,6 +281,10 @@ export const WebViewScreen: React.FC<WebViewScreenProps> = ({ route }) => {
             ref={webViewRef}
             onShouldStartLoadWithRequest={req => {
               const isHttps = /^https:\/\//i.test(req.url);
+
+              if (interceptSelfRedirect(req)) {
+                return false;
+              }
 
               // Allow about:blank/srcdoc during trusted sessions (some wallets use this before redirecting)
               if (isSessionTrusted && isAllowedAboutUrl(req.url)) {
