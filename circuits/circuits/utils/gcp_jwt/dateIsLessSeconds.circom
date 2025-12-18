@@ -52,9 +52,5 @@ template DateIsLessSeconds() {
   signal isYearAndMonthAndDayAndHourAndMinuteEqual <== isYearAndMonthAndDayAndHourEqual * isMinuteEqual;
   signal isYearAndMonthAndDayAndHourAndMinuteEqualAndSecondLess <== isYearAndMonthAndDayAndHourAndMinuteEqual * isSecondLess;
 
-  component greaterThan = GreaterThan(7);
-  greaterThan.in[0] <== isYearLess + isYearEqualAndMonthLess + isYearAndMonthEqualAndDayLess + isYearAndMonthAndDayEqualAndHourLess + isYearAndMonthAndDayAndHourEqualAndMinuteLess + isYearAndMonthAndDayAndHourAndMinuteEqualAndSecondLess;
-  greaterThan.in[1] <== 0;
-
-  signal output out <== greaterThan.out;
+  signal output out <== isYearLess + isYearEqualAndMonthLess + isYearAndMonthEqualAndDayLess + isYearAndMonthAndDayEqualAndHourLess + isYearAndMonthAndDayAndHourEqualAndMinuteLess + isYearAndMonthAndDayAndHourAndMinuteEqualAndSecondLess;
 }

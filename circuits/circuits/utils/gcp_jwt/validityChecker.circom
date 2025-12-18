@@ -35,8 +35,8 @@ template IsValidAscii() {
 /// - Expects SEQUENCE header: 0x30, length 0x1E at `validity_offset`
 /// - notBefore: tag 0x17, length 0x0d, 12 ASCII digits YYMMDDHHMMSS, trailing 'Z'
 /// - notAfter:  tag 0x17, length 0x0d, 12 ASCII digits YYMMDDHHMMSS, trailing 'Z'
-/// - `validity_offset` points to the 0x30; a full 33-byte window is accessed up to
-///   `validity_offset + 32` (inclusive)
+/// - `validity_offset` points to the 0x30; a full 32-byte window is accessed up to
+///   `validity_offset + 31` (inclusive)
 /// - Dates are compared with `DateIsLessSeconds`; inputs are assumed to be well-formed
 ///   aside from ASCII digit checks performed in-circuit.
 template ValidityChecker(MAX_CERT_LENGTH) {
@@ -105,7 +105,7 @@ template ValidityChecker(MAX_CERT_LENGTH) {
     signal current_date_second <== current_date[10] * 10 + current_date[11];
 
     signal not_before_year <== 2000 + not_before_digits[0] * 10 + not_before_digits[1];
-    signal not_before_year_valid <== LessThan(12)([not_before_year, 2049]);
+    signal not_before_year_valid <== LessThan(12)([not_before_year, 2050]);
     not_before_year_valid === 1;
     signal not_before_month <== not_before_digits[2] * 10 + not_before_digits[3];
     signal not_before_month_valid <== LessThan(8)([not_before_month, 13]);
@@ -124,7 +124,7 @@ template ValidityChecker(MAX_CERT_LENGTH) {
     not_before_second_valid === 1;
 
     signal not_after_year <== 2000 + not_after_digits[0] * 10 + not_after_digits[1];
-    signal not_after_year_valid <== LessThan(12)([not_after_year, 2049]);
+    signal not_after_year_valid <== LessThan(12)([not_after_year, 2050]);
     not_after_year_valid === 1;
     signal not_after_month <== not_after_digits[2] * 10 + not_after_digits[3];
     signal not_after_month_valid <== LessThan(8)([not_after_month, 13]);
