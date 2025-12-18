@@ -3,6 +3,7 @@ pragma circom 2.1.9;
 include "./ofac/ofac_name_dob_kyc.circom";
 include "./ofac/ofac_name_yob_kyc.circom";
 include "../../aadhaar/disclose/country_not_in_list.circom";
+include "circomlib/circuits/comparators.circom";
 include "../date/isValid.circom";
 include "../date/isOlderThan.circom";
 include "../constants.circom";
@@ -101,10 +102,14 @@ template DISCLOSE_KYC(
     signal majority_age_1 <== majority_age_ASCII[2] - 48;
     signal majority_age <== majority_age_100 + majority_age_10 + majority_age_1;
 
+    component lessThan256 = LessThan(8);
+    lessThan256.in[0] <== majority_age;
+    lessThan256.in[1] <== 255;
+    lessThan256.out === 1;
+
     revealed_data[max_length] <== ofac_name_dob_circuit.ofacCheckResult * selector_ofac;
     revealed_data[max_length + 1] <== ofac_name_yob_circuit.ofacCheckResult * selector_ofac;
     revealed_data[max_length + 2] <== is_older_than.out * majority_age;
-
 
     component country_not_in_list_circuit = CountryNotInList(MAX_FORBIDDEN_COUNTRIES_LIST_LENGTH);
 
