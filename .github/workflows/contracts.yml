@@ -17,6 +17,8 @@ jobs:
       should_run: ${{ steps.filter.outputs.should_run }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Check if should run
         id: filter
