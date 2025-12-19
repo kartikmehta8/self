@@ -134,6 +134,14 @@ jobs:
       - name: Print Circom version
         run: circom --version
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Cache Yarn dependencies
         uses: ./.github/actions/cache-yarn
         with:
