@@ -19,6 +19,15 @@ env:
   E2E_TESTING: 1
 
 on:
+  push:
+    branches:
+      - dev
+      - staging
+      - main
+    paths:
+      - "packages/mobile-sdk-demo/**"
+      - "packages/mobile-sdk-alpha/**"
+      - ".github/workflows/mobile-sdk-demo-e2e.yml"
   pull_request:
     branches:
       - dev
@@ -28,6 +37,7 @@ on:
       - "packages/mobile-sdk-demo/**"
       - "packages/mobile-sdk-alpha/**"
       - ".github/workflows/mobile-sdk-demo-e2e.yml"
+  workflow_dispatch:
 
 jobs:
   android-e2e:
@@ -59,6 +69,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - run: corepack enable
       - run: corepack prepare yarn@4.6.0 --activate
+      - name: Compute .yarnrc.yml hash
+        id: yarnrc-hash
+        uses: ./.github/actions/yarnrc-hash
       - name: Cache Yarn dependencies
         uses: ./.github/actions/cache-yarn
         with:
@@ -66,10 +79,17 @@ jobs:
             .yarn/cache
             .yarn/install-state.gz
             .yarn/unplugged
-          cache-version: ${{ env.GH_CACHE_VERSION }}-node-${{ env.NODE_VERSION_SANITIZED }}-${{ hashFiles('.yarnrc.yml') }}
+          cache-version: ${{ env.GH_CACHE_VERSION }}-node-${{ env.NODE_VERSION_SANITIZED }}-${{ steps.yarnrc-hash.outputs.hash }}
       - name: Toggle Yarn hardened mode for trusted PRs
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
         run: echo "YARN_ENABLE_HARDENED_MODE=0" >> $GITHUB_ENV
+      - name: Generate token for self repositories
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+        uses: ./.github/actions/generate-github-token
+        id: github-token
+        with:
+          app-id: ${{ vars.GH_WORKFLOWS_CROSS_ACCESS_ID }}
+          private-key: ${{ secrets.GH_WORKFLOWS_CROSS_ACCESS_KEY }}
       - name: Install deps (internal PRs and protected branches)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
         uses: nick-fields/retry@v3
@@ -79,7 +99,7 @@ jobs:
           retry_wait_seconds: 5
           command: yarn install --immutable --silent
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
       - name: Install deps (forked PRs - no secrets)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
         uses: nick-fields/retry@v3
@@ -192,7 +212,11 @@ jobs:
 
   ios-e2e:
     timeout-minutes: 60
-    runs-on: macos-latest-large
+    # runs-on: macos-latest-large
+    runs-on: namespace-profile-apple-silicon-6cpu
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push'
     name: iOS E2E Tests Demo App
     concurrency:
       group: ${{ github.workflow }}-ios-${{ github.ref }}
@@ -220,6 +244,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - run: corepack enable
       - run: corepack prepare yarn@4.6.0 --activate
+      - name: Compute .yarnrc.yml hash
+        id: yarnrc-hash
+        uses: ./.github/actions/yarnrc-hash
       - name: Cache Yarn dependencies
         uses: ./.github/actions/cache-yarn
         with:
@@ -227,10 +254,32 @@ jobs:
             .yarn/cache
             .yarn/install-state.gz
             .yarn/unplugged
-          cache-version: ${{ env.GH_CACHE_VERSION }}-node-${{ env.NODE_VERSION_SANITIZED }}-${{ hashFiles('.yarnrc.yml') }}
+          cache-version: ${{ env.GH_CACHE_VERSION }}-node-${{ env.NODE_VERSION_SANITIZED }}-${{ steps.yarnrc-hash.outputs.hash }}
       - name: Toggle Yarn hardened mode for trusted PRs
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
         run: echo "YARN_ENABLE_HARDENED_MODE=0" >> $GITHUB_ENV
+      - name: Check Java installation
+        run: |
+          echo "INSTALL_JAVA=false" >> "$GITHUB_ENV"
+          if command -v java &> /dev/null && java -version &> /dev/null; then
+            echo "Java already installed: $(java -version 2>&1 | head -n 1)"
+          else
+            echo "Java not found or not working, will install..."
+            echo "INSTALL_JAVA=true" >> "$GITHUB_ENV"
+          fi
+      - name: Setup Java environment
+        if: env.INSTALL_JAVA == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Generate token for self repositories
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+        uses: ./.github/actions/generate-github-token
+        id: github-token
+        with:
+          app-id: ${{ vars.GH_WORKFLOWS_CROSS_ACCESS_ID }}
+          private-key: ${{ secrets.GH_WORKFLOWS_CROSS_ACCESS_KEY }}
       - name: Install deps (internal PRs and protected branches)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
         uses: nick-fields/retry@v3
@@ -240,7 +289,7 @@ jobs:
           retry_wait_seconds: 5
           command: yarn install --immutable --silent
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
       - name: Install deps (forked PRs - no secrets)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
         uses: nick-fields/retry@v3
@@ -293,7 +342,7 @@ jobs:
           path: |
             packages/mobile-sdk-demo/ios/Pods
             ~/Library/Caches/CocoaPods
-          lock-file: packages/mobile-sdk-demo/ios/Podfile.lock
+          lockfile: packages/mobile-sdk-demo/ios/Podfile.lock
       # DerivedData caching disabled - caused intermittent build failures due to stale cache
       # Pod caching still speeds up pod install significantly
       - name: Verify iOS Runtime
@@ -316,15 +365,15 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 10
           command: |
-            if [ -n "${SELFXYZ_INTERNAL_REPO_PAT}" ]; then
-              echo "🔑 Using SELFXYZ_INTERNAL_REPO_PAT for private pod access"
-              echo "::add-mask::${SELFXYZ_INTERNAL_REPO_PAT}"
+            if [ -n "${SELFXYZ_APP_TOKEN}" ]; then
+              echo "🔑 Using GitHub App token for private pod access"
+              echo "::add-mask::${SELFXYZ_APP_TOKEN}"
             fi
             cd packages/mobile-sdk-demo/ios
             echo "📦 Installing pods via cache-fix script…"
             bash scripts/pod-install-with-cache-fix.sh
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
           GIT_TERMINAL_PROMPT: 0
       - name: Setup iOS Simulator
         run: |

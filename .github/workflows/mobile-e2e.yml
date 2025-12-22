@@ -17,6 +17,15 @@ env:
   MAESTRO_VERSION: 1.41.0
 
 on:
+  push:
+    branches:
+      - dev
+      - staging
+      - main
+    paths:
+      - "app/**"
+      - "packages/mobile-sdk-alpha/**"
+      - ".github/workflows/mobile-e2e.yml"
   pull_request:
     branches:
       - dev
@@ -26,6 +35,7 @@ on:
       - "app/**"
       - "packages/mobile-sdk-alpha/**"
       - ".github/workflows/mobile-e2e.yml"
+  workflow_dispatch:
 
 jobs:
   android-build-test:
@@ -70,6 +80,14 @@ jobs:
       - name: Toggle Yarn hardened mode for trusted PRs
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
         run: echo "YARN_ENABLE_HARDENED_MODE=0" >> $GITHUB_ENV
+      - name: Generate token for self repositories
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+        uses: ./.github/actions/generate-github-token
+        id: github-token
+        with:
+          app-id: ${{ vars.GH_WORKFLOWS_CROSS_ACCESS_ID }}
+          private-key: ${{ secrets.GH_WORKFLOWS_CROSS_ACCESS_KEY }}
+          configure-netrc: "true"
       - name: Install deps (internal PRs and protected branches)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
         uses: nick-fields/retry@v3
@@ -79,7 +97,7 @@ jobs:
           retry_wait_seconds: 5
           command: yarn install --immutable --silent
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
       - name: Install deps (forked PRs - no secrets)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
         uses: nick-fields/retry@v3
@@ -138,7 +156,7 @@ jobs:
           cd app
           PLATFORM=android node scripts/setup-private-modules.cjs
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
           CI: true
       - name: Build Android APK
         run: |
@@ -149,6 +167,8 @@ jobs:
       - name: Clean up Gradle build artifacts
         uses: ./.github/actions/cleanup-gradle-artifacts
       - name: Verify APK and android-passport-nfc-reader integration
+        env:
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
         run: |
           echo "🔍 Verifying build artifacts..."
           APK_PATH="app/android/app/build/outputs/apk/debug/app-debug.apk"
@@ -160,8 +180,8 @@ jobs:
           echo "📱 APK size: $APK_SIZE bytes"
 
           # Verify private modules were properly integrated (skip for forks)
-          if [ -z "${SELFXYZ_INTERNAL_REPO_PAT:-}" ]; then
-            echo "🔕 No PAT available — skipping private module verification"
+          if [ -z "${SELFXYZ_APP_TOKEN:-}" ]; then
+            echo "🔕 No SELFXYZ_APP_TOKEN available — skipping private module verification"
           else
             # Verify android-passport-nfc-reader
             if [ -d "app/android/android-passport-nfc-reader" ]; then
@@ -219,7 +239,8 @@ jobs:
 
   e2e-ios:
     timeout-minutes: 120
-    runs-on: macos-latest-large
+    # runs-on: macos-latest-large
+    runs-on: namespace-profile-apple-silicon-6cpu
     concurrency:
       group: ${{ github.workflow }}-ios-${{ github.ref }}
       cancel-in-progress: true
@@ -263,6 +284,29 @@ jobs:
       - name: Toggle Yarn hardened mode for trusted PRs
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
         run: echo "YARN_ENABLE_HARDENED_MODE=0" >> $GITHUB_ENV
+      - name: Check Java installation
+        run: |
+          echo "INSTALL_JAVA=false" >> "$GITHUB_ENV"
+          if command -v java &> /dev/null && java -version &> /dev/null; then
+            echo "Java already installed: $(java -version 2>&1 | head -n 1)"
+          else
+            echo "Java not found or not working, will install..."
+            echo "INSTALL_JAVA=true" >> "$GITHUB_ENV"
+          fi
+      - name: Setup Java environment
+        if: env.INSTALL_JAVA == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Generate token for self repositories
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+        uses: ./.github/actions/generate-github-token
+        id: github-token
+        with:
+          app-id: ${{ vars.GH_WORKFLOWS_CROSS_ACCESS_ID }}
+          private-key: ${{ secrets.GH_WORKFLOWS_CROSS_ACCESS_KEY }}
+          configure-netrc: "true"
       - name: Install deps (internal PRs and protected branches)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
         uses: nick-fields/retry@v3
@@ -272,7 +316,7 @@ jobs:
           retry_wait_seconds: 5
           command: yarn install --immutable --silent
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
       - name: Install deps (forked PRs - no secrets)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
         uses: nick-fields/retry@v3
@@ -336,7 +380,7 @@ jobs:
           path: |
             app/ios/Pods
             ~/Library/Caches/CocoaPods
-          lock-file: app/ios/Podfile.lock
+          lockfile: app/ios/Podfile.lock
       # DerivedData caching disabled - caused intermittent build failures due to stale cache
       # Pod caching still speeds up pod install significantly
       - name: Verify iOS Runtime
@@ -360,7 +404,7 @@ jobs:
             echo "📦 Installing pods via centralized script…"
             BUNDLE_GEMFILE=../Gemfile bundle exec bash scripts/pod-install-with-cache-fix.sh
         env:
-          SELFXYZ_INTERNAL_REPO_PAT: ${{ secrets.SELFXYZ_INTERNAL_REPO_PAT }}
+          SELFXYZ_APP_TOKEN: ${{ steps.github-token.outputs.token }}
       - name: Setup iOS Simulator
         run: |
           echo "Setting up iOS Simulator..."
