@@ -134,7 +134,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org"
-      - uses: actions/checkout@v6
       - name: Install Dependencies
         uses: ./.github/actions/yarn-install
 
@@ -161,7 +160,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org"
-      - uses: actions/checkout@v6
       - name: Install Dependencies
         uses: ./.github/actions/yarn-install
       - name: Build package
