@@ -2,205 +2,40 @@
 // SPDX-License-Identifier: BUSL-1.1
 // NOTE: Converts to Apache-2.0 on 2029-06-11 per LICENSE.
 
-import forge from 'node-forge';
 import { Platform } from 'react-native';
 import type { Socket } from 'socket.io-client';
-import socketIo from 'socket.io-client';
-import { v4 } from 'uuid';
+import { getCircuitNameFromPassportData } from '@selfxyz/common/utils';
+import type { PassportData } from '@selfxyz/common/types';
 import type { AnyActorRef, AnyEventObject, StateFrom } from 'xstate';
 import { createActor, createMachine } from 'xstate';
 import { create } from 'zustand';
 
-import type { DocumentCategory, PassportData } from '@selfxyz/common/types';
-import type { EndpointType, SelfApp } from '@selfxyz/common/utils';
-import {
-  getCircuitNameFromPassportData,
-  getSKIPEM,
-  getSolidityPackedUserContextData,
-  initPassportDataParsing,
-} from '@selfxyz/common/utils';
-import { checkPCR0Mapping, validatePKIToken } from '@selfxyz/common/utils/attest';
-import {
-  generateTEEInputsDiscloseStateless,
-  generateTEEInputsDSC,
-  generateTEEInputsRegister,
-} from '@selfxyz/common/utils/circuits/registerInputs';
-import {
-  checkDocumentSupported,
-  checkIfPassportDscIsInTree,
-  isDocumentNullified,
-  isUserRegistered,
-  isUserRegisteredWithAlternativeCSCA,
-} from '@selfxyz/common/utils/passports/validate';
-import {
-  clientKey,
-  clientPublicKeyHex,
-  ec,
-  encryptAES256GCM,
-  getPayload,
-  getWSDbRelayerUrl,
-} from '@selfxyz/common/utils/proving';
+import type { EndpointType } from '@selfxyz/common/utils';
 import type { IDDocument } from '@selfxyz/common/utils/types';
 
 import { PassportEvents, ProofEvents } from '../constants/analytics';
 import {
-  clearPassportData,
   hasAnyValidRegisteredDocument,
   loadSelectedDocument,
   markCurrentDocumentAsRegistered,
-  reStorePassportDataWithRightCSCA,
-  storePassportData,
 } from '../documents/utils';
-import { fetchAllTreesAndCircuits, getCommitmentTree } from '../stores';
 import { SdkEvents } from '../types/events';
 import type { SelfClient } from '../types/public';
+import type { DocumentProcessorDeps } from './internal/documentProcessor';
+import { parseIDDocument, startFetchingData, validatingDocument } from './internal/documentProcessor';
 import type { ProofContext } from './internal/logging';
-import { handleStatusCode, parseStatusMessage } from './internal/statusHandlers';
-
-// Helper functions for WebSocket URL resolution
-const getMappingKey = (circuitType: 'disclose' | 'register' | 'dsc', documentCategory: DocumentCategory): string => {
-  if (circuitType === 'disclose') {
-    if (documentCategory === 'passport') return 'DISCLOSE';
-    if (documentCategory === 'id_card') return 'DISCLOSE_ID';
-    if (documentCategory === 'aadhaar') return 'DISCLOSE_AADHAAR';
-    throw new Error(`Unsupported document category for disclose: ${documentCategory}`);
-  }
-  if (circuitType === 'register') {
-    if (documentCategory === 'passport') return 'REGISTER';
-    if (documentCategory === 'id_card') return 'REGISTER_ID';
-    if (documentCategory === 'aadhaar') return 'REGISTER_AADHAAR';
-    throw new Error(`Unsupported document category for register: ${documentCategory}`);
-  }
-  // circuitType === 'dsc'
-  return documentCategory === 'passport' ? 'DSC' : 'DSC_ID';
-};
-
-const resolveWebSocketUrl = (
-  selfClient: SelfClient,
-  circuitType: 'disclose' | 'register' | 'dsc',
-  passportData: PassportData,
-  circuitName: string,
-): string | undefined => {
-  const { documentCategory } = passportData;
-  const circuitsMapping = selfClient.getProtocolState()[documentCategory].circuits_dns_mapping;
-  const mappingKey = getMappingKey(circuitType, documentCategory);
-
-  return circuitsMapping?.[mappingKey]?.[circuitName];
-};
-
-// Helper functions for _generatePayload refactoring
-const _generateCircuitInputs = async (
-  selfClient: SelfClient,
-  circuitType: 'disclose' | 'register' | 'dsc',
-  secret: string | undefined | null,
-  passportData: IDDocument,
-  env: 'prod' | 'stg',
-  selfApp: SelfApp | null,
-) => {
-  const document: DocumentCategory = passportData.documentCategory;
-  const protocolStore = selfClient.getProtocolState();
-
-  // (Removed the early selfApp guard—only the disclosure path now enforces selfApp below)
-
-  let inputs, circuitName, endpointType, endpoint, circuitTypeWithDocumentExtension;
-  switch (circuitType) {
-    case 'register':
-      ({ inputs, circuitName, endpointType, endpoint } = await generateTEEInputsRegister(
-        secret as string,
-        passportData,
-        document === 'aadhaar' ? protocolStore[document].public_keys : protocolStore[document].dsc_tree,
-        env,
-      ));
-      circuitTypeWithDocumentExtension = `${circuitType}${document === 'passport' ? '' : '_id'}`;
-      break;
-    case 'dsc':
-      if (document === 'aadhaar') {
-        throw new Error('DSC circuit type is not supported for Aadhaar documents');
-      }
-      ({ inputs, circuitName, endpointType, endpoint } = generateTEEInputsDSC(
-        passportData as PassportData,
-        protocolStore[document].csca_tree as string[][],
-        env,
-      ));
-      circuitTypeWithDocumentExtension = `${circuitType}${document === 'passport' ? '' : '_id'}`;
-      break;
-    case 'disclose': {
-      if (!selfApp) {
-        throw new Error('SelfApp context not initialized');
-      }
-      ({ inputs, circuitName, endpointType, endpoint } = generateTEEInputsDiscloseStateless(
-        secret as string,
-        passportData,
-        selfApp,
-        (doc: DocumentCategory, tree) => {
-          const docStore =
-            doc === 'passport'
-              ? protocolStore.passport
-              : doc === 'aadhaar'
-                ? protocolStore.aadhaar
-                : protocolStore.id_card;
-          switch (tree) {
-            case 'ofac':
-              return docStore.ofac_trees;
-            case 'commitment':
-              if (!docStore.commitment_tree) {
-                throw new Error('Commitment tree not loaded');
-              }
-              return docStore.commitment_tree;
-            default:
-              throw new Error('Unknown tree type');
-          }
-        },
-      ));
-      circuitTypeWithDocumentExtension = `disclose`;
-      break;
-    }
-    default:
-      throw new Error('Invalid circuit type:' + circuitType);
-  }
-
-  return {
-    inputs,
-    circuitName,
-    endpointType,
-    endpoint,
-    circuitTypeWithDocumentExtension,
-  };
-};
-
-const JSONRPC_VERSION = '2.0' as const;
-const SUBMIT_METHOD = 'openpassport_submit_request' as const;
-const SUBMIT_ID = 2 as const;
-
-type EncryptedPayload = {
-  nonce: number[];
-  cipher_text: number[];
-  auth_tag: number[];
-};
-
-type SubmitRequest = {
-  jsonrpc: typeof JSONRPC_VERSION;
-  method: typeof SUBMIT_METHOD;
-  id: typeof SUBMIT_ID;
-  params: { uuid: string | null } & EncryptedPayload;
-};
-
-const _encryptPayload = (payload: unknown, sharedKey: Buffer): EncryptedPayload => {
-  const forgeKey = forge.util.createBuffer(sharedKey.toString('binary'));
-  return encryptAES256GCM(JSON.stringify(payload), forgeKey);
-};
-
-const _buildSubmitRequest = (uuid: string | null, encryptedPayload: EncryptedPayload): SubmitRequest => {
-  return {
-    jsonrpc: JSONRPC_VERSION,
-    method: SUBMIT_METHOD,
-    id: SUBMIT_ID,
-    params: {
-      uuid: uuid,
-      ...encryptedPayload,
-    },
-  };
-};
+import type { PayloadDeps } from './internal/payloadGenerator';
+import { _generatePayload as generatePayload } from './internal/payloadGenerator';
+import type { SocketIOListenerDeps } from './internal/socketIOListener';
+import { _startSocketIOStatusListener as startSocketIOStatusListener } from './internal/socketIOListener';
+import type { WebSocketHandlerDeps } from './internal/websocketHandlers';
+import {
+  _handleWebSocketMessage as handleWebSocketMessage,
+  _handleWsClose as handleWsClose,
+  _handleWsError as handleWsError,
+  _handleWsOpen as handleWsOpen,
+} from './internal/websocketHandlers';
+import { resolveWebSocketUrl } from './internal/websocketUrlResolver';
 
 const getPlatform = (): 'ios' | 'android' => (Platform.OS === 'ios' ? 'ios' : 'android');
 
@@ -486,6 +321,46 @@ export const useProvingStore = create<ProvingState>((set, get) => {
     });
   }
 
+  const getActorRef = () => actor;
+
+  const createContextFactory =
+    (selfClient: SelfClient) =>
+    (stage: string, overrides: Partial<ProofContext> = {}) =>
+      createProofContext(selfClient, stage, overrides);
+
+  const createSocketDeps = (selfClient: SelfClient): SocketIOListenerDeps => ({
+    getState: get,
+    setState: set,
+    getActor: getActorRef,
+    createProofContext: (stage: string, overrides: Partial<ProofContext> = {}) =>
+      createContextFactory(selfClient)(stage, overrides),
+  });
+
+  const createWebSocketDeps = (selfClient: SelfClient): WebSocketHandlerDeps => {
+    const socketDeps = createSocketDeps(selfClient);
+    return {
+      ...socketDeps,
+      getState: get,
+      startSocketIOStatusListener: (receivedUuid: string, endpointType: EndpointType, client: SelfClient) =>
+        startSocketIOStatusListener(receivedUuid, endpointType, client, socketDeps),
+    };
+  };
+
+  const createPayloadDeps = (selfClient: SelfClient): PayloadDeps => ({
+    getState: get,
+    setState: set,
+    createProofContext: (stage: string, overrides: Partial<ProofContext> = {}) =>
+      createContextFactory(selfClient)(stage, overrides),
+  });
+
+  const createDocumentDeps = (selfClient: SelfClient): DocumentProcessorDeps => ({
+    getState: get,
+    setState: set,
+    getActor: getActorRef,
+    createProofContext: (stage: string, overrides: Partial<ProofContext> = {}) =>
+      createContextFactory(selfClient)(stage, overrides),
+  });
+
   return {
     currentState: 'idle',
     attestation: null,
@@ -503,139 +378,8 @@ export const useProvingStore = create<ProvingState>((set, get) => {
     error_code: null,
     reason: null,
     endpointType: null,
-    _handleWebSocketMessage: async (event: MessageEvent, selfClient: SelfClient) => {
-      if (!actor) {
-        console.error('Cannot process message: State machine not initialized.');
-        return;
-      }
-
-      const startTime = Date.now();
-      const context = createProofContext(selfClient, '_handleWebSocketMessage');
-
-      try {
-        const result = JSON.parse(event.data);
-        selfClient.logProofEvent('info', 'WebSocket message received', context);
-        if (result.result?.attestation) {
-          selfClient?.trackEvent(ProofEvents.ATTESTATION_RECEIVED);
-          selfClient.logProofEvent('info', 'Attestation received', context);
-
-          const attestationData = result.result.attestation;
-          set({ attestation: attestationData });
-          const attestationToken = Buffer.from(attestationData).toString('utf-8');
-
-          const { userPubkey, serverPubkey, imageHash, verified } = validatePKIToken(attestationToken, __DEV__);
-
-          const pcr0Mapping = await checkPCR0Mapping(imageHash);
-
-          if (!__DEV__ && !pcr0Mapping) {
-            console.error('PCR0 mapping not found');
-            actor!.send({ type: 'CONNECT_ERROR' });
-            return;
-          }
-
-          if (clientPublicKeyHex !== userPubkey.toString('hex')) {
-            console.error('User public key does not match');
-            actor!.send({ type: 'CONNECT_ERROR' });
-            return;
-          }
-
-          if (!verified) {
-            selfClient.logProofEvent('error', 'Attestation verification failed', context, {
-              failure: 'PROOF_FAILED_TEE_PROCESSING',
-              duration_ms: Date.now() - startTime,
-            });
-            console.error('Attestation verification failed');
-            actor!.send({ type: 'CONNECT_ERROR' });
-            return;
-          }
-
-          selfClient?.trackEvent(ProofEvents.ATTESTATION_VERIFIED);
-          selfClient.logProofEvent('info', 'Attestation verified', context);
-
-          const serverKey = ec.keyFromPublic(serverPubkey, 'hex');
-          const derivedKey = clientKey.derive(serverKey.getPublic());
-
-          set({
-            serverPublicKey: serverKey.getPublic(true, 'hex'),
-            sharedKey: Buffer.from(derivedKey.toArray('be', 32)),
-          });
-          selfClient?.trackEvent(ProofEvents.SHARED_KEY_DERIVED);
-          selfClient.logProofEvent('info', 'Shared key derived', context);
-
-          actor!.send({ type: 'CONNECT_SUCCESS' });
-        } else if (result.id === 2 && typeof result.result === 'string' && !result.error) {
-          selfClient?.trackEvent(ProofEvents.WS_HELLO_ACK);
-          selfClient.logProofEvent('info', 'Hello ACK received', context);
-
-          // Received status from TEE
-          const statusUuid = result.result;
-          if (get().uuid !== statusUuid) {
-            selfClient.logProofEvent('warn', 'Status UUID mismatch', context, {
-              received_uuid: statusUuid,
-            });
-            console.warn(
-              `Received status UUID (${statusUuid}) does not match stored UUID (${get().uuid}). Using received UUID.`,
-            );
-          }
-          const endpointType = get().endpointType;
-          if (!endpointType) {
-            selfClient.logProofEvent('error', 'Endpoint type missing', context, {
-              failure: 'PROOF_FAILED_TEE_PROCESSING',
-              duration_ms: Date.now() - startTime,
-            });
-            console.error('Cannot start Socket.IO listener: endpointType not set.');
-            selfClient?.trackEvent(ProofEvents.PROOF_FAILED, {
-              circuitType: get().circuitType,
-              error: get().error_code ?? 'unknown',
-            });
-            actor!.send({ type: 'PROVE_ERROR' });
-            return;
-          }
-          get()._startSocketIOStatusListener(statusUuid, endpointType, selfClient);
-        } else if (result.error) {
-          selfClient.logProofEvent('error', 'TEE returned error', context, {
-            failure: 'PROOF_FAILED_TEE_PROCESSING',
-            error: result.error,
-            duration_ms: Date.now() - startTime,
-          });
-          console.error('Received error from TEE:', result.error);
-          selfClient?.trackEvent(ProofEvents.TEE_WS_ERROR, {
-            error: result.error,
-          });
-          selfClient?.trackEvent(ProofEvents.PROOF_FAILED, {
-            circuitType: get().circuitType,
-            error: get().error_code ?? 'unknown',
-          });
-          actor!.send({ type: 'PROVE_ERROR' });
-        } else {
-          selfClient.logProofEvent('warn', 'Unknown message format', context);
-          console.warn('Received unknown message format from TEE:', result);
-        }
-      } catch (error) {
-        selfClient.logProofEvent('error', 'WebSocket message handling failed', context, {
-          failure:
-            get().currentState === 'init_tee_connexion' ? 'PROOF_FAILED_CONNECTION' : 'PROOF_FAILED_TEE_PROCESSING',
-          error: error instanceof Error ? error.message : String(error),
-          duration_ms: Date.now() - startTime,
-        });
-        console.error('Error processing WebSocket message:', error);
-        if (get().currentState === 'init_tee_connexion') {
-          selfClient?.trackEvent(ProofEvents.TEE_CONN_FAILED, {
-            message: error instanceof Error ? error.message : String(error),
-          });
-          actor!.send({ type: 'CONNECT_ERROR' });
-        } else {
-          selfClient?.trackEvent(ProofEvents.TEE_WS_ERROR, {
-            error: error instanceof Error ? error.message : String(error),
-          });
-          selfClient?.trackEvent(ProofEvents.PROOF_FAILED, {
-            circuitType: get().circuitType,
-            error: get().error_code ?? 'unknown',
-          });
-          actor!.send({ type: 'PROVE_ERROR' });
-        }
-      }
-    },
+    _handleWebSocketMessage: async (event: MessageEvent, selfClient: SelfClient) =>
+      handleWebSocketMessage(event, selfClient, createWebSocketDeps(selfClient)),
     _handleRegisterErrorOrFailure: async (selfClient: SelfClient) => {
       try {
         const hasValid = await hasAnyValidRegisteredDocument(selfClient);
@@ -650,191 +394,16 @@ export const useProvingStore = create<ProvingState>((set, get) => {
       }
     },
 
-    _startSocketIOStatusListener: (receivedUuid: string, endpointType: EndpointType, selfClient: SelfClient) => {
-      if (!actor) {
-        console.error('Cannot start Socket.IO listener: Actor not available.');
-        return;
-      }
-      const url = getWSDbRelayerUrl(endpointType);
-      const socket: Socket = socketIo(url, {
-        path: '/',
-        transports: ['websocket'],
-      });
-      set({ socketConnection: socket });
-      selfClient.trackEvent(ProofEvents.SOCKETIO_CONN_STARTED);
-      const context = createProofContext(selfClient, '_startSocketIOStatusListener');
-      selfClient.logProofEvent('info', 'Socket.IO listener started', context, { url });
+    _startSocketIOStatusListener: (receivedUuid: string, endpointType: EndpointType, selfClient: SelfClient) =>
+      startSocketIOStatusListener(receivedUuid, endpointType, selfClient, createSocketDeps(selfClient)),
 
-      socket.on('connect', () => {
-        socket?.emit('subscribe', receivedUuid);
-        selfClient.trackEvent(ProofEvents.SOCKETIO_SUBSCRIBED);
-        selfClient.logProofEvent('info', 'Socket.IO connected', context);
-      });
+    _handleWsOpen: (selfClient: SelfClient) => handleWsOpen(selfClient, createWebSocketDeps(selfClient)),
 
-      socket.on('connect_error', error => {
-        console.error('SocketIO connection error:', error);
-        selfClient.trackEvent(ProofEvents.SOCKETIO_CONNECT_ERROR, {
-          message: error instanceof Error ? error.message : String(error),
-        });
-        selfClient.logProofEvent('error', 'Socket.IO connection error', context, {
-          failure: 'PROOF_FAILED_CONNECTION',
-          error: error instanceof Error ? error.message : String(error),
-        });
-        actor!.send({ type: 'PROVE_ERROR' });
-        set({ socketConnection: null });
-      });
+    _handleWsError: (error: Event, selfClient: SelfClient) =>
+      handleWsError(error, selfClient, createWebSocketDeps(selfClient)),
 
-      socket.on('disconnect', (_reason: string) => {
-        const currentActor = actor;
-        selfClient.logProofEvent('warn', 'Socket.IO disconnected', context);
-        if (get().currentState === 'ready_to_prove' && currentActor) {
-          console.error('SocketIO disconnected unexpectedly during proof listening.');
-          selfClient.trackEvent(ProofEvents.SOCKETIO_DISCONNECT_UNEXPECTED);
-          selfClient.logProofEvent('error', 'Socket.IO disconnected unexpectedly', context, {
-            failure: 'PROOF_FAILED_CONNECTION',
-          });
-          currentActor.send({ type: 'PROVE_ERROR' });
-        }
-        set({ socketConnection: null });
-      });
-
-      socket.on('status', (message: unknown) => {
-        try {
-          const data = parseStatusMessage(message);
-
-          selfClient.trackEvent(ProofEvents.SOCKETIO_STATUS_RECEIVED, {
-            status: data.status,
-          });
-          selfClient.logProofEvent('info', 'Status message received', context, {
-            status: data.status,
-          });
-
-          const result = handleStatusCode(data, get().circuitType as string);
-
-          // Handle state updates
-          if (result.stateUpdate) {
-            set(result.stateUpdate);
-          }
-
-          // Handle analytics
-          result.analytics?.forEach(({ event, data: eventData }) => {
-            if (event === 'SOCKETIO_PROOF_FAILURE') {
-              selfClient.logProofEvent('error', 'TEE processing failed', context, {
-                failure: 'PROOF_FAILED_TEE_PROCESSING',
-                error_code: eventData?.error_code,
-                reason: eventData?.reason,
-              });
-            } else if (event === 'SOCKETIO_PROOF_SUCCESS') {
-              selfClient.logProofEvent('info', 'TEE processing succeeded', context);
-            }
-            selfClient.trackEvent(event as unknown as keyof typeof ProofEvents, eventData);
-          });
-
-          // Handle actor events
-          if (result.actorEvent) {
-            if (result.actorEvent.type === 'PROVE_FAILURE') {
-              console.error('Proof generation/verification failed (status 3 or 5).');
-              console.error(data);
-            }
-            actor!.send(result.actorEvent);
-          }
-
-          // Handle disconnection
-          if (result.shouldDisconnect) {
-            socket?.disconnect();
-          }
-        } catch (error) {
-          console.error('Error handling status message:', error);
-          selfClient.logProofEvent('error', 'Status message parsing failed', context, {
-            failure: 'PROOF_FAILED_MESSAGE_PARSING',
-            error: error instanceof Error ? error.message : String(error),
-          });
-          actor!.send({ type: 'PROVE_ERROR' });
-        }
-      });
-    },
-
-    _handleWsOpen: (selfClient: SelfClient) => {
-      if (!actor) {
-        return;
-      }
-      const ws = get().wsConnection;
-      if (!ws) {
-        return;
-      }
-      const connectionUuid = v4();
-
-      selfClient.trackEvent(ProofEvents.CONNECTION_UUID_GENERATED, {
-        connection_uuid: connectionUuid,
-      });
-      const context = createProofContext(selfClient, '_handleWsOpen', {
-        sessionId: connectionUuid,
-      });
-      selfClient.logProofEvent('info', 'WebSocket open', context);
-      set({ uuid: connectionUuid });
-      const helloBody = {
-        jsonrpc: '2.0',
-        method: 'openpassport_hello',
-        id: 1,
-        params: {
-          user_pubkey: [...Array.from(Buffer.from(clientPublicKeyHex, 'hex'))],
-          uuid: connectionUuid,
-        },
-      };
-      selfClient.trackEvent(ProofEvents.WS_HELLO_SENT);
-      ws.send(JSON.stringify(helloBody));
-      selfClient.logProofEvent('info', 'WS hello sent', context);
-    },
-
-    _handleWsError: (error: Event, selfClient: SelfClient) => {
-      console.error('TEE WebSocket error event:', error);
-      if (!actor) {
-        return;
-      }
-      const context = createProofContext(selfClient, '_handleWsError');
-      selfClient.logProofEvent('error', 'TEE WebSocket error', context, {
-        failure: 'PROOF_FAILED_CONNECTION',
-        error: error instanceof Error ? error.message : String(error),
-      });
-      get()._handleWebSocketMessage(
-        new MessageEvent('error', {
-          data: JSON.stringify({ error: 'WebSocket connection error' }),
-        }),
-        selfClient,
-      );
-    },
-
-    _handleWsClose: (event: CloseEvent, selfClient: SelfClient) => {
-      selfClient.trackEvent(ProofEvents.TEE_WS_CLOSED, {
-        code: event.code,
-        reason: event.reason,
-      });
-      if (!actor) {
-        return;
-      }
-      const context = createProofContext(selfClient, '_handleWsClose');
-      selfClient.logProofEvent('warn', 'TEE WebSocket closed', context, {
-        code: event.code,
-        reason: event.reason,
-      });
-      const currentState = get().currentState;
-      if (
-        currentState === 'init_tee_connexion' ||
-        currentState === 'proving' ||
-        currentState === 'listening_for_status'
-      ) {
-        console.error(`TEE WebSocket closed unexpectedly during ${currentState}.`);
-        get()._handleWebSocketMessage(
-          new MessageEvent('error', {
-            data: JSON.stringify({ error: 'WebSocket closed unexpectedly' }),
-          }),
-          selfClient,
-        );
-      }
-      if (get().wsConnection) {
-        set({ wsConnection: null });
-      }
-    },
+    _handleWsClose: (event: CloseEvent, selfClient: SelfClient) =>
+      handleWsClose(event, selfClient, createWebSocketDeps(selfClient)),
 
     init: async (
       selfClient: SelfClient,
@@ -912,299 +481,12 @@ export const useProvingStore = create<ProvingState>((set, get) => {
       }
     },
 
-    parseIDDocument: async (selfClient: SelfClient) => {
-      _checkActorInitialized(actor);
-      const startTime = Date.now();
-      const context = createProofContext(selfClient, 'parseIDDocument');
-      selfClient.logProofEvent('info', 'Parsing ID document started', context);
+    parseIDDocument: async (selfClient: SelfClient) => parseIDDocument(selfClient, createDocumentDeps(selfClient)),
 
-      try {
-        const { passportData, env } = get();
-        if (!passportData) {
-          throw new Error('PassportData is not available');
-        }
+    startFetchingData: async (selfClient: SelfClient) => startFetchingData(selfClient, createDocumentDeps(selfClient)),
 
-        selfClient.logProofEvent('info', 'ID document parsing process started', context);
-
-        // Parse ID document logic (copied from parseIDDocument.ts but without try-catch wrapper)
-        const skiPem = await getSKIPEM(env === 'stg' ? 'staging' : 'production');
-        const parsedPassportData = initPassportDataParsing(passportData as PassportData, skiPem);
-        if (!parsedPassportData) {
-          throw new Error('Failed to parse passport data');
-        }
-
-        const passportMetadata = parsedPassportData.passportMetadata!;
-        let dscObject;
-        try {
-          dscObject = { dsc: passportMetadata.dsc };
-        } catch (error) {
-          console.error('Failed to parse dsc:', error);
-          dscObject = {};
-        }
-
-        selfClient.trackEvent(PassportEvents.PASSPORT_PARSED, {
-          success: true,
-          data_groups: passportMetadata.dataGroups,
-          dg1_size: passportMetadata.dg1Size,
-          dg1_hash_size: passportMetadata.dg1HashSize,
-          dg1_hash_function: passportMetadata.dg1HashFunction,
-          dg1_hash_offset: passportMetadata.dg1HashOffset,
-          dg_padding_bytes: passportMetadata.dgPaddingBytes,
-          e_content_size: passportMetadata.eContentSize,
-          e_content_hash_function: passportMetadata.eContentHashFunction,
-          e_content_hash_offset: passportMetadata.eContentHashOffset,
-          signed_attr_size: passportMetadata.signedAttrSize,
-          signed_attr_hash_function: passportMetadata.signedAttrHashFunction,
-          signature_algorithm: passportMetadata.signatureAlgorithm,
-          salt_length: passportMetadata.saltLength,
-          curve_or_exponent: passportMetadata.curveOrExponent,
-          signature_algorithm_bits: passportMetadata.signatureAlgorithmBits,
-          country_code: passportMetadata.countryCode,
-          csca_found: passportMetadata.cscaFound,
-          csca_hash_function: passportMetadata.cscaHashFunction,
-          csca_signature_algorithm: passportMetadata.cscaSignatureAlgorithm,
-          csca_salt_length: passportMetadata.cscaSaltLength,
-          csca_curve_or_exponent: passportMetadata.cscaCurveOrExponent,
-          csca_signature_algorithm_bits: passportMetadata.cscaSignatureAlgorithmBits,
-          dsc: dscObject,
-          dsc_aki: (passportData as PassportData).dsc_parsed?.authorityKeyIdentifier,
-          dsc_ski: (passportData as PassportData).dsc_parsed?.subjectKeyIdentifier,
-        });
-        console.log('passport data parsed successfully, storing in keychain');
-        await storePassportData(selfClient, parsedPassportData);
-        console.log('passport data stored in keychain');
-
-        set({ passportData: parsedPassportData });
-        selfClient.logProofEvent('info', 'ID document parsing succeeded', context, {
-          duration_ms: Date.now() - startTime,
-        });
-        actor!.send({ type: 'PARSE_SUCCESS' });
-      } catch (error) {
-        selfClient.logProofEvent('error', 'ID document parsing failed', context, {
-          failure: 'PROOF_FAILED_PARSING',
-          error: error instanceof Error ? error.message : String(error),
-          duration_ms: Date.now() - startTime,
-        });
-        console.error('Error parsing ID document:', error);
-        const errMsg = error instanceof Error ? error.message : String(error);
-        selfClient.trackEvent(PassportEvents.PASSPORT_PARSE_FAILED, {
-          error: errMsg,
-        });
-        actor!.send({ type: 'PARSE_ERROR' });
-      }
-    },
-
-    startFetchingData: async (selfClient: SelfClient) => {
-      _checkActorInitialized(actor);
-      selfClient.trackEvent(ProofEvents.FETCH_DATA_STARTED);
-      const startTime = Date.now();
-      const context = createProofContext(selfClient, 'startFetchingData');
-      // passport and id card
-      selfClient.logProofEvent('info', 'Fetching DSC data started', context);
-      try {
-        const { passportData, env } = get();
-        if (!passportData) {
-          throw new Error('PassportData is not available');
-        }
-        const document: DocumentCategory = passportData.documentCategory;
-        console.log('document', document);
-        switch (passportData.documentCategory) {
-          case 'passport':
-          case 'id_card':
-            if (!passportData?.dsc_parsed) {
-              selfClient.logProofEvent('error', 'Missing parsed DSC', context, {
-                failure: 'PROOF_FAILED_DATA_FETCH',
-                duration_ms: Date.now() - startTime,
-              });
-              console.error('Missing parsed DSC in passport data');
-              selfClient.trackEvent(ProofEvents.FETCH_DATA_FAILED, {
-                message: 'Missing parsed DSC in passport data',
-              });
-              actor!.send({ type: 'FETCH_ERROR' });
-              return;
-            }
-            selfClient.logProofEvent('info', 'Protocol store fetch', context, {
-              step: 'protocol_store_fetch',
-              document,
-            });
-            await fetchAllTreesAndCircuits(selfClient, document, env!, passportData.dsc_parsed!.authorityKeyIdentifier);
-            break;
-          case 'aadhaar':
-            selfClient.logProofEvent('info', 'Protocol store fetch', context, {
-              step: 'protocol_store_fetch',
-              document,
-            });
-            await selfClient.getProtocolState().aadhaar.fetch_all(env!);
-            break;
-        }
-        selfClient.logProofEvent('info', 'Data fetch succeeded', context, {
-          duration_ms: Date.now() - startTime,
-        });
-        selfClient.trackEvent(ProofEvents.FETCH_DATA_SUCCESS);
-        actor!.send({ type: 'FETCH_SUCCESS' });
-      } catch (error) {
-        selfClient.logProofEvent('error', 'Data fetch failed', context, {
-          failure: 'PROOF_FAILED_DATA_FETCH',
-          error: error instanceof Error ? error.message : String(error),
-          duration_ms: Date.now() - startTime,
-        });
-        console.error('Error fetching data:', error);
-        selfClient.trackEvent(ProofEvents.FETCH_DATA_FAILED, {
-          message: error instanceof Error ? error.message : String(error),
-        });
-        actor!.send({ type: 'FETCH_ERROR' });
-      }
-    },
-
-    validatingDocument: async (selfClient: SelfClient) => {
-      _checkActorInitialized(actor);
-      // TODO: for the disclosure, we could check that the selfApp is a valid one.
-      selfClient.trackEvent(ProofEvents.VALIDATION_STARTED);
-      const startTime = Date.now();
-      const context = createProofContext(selfClient, 'validatingDocument');
-      selfClient.logProofEvent('info', 'Validating document started', context);
-      try {
-        const { passportData, secret, circuitType } = get();
-        if (!passportData) {
-          throw new Error('PassportData is not available');
-        }
-        const isSupported = await checkDocumentSupported(passportData, {
-          getDeployedCircuits: (documentCategory: DocumentCategory) =>
-            selfClient.getProtocolState()[documentCategory].deployed_circuits!,
-        });
-        selfClient.logProofEvent('info', 'Document support check', context, {
-          supported: isSupported.status === 'passport_supported',
-          duration_ms: Date.now() - startTime,
-        });
-        if (isSupported.status !== 'passport_supported') {
-          selfClient.logProofEvent('error', 'Passport not supported', context, {
-            failure: 'PROOF_FAILED_VALIDATION',
-            details: isSupported.details,
-            duration_ms: Date.now() - startTime,
-          });
-          console.error('Passport not supported:', isSupported.status, isSupported.details);
-          selfClient.trackEvent(PassportEvents.COMING_SOON, {
-            status: isSupported.status,
-            details: isSupported.details,
-          });
-
-          await clearPassportData(selfClient);
-
-          actor!.send({ type: 'PASSPORT_NOT_SUPPORTED' });
-          return;
-        }
-
-        /// disclosure
-        if (circuitType === 'disclose') {
-          const isRegisteredWithLocalCSCA = await isUserRegistered(
-            passportData,
-            secret as string,
-            (documentCategory: DocumentCategory) => getCommitmentTree(selfClient, documentCategory),
-          );
-          selfClient.logProofEvent('info', 'Local CSCA registration check', context, {
-            registered: isRegisteredWithLocalCSCA,
-          });
-          if (isRegisteredWithLocalCSCA) {
-            selfClient.logProofEvent('info', 'Validation succeeded', context, {
-              duration_ms: Date.now() - startTime,
-            });
-            selfClient.trackEvent(ProofEvents.VALIDATION_SUCCESS);
-            actor!.send({ type: 'VALIDATION_SUCCESS' });
-            return;
-          } else {
-            selfClient.logProofEvent('error', 'Passport data not found', context, {
-              failure: 'PROOF_FAILED_VALIDATION',
-              duration_ms: Date.now() - startTime,
-            });
-            actor!.send({ type: 'PASSPORT_DATA_NOT_FOUND' });
-            return;
-          }
-        }
-
-        /// registration
-        else {
-          const { isRegistered, csca } = await isUserRegisteredWithAlternativeCSCA(passportData, secret as string, {
-            getCommitmentTree: (docCategory: DocumentCategory) => getCommitmentTree(selfClient, docCategory),
-            getAltCSCA: (docType: DocumentCategory) => {
-              if (docType === 'aadhaar') {
-                const publicKeys = selfClient.getProtocolState().aadhaar.public_keys;
-                // Convert string[] to Record<string, string> format expected by AlternativeCSCA
-                return publicKeys ? Object.fromEntries(publicKeys.map(key => [key, key])) : {};
-              }
-              return selfClient.getProtocolState()[docType].alternative_csca;
-            },
-          });
-          selfClient.logProofEvent('info', 'Alternative CSCA registration check', context, {
-            registered: isRegistered,
-          });
-          if (isRegistered) {
-            await reStorePassportDataWithRightCSCA(selfClient, passportData, csca as string);
-
-            (async () => {
-              try {
-                await markCurrentDocumentAsRegistered(selfClient);
-              } catch (error) {
-                console.error('Error marking document as registered:', error);
-              }
-            })();
-            set({ circuitType: 'register' }); // Update circuit type to 'register' to reflect full registration completion
-
-            selfClient.trackEvent(ProofEvents.ALREADY_REGISTERED);
-            selfClient.logProofEvent('info', 'Document already registered', context, {
-              duration_ms: Date.now() - startTime,
-            });
-            actor!.send({ type: 'ALREADY_REGISTERED' });
-            return;
-          }
-          const isNullifierOnchain = await isDocumentNullified(passportData);
-          selfClient.logProofEvent('info', 'Nullifier check', context, {
-            nullified: isNullifierOnchain,
-          });
-          if (isNullifierOnchain) {
-            selfClient.logProofEvent('error', 'Passport nullified', context, {
-              failure: 'PROOF_FAILED_VALIDATION',
-              duration_ms: Date.now() - startTime,
-            });
-            console.warn(
-              'Passport is nullified, but not registered with this secret. Navigating to AccountRecoveryChoice',
-            );
-            selfClient.trackEvent(ProofEvents.PASSPORT_NULLIFIER_ONCHAIN);
-            actor!.send({ type: 'ACCOUNT_RECOVERY_CHOICE' });
-            return;
-          }
-          const document: DocumentCategory = passportData.documentCategory;
-          if (document === 'passport' || document === 'id_card') {
-            const isDscRegistered = await checkIfPassportDscIsInTree(
-              passportData,
-              selfClient.getProtocolState()[document].dsc_tree,
-            );
-            selfClient.logProofEvent('info', 'DSC tree check', context, {
-              dsc_registered: isDscRegistered,
-            });
-            if (isDscRegistered) {
-              selfClient.trackEvent(ProofEvents.DSC_IN_TREE);
-              set({ circuitType: 'register' });
-            }
-          }
-          selfClient.logProofEvent('info', 'Validation succeeded', context, {
-            duration_ms: Date.now() - startTime,
-          });
-          selfClient.trackEvent(ProofEvents.VALIDATION_SUCCESS);
-          actor!.send({ type: 'VALIDATION_SUCCESS' });
-        }
-      } catch (error) {
-        selfClient.logProofEvent('error', 'Validation failed', context, {
-          failure: 'PROOF_FAILED_VALIDATION',
-          error: error instanceof Error ? error.message : String(error),
-          duration_ms: Date.now() - startTime,
-        });
-        console.error('Error validating passport:', error);
-        selfClient.trackEvent(ProofEvents.VALIDATION_FAILED, {
-          message: error instanceof Error ? error.message : String(error),
-        });
-        actor!.send({ type: 'VALIDATION_ERROR' });
-      }
-    },
+    validatingDocument: async (selfClient: SelfClient) =>
+      validatingDocument(selfClient, createDocumentDeps(selfClient)),
 
     initTeeConnection: async (selfClient: SelfClient): Promise<boolean> => {
       const startTime = Date.now();
@@ -1415,90 +697,7 @@ export const useProvingStore = create<ProvingState>((set, get) => {
       });
     },
 
-    _generatePayload: async (selfClient: SelfClient) => {
-      const startTime = Date.now();
-      const { circuitType, passportData, secret, uuid, sharedKey, env } = get();
-      const context = createProofContext(selfClient, '_generatePayload', {
-        sessionId: uuid || get().uuid || 'unknown-session',
-        circuitType: circuitType || null,
-      });
-      selfClient.logProofEvent('info', 'Payload generation started', context);
-
-      try {
-        if (!passportData) {
-          throw new Error('PassportData is not available');
-        }
-        if (!env) {
-          throw new Error('Environment not set');
-        }
-        if (!sharedKey) {
-          throw new Error('Shared key not available');
-        }
-
-        // Generate circuit inputs
-        const { inputs, circuitName, endpointType, endpoint, circuitTypeWithDocumentExtension } =
-          await _generateCircuitInputs(
-            selfClient,
-            circuitType as 'disclose' | 'register' | 'dsc',
-            secret,
-            passportData,
-            env,
-            selfClient.getSelfAppState().selfApp,
-          );
-
-        selfClient.logProofEvent('info', 'Inputs generated', context, {
-          circuit_name: circuitName,
-          endpoint_type: endpointType,
-        });
-
-        // Build payload
-        const selfApp = selfClient.getSelfAppState().selfApp;
-        const userDefinedData = getSolidityPackedUserContextData(
-          selfApp?.chainID ?? 0,
-          selfApp?.userId ?? '',
-          selfApp?.userDefinedData ?? '',
-        ).slice(2);
-
-        const payload = getPayload(
-          inputs,
-          circuitTypeWithDocumentExtension as 'register_id' | 'dsc_id' | 'register' | 'dsc',
-          circuitName as string,
-          endpointType as EndpointType,
-          endpoint as string,
-          selfApp?.version,
-          userDefinedData,
-          selfApp?.selfDefinedData ?? '',
-        );
-
-        const payloadSize = JSON.stringify(payload).length;
-
-        // Encrypt payload
-        const encryptedPayload = _encryptPayload(payload, sharedKey);
-
-        selfClient.logProofEvent('info', 'Payload encrypted', context, {
-          payload_size: payloadSize,
-        });
-
-        selfClient.trackEvent(ProofEvents.PAYLOAD_GEN_COMPLETED);
-        selfClient.trackEvent(ProofEvents.PAYLOAD_ENCRYPTED);
-
-        set({ endpointType: endpointType as EndpointType });
-
-        selfClient.logProofEvent('info', 'Payload generation completed', context, {
-          duration_ms: Date.now() - startTime,
-        });
-
-        // Build and return submit request
-        return _buildSubmitRequest(uuid!, encryptedPayload);
-      } catch (error) {
-        selfClient.logProofEvent('error', 'Payload generation failed', context, {
-          failure: 'PROOF_FAILED_PAYLOAD_GEN',
-          error: error instanceof Error ? error.message : String(error),
-          duration_ms: Date.now() - startTime,
-        });
-        throw error;
-      }
-    },
+    _generatePayload: async (selfClient: SelfClient) => generatePayload(selfClient, createPayloadDeps(selfClient)),
 
     _handlePassportNotSupported: (selfClient: SelfClient) => {
       const passportData = get().passportData;
