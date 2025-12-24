@@ -40,11 +40,10 @@ jobs:
   run_circuit_tests:
     needs: check_changes
     if: github.event.pull_request.draft == false && needs.check_changes.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
-    # runs-on:
-    #   - "self-hosted"
-    #   - "selfxyz-org"
-    #   - "ubuntu-24-04"
+    runs-on:
+      - "self-hosted"
+      - "selfxyz-org"
+      - "ubuntu-24-04"
     environment: development
     permissions:
       contents: read
