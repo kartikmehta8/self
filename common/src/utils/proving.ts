@@ -1,4 +1,5 @@
 import forge from 'node-forge';
+import { Buffer } from 'buffer';
 
 import { WS_DB_RELAYER, WS_DB_RELAYER_STAGING } from '../constants/index.js';
 import { initElliptic } from '../utils/certificate_parsing/elliptic.js';
@@ -24,6 +25,7 @@ export type TEEPayloadDisclose = TEEPayloadBase & {
   onchain: boolean;
   endpoint: string;
   userDefinedData: string;
+  selfDefinedData: string;
   version: number;
 };
 
@@ -64,7 +66,8 @@ export function getPayload(
   endpointType: EndpointType,
   endpoint: string,
   version: number = 1,
-  userDefinedData: string = ''
+  userDefinedData: string = '',
+  selfDefinedData: string = ''
 ) {
   if (circuitType === 'disclose') {
     const type =
@@ -84,6 +87,7 @@ export function getPayload(
       },
       version,
       userDefinedData,
+      selfDefinedData,
     };
     return payload;
   } else {

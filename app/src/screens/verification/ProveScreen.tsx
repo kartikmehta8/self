@@ -21,9 +21,10 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 
+import { isMRZDocument } from '@selfxyz/common';
 import type { SelfAppDisclosureConfig } from '@selfxyz/common/utils/appType';
 import { formatEndpoint } from '@selfxyz/common/utils/scope';
-import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
+import { loadSelectedDocument, useSelfClient } from '@selfxyz/mobile-sdk-alpha';
 import miscAnimation from '@selfxyz/mobile-sdk-alpha/animations/loading/misc.json';
 import {
   BodyText,
@@ -31,19 +32,28 @@ import {
   HeldPrimaryButtonProveScreen,
 } from '@selfxyz/mobile-sdk-alpha/components';
 import { ProofEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  black,
+  slate300,
+  white,
+} from '@selfxyz/mobile-sdk-alpha/constants/colors';
 
 import Disclosures from '@/components/Disclosures';
+import { buttonTap } from '@/integrations/haptics';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
 import type { RootStackParamList } from '@/navigation';
 import {
   setDefaultDocumentTypeIfNeeded,
   usePassport,
 } from '@/providers/passportDataProvider';
+import { getPointsAddress } from '@/services/points';
 import { useProofHistoryStore } from '@/stores/proofHistoryStore';
 import { ProofStatus } from '@/stores/proofTypes';
-import { black, slate300, white } from '@/utils/colors';
+import {
+  checkDocumentExpiration,
+  getDocumentAttributes,
+} from '@/utils/documentAttributes';
 import { formatUserId } from '@/utils/formatUserId';
-import { buttonTap } from '@/utils/haptic';
 
 const ProveScreen: React.FC = () => {
   const selfClient = useSelfClient();
@@ -59,6 +69,8 @@ const ProveScreen: React.FC = () => {
   const [scrollViewContentHeight, setScrollViewContentHeight] = useState(0);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const [showFullAddress, setShowFullAddress] = useState(false);
+  const [isDocumentExpired, setIsDocumentExpired] = useState(false);
+  const isDocumentExpiredRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const isContentShorterThanScrollView = useMemo(
@@ -83,11 +95,12 @@ const ProveScreen: React.FC = () => {
           sessionId: provingStore.uuid!,
           userId: selectedApp.userId,
           userIdType: selectedApp.userIdType,
+          endpoint: selectedApp.endpoint,
           endpointType: selectedApp.endpointType,
           status: ProofStatus.PENDING,
           logoBase64: selectedApp.logoBase64,
           disclosures: JSON.stringify(selectedApp.disclosures),
-          documentId: selectedDocumentId || '', // Fallback to empty if none selected
+          documentId: selectedDocumentId || '',
         });
       }
     };
@@ -109,11 +122,66 @@ const ProveScreen: React.FC = () => {
 
     setDefaultDocumentTypeIfNeeded();
 
-    if (selectedAppRef.current?.sessionId !== selectedApp.sessionId) {
-      provingStore.init(selfClient, 'disclose');
+    const checkExpirationAndInit = async () => {
+      let isExpired = false;
+      try {
+        const selectedDocument = await loadSelectedDocument(selfClient);
+        if (!selectedDocument || !isMRZDocument(selectedDocument.data)) {
+          setIsDocumentExpired(false);
+          isExpired = false;
+          isDocumentExpiredRef.current = false;
+        } else {
+          const { data: passportData } = selectedDocument;
+          const attributes = getDocumentAttributes(passportData);
+          const expiryDateSlice = attributes.expiryDateSlice;
+          isExpired = checkDocumentExpiration(expiryDateSlice);
+          setIsDocumentExpired(isExpired);
+          isDocumentExpiredRef.current = isExpired;
+        }
+      } catch (error) {
+        console.error('Error checking document expiration:', error);
+        setIsDocumentExpired(false);
+        isExpired = false;
+        isDocumentExpiredRef.current = false;
+      }
+
+      if (
+        !isExpired &&
+        selectedAppRef.current?.sessionId !== selectedApp.sessionId
+      ) {
+        provingStore.init(selfClient, 'disclose');
+      }
+      selectedAppRef.current = selectedApp;
+    };
+
+    checkExpirationAndInit();
+    //removed provingStore from dependencies because it causes infinite re-render on longpressing the button
+    //as it sets provingStore.setUserConfirmed()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedApp?.sessionId, isFocused, selfClient]);
+
+  // Enhance selfApp with user's points address if not already set
+  useEffect(() => {
+    console.log('useEffect selectedApp', selectedApp);
+    if (!selectedApp || selectedApp.selfDefinedData) {
+      return;
     }
-    selectedAppRef.current = selectedApp;
-  }, [selectedApp, isFocused, provingStore, selfClient]);
+
+    const enhanceApp = async () => {
+      const address = await getPointsAddress();
+
+      // Only update if still the same session
+      if (selectedAppRef.current?.sessionId === selectedApp.sessionId) {
+        console.log('enhancing app with points address', address);
+        selfClient.getSelfAppState().setSelfApp({
+          ...selectedApp,
+          selfDefinedData: address.toLowerCase(),
+        });
+      }
+    };
+
+    enhanceApp();
+  }, [selectedApp, selfClient]);
 
   const disclosureOptions = useMemo(() => {
     return (selectedApp?.disclosures as SelfAppDisclosureConfig) || [];
@@ -177,7 +245,11 @@ const ProveScreen: React.FC = () => {
       const isCloseToBottom =
         layoutMeasurement.height + contentOffset.y >=
         contentSize.height - paddingToBottom;
-      if (isCloseToBottom && !hasScrolledToBottom) {
+      if (
+        isCloseToBottom &&
+        !hasScrolledToBottom &&
+        !isDocumentExpiredRef.current
+      ) {
         setHasScrolledToBottom(true);
         buttonTap();
         trackEvent(ProofEvents.PROOF_DISCLOSURES_SCROLLED, {
@@ -235,8 +307,8 @@ const ProveScreen: React.FC = () => {
                 <Image
                   marginBottom={20}
                   source={logoSource}
-                  width={100}
-                  height={100}
+                  width={64}
+                  height={64}
                   objectFit="contain"
                 />
               )}
@@ -249,7 +321,7 @@ const ProveScreen: React.FC = () => {
                 style={{ fontSize: 24, color: slate300, textAlign: 'center' }}
               >
                 <Text color={white}>{selectedApp.appName}</Text> is requesting
-                that you prove the following information:
+                you to prove the following information:
               </BodyText>
             </YStack>
           )}
@@ -396,6 +468,7 @@ const ProveScreen: React.FC = () => {
           selectedAppSessionId={selectedApp?.sessionId}
           hasScrolledToBottom={hasScrolledToBottom}
           isReadyToProve={isReadyToProve}
+          isDocumentExpired={isDocumentExpired}
         />
       </ExpandableBottomLayout.BottomSection>
     </ExpandableBottomLayout.Layout>

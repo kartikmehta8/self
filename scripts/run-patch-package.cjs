@@ -90,27 +90,46 @@ if (!isExecutableAvailableOnPath('patch-package')) {
 
 // Run patch-package with better error handling
 try {
-  const patchRun = spawnSync('patch-package', {
+  const rootPatchRun = spawnSync('patch-package', ['--patch-dir', 'patches'], {
+    cwd: repositoryRootPath,
     shell: true,
     stdio: isCI ? 'pipe' : 'inherit',
-    timeout: 30000 // 30 second timeout
+    timeout: 30000
   });
-
-  if (patchRun.status !== 0) {
-    if (isCI) {
-      console.log('patch-package: failed to apply patches (CI mode)');
-      console.log('stdout:', patchRun.stdout?.toString());
-      console.log('stderr:', patchRun.stderr?.toString());
-      // In CI, don't fail the entire build for patch issues
-      console.log('Continuing build despite patch failures...');
-      process.exit(0);
-    } else {
-      console.error('patch-package failed with exit code:', patchRun.status);
-      process.exit(patchRun.status || 1);
-    }
+  if (rootPatchRun.status === 0) {
+    if (!isCI) console.log('✓ Patches applied to root workspace');
   } else {
-    if (isCI) {
-      console.log('patch-package: patches applied successfully (CI mode)');
+    const errorOutput = rootPatchRun.stderr?.toString() || rootPatchRun.stdout?.toString() || '';
+    console.error(`patch-package failed for root workspace (exit code ${rootPatchRun.status})`);
+    if (errorOutput) console.error(errorOutput);
+    if (!isCI) process.exit(1);
+  }
+
+  // Also patch app/node_modules if it exists
+  // Workspaces with isolated node_modules due to limited hoisting
+  const workspaceRoots = [
+    { name: 'app', path: path.join(repositoryRootPath, 'app') },
+    { name: 'contracts', path: path.join(repositoryRootPath, 'contracts') }
+  ];
+
+  for (const workspace of workspaceRoots) {
+    const workspaceNodeModules = path.join(workspace.path, 'node_modules');
+    if (!fs.existsSync(workspaceNodeModules)) continue;
+
+    const workspacePatchRun = spawnSync('patch-package', ['--patch-dir', '../patches'], {
+      cwd: workspace.path,
+      shell: true,
+      stdio: isCI ? 'pipe' : 'inherit',
+      timeout: 30000
+    });
+
+    if (workspacePatchRun.status === 0) {
+      if (!isCI) console.log(`✓ Patches applied to ${workspace.name} workspace`);
+    } else {
+      const errorOutput = workspacePatchRun.stderr?.toString() || workspacePatchRun.stdout?.toString() || '';
+      console.error(`patch-package failed for ${workspace.name} workspace (exit code ${workspacePatchRun.status})`);
+      if (errorOutput) console.error(errorOutput);
+      if (!isCI) process.exit(1);
     }
   }
 } catch (error) {

@@ -17,14 +17,14 @@ import Keychain from 'react-native-keychain';
 
 import { AuthEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
 
-import { useSettingStore } from '@/stores/settingStore';
-import type { Mnemonic } from '@/types/mnemonic';
-import analytics from '@/utils/analytics';
-import type { GetSecureOptions } from '@/utils/keychainSecurity';
+import type { GetSecureOptions } from '@/integrations/keychain';
 import {
   createKeychainOptions,
   detectSecurityCapabilities,
-} from '@/utils/keychainSecurity';
+} from '@/integrations/keychain';
+import analytics from '@/services/analytics';
+import { useSettingStore } from '@/stores/settingStore';
+import type { Mnemonic } from '@/types/mnemonic';
 
 const { trackEvent } = analytics();
 
@@ -137,6 +137,7 @@ async function restoreFromMnemonic(
       ...options.setOptions,
       service: SERVICE_NAME,
     });
+    generateAndStorePointsAddress(mnemonic);
     trackEvent(AuthEvents.MNEMONIC_RESTORE_SUCCESS);
     return data;
   } catch (error: unknown) {
@@ -259,7 +260,6 @@ export const AuthProvider = ({
 
     setIsAuthenticatingPromise(null);
     setIsAuthenticated(true);
-    useSettingStore.getState().incrementLoginCount();
     trackEvent(AuthEvents.BIOMETRIC_LOGIN_SUCCESS);
     setAuthenticatedTimeout(previousTimeout => {
       if (previousTimeout) {
@@ -278,7 +278,7 @@ export const AuthProvider = ({
         keychainOptions => loadOrCreateMnemonic(keychainOptions),
         str => JSON.parse(str),
         {
-          requireAuth: false,
+          requireAuth: true,
         },
       ),
     [],
@@ -328,15 +328,25 @@ function _generateAddressFromMnemonic(mnemonic: string, index: number): string {
   return wallet.address;
 }
 
+export async function generateAndStorePointsAddress(
+  mnemonic: string,
+): Promise<string> {
+  const pointsAddr = _generateAddressFromMnemonic(mnemonic, 1);
+  useSettingStore.getState().setPointsAddress(pointsAddr);
+  return pointsAddr;
+}
+
 /**
  * Gets the second address if it exists, or generates and stores it if not.
  * By Generate, it means we need the user's biometric auth.
  *
  * Flow is, when the user visits the points screen for the first time, we need to generate the points address.
  */
-export async function getOrGeneratePointsAddress(): Promise<string> {
+export async function getOrGeneratePointsAddress(
+  forceGenerateFromMnemonic: boolean = false,
+): Promise<string> {
   const pointsAddress = useSettingStore.getState().pointsAddress;
-  if (pointsAddress) {
+  if (pointsAddress && !forceGenerateFromMnemonic) {
     return pointsAddress;
   }
 
@@ -356,6 +366,11 @@ export async function getOrGeneratePointsAddress(): Promise<string> {
 
   useSettingStore.getState().setPointsAddress(pointsAddr);
   return pointsAddr;
+}
+
+export function getPrivateKeyFromMnemonic(mnemonic: string) {
+  const wallet = ethers.HDNodeWallet.fromPhrase(mnemonic);
+  return wallet.privateKey;
 }
 
 export async function hasSecretStored() {
@@ -418,6 +433,32 @@ export async function unsafe_clearSecrets() {
 }
 
 /**
+ * Retrieves the private key for the points address (derived at index 1) using the
+ * same biometric protections and keychain options as other secret accessors.
+ */
+export async function unsafe_getPointsPrivateKey(
+  keychainOptions?: KeychainOptions,
+) {
+  const options =
+    keychainOptions ||
+    (await createKeychainOptions({
+      requireAuth: true,
+    }));
+
+  const foundMnemonic = await loadOrCreateMnemonic(options);
+  if (!foundMnemonic) {
+    return null;
+  }
+  const mnemonic = JSON.parse(foundMnemonic) as Mnemonic;
+  const wallet = ethers.HDNodeWallet.fromPhrase(
+    mnemonic.phrase,
+    undefined,
+    "m/44'/60'/0'/0/1",
+  );
+  return wallet.privateKey;
+}
+
+/**
  * The only reason this is exported without being locked behind user biometrics is to allow `loadPassportDataAndSecret`
  * to access both the privatekey and the passport data with the user only authenticating once
  */
@@ -433,8 +474,7 @@ export async function unsafe_getPrivateKey(keychainOptions?: KeychainOptions) {
     return null;
   }
   const mnemonic = JSON.parse(foundMnemonic) as Mnemonic;
-  const wallet = ethers.HDNodeWallet.fromPhrase(mnemonic.phrase);
-  return wallet.privateKey;
+  return getPrivateKeyFromMnemonic(mnemonic.phrase);
 }
 
 export const useAuth = () => {

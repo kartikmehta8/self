@@ -9,7 +9,7 @@ import { useIsFocused } from '@react-navigation/native';
 
 import {
   DelayedLottieView,
-  hasAnyValidRegisteredDocument,
+  dinot,
   useSelfClient,
 } from '@selfxyz/mobile-sdk-alpha';
 import {
@@ -20,40 +20,42 @@ import {
 } from '@selfxyz/mobile-sdk-alpha/components';
 import { PassportEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
 import {
+  black,
+  slate400,
+  slate800,
+  white,
+} from '@selfxyz/mobile-sdk-alpha/constants/colors';
+import {
   mrzReadInstructions,
   useReadMRZ,
 } from '@selfxyz/mobile-sdk-alpha/onboarding/read-mrz';
 
 import passportScanAnimation from '@/assets/animations/passport_scan.json';
+import Scan from '@/assets/icons/passport_camera_scan.svg';
 import { PassportCamera } from '@/components/native/PassportCamera';
 import useHapticNavigation from '@/hooks/useHapticNavigation';
-import Scan from '@/images/icons/passport_camera_scan.svg';
 import { ExpandableBottomLayout } from '@/layouts/ExpandableBottomLayout';
-import { black, slate400, slate800, white } from '@/utils/colors';
-import { dinot } from '@/utils/fonts';
+import { getDocumentScanPrompt } from '@/utils/documentAttributes';
 
 const DocumentCameraScreen: React.FC = () => {
-  const client = useSelfClient();
   const isFocused = useIsFocused();
+  const selfClient = useSelfClient();
+  const selectedDocumentType = selfClient.useMRZStore(
+    state => state.documentType,
+  );
 
   // Add a ref to track when the camera screen is mounted
   const scanStartTimeRef = useRef(Date.now());
   const { onPassportRead } = useReadMRZ(scanStartTimeRef);
 
-  const navigateToLaunch = useHapticNavigation('Launch', {
-    action: 'cancel',
-  });
+  const scanPrompt = getDocumentScanPrompt(selectedDocumentType);
+
   const navigateToHome = useHapticNavigation('Home', {
     action: 'cancel',
   });
 
   const onCancelPress = async () => {
-    const hasValidDocument = await hasAnyValidRegisteredDocument(client);
-    if (hasValidDocument) {
-      navigateToHome();
-    } else {
-      navigateToLaunch();
-    }
+    navigateToHome();
   };
 
   return (
@@ -72,7 +74,7 @@ const DocumentCameraScreen: React.FC = () => {
       <ExpandableBottomLayout.BottomSection backgroundColor={white}>
         <YStack alignItems="center" gap="$2.5">
           <YStack alignItems="center" gap="$6" paddingBottom="$2.5">
-            <Title>Scan your ID</Title>
+            <Title>{scanPrompt}</Title>
             <XStack gap="$6" alignSelf="flex-start" alignItems="flex-start">
               <View paddingTop="$2">
                 <Scan height={40} width={40} color={slate800} />
@@ -89,7 +91,7 @@ const DocumentCameraScreen: React.FC = () => {
           </YStack>
 
           <Additional style={styles.disclaimer}>
-            SELF WILL NOT CAPTURE AN IMAGE OF YOUR PASSPORT.
+            Self will not capture an image of your ID.
           </Additional>
 
           <SecondaryButton

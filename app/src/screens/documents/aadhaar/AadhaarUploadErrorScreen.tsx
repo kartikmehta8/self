@@ -8,18 +8,20 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { useSelfClient } from '@selfxyz/mobile-sdk-alpha';
-import {
-  BodyText,
-  PrimaryButton,
-  SecondaryButton,
-} from '@selfxyz/mobile-sdk-alpha/components';
+import { BodyText, PrimaryButton } from '@selfxyz/mobile-sdk-alpha/components';
 import { AadhaarEvents } from '@selfxyz/mobile-sdk-alpha/constants/analytics';
+import {
+  black,
+  slate100,
+  slate200,
+  slate500,
+  white,
+} from '@selfxyz/mobile-sdk-alpha/constants/colors';
+import { useSafeBottomPadding } from '@selfxyz/mobile-sdk-alpha/hooks';
 import { getErrorMessages } from '@selfxyz/mobile-sdk-alpha/onboarding/import-aadhaar';
 
-import WarningIcon from '@/images/warning.svg';
-import { useSafeAreaInsets } from '@/mocks/react-native-safe-area-context';
-import { black, slate100, slate200, slate500, white } from '@/utils/colors';
-import { extraYPadding } from '@/utils/constants';
+import WarningIcon from '@/assets/images/warning.svg';
+import { extraYPadding } from '@/utils/styleUtils';
 
 type AadhaarUploadErrorRouteParams = {
   errorType?: 'general' | 'expired';
@@ -31,7 +33,7 @@ type AadhaarUploadErrorRoute = RouteProp<
 >;
 
 const AadhaarUploadErrorScreen: React.FC = () => {
-  const { bottom } = useSafeAreaInsets();
+  const paddingBottom = useSafeBottomPadding(extraYPadding + 35);
   const navigation = useNavigation();
   const route = useRoute<AadhaarUploadErrorRoute>();
   const { trackEvent } = useSelfClient();
@@ -78,7 +80,7 @@ const AadhaarUploadErrorScreen: React.FC = () => {
       <YStack
         paddingHorizontal={25}
         backgroundColor={white}
-        paddingBottom={bottom + extraYPadding + 35}
+        paddingBottom={paddingBottom}
         paddingTop={25}
       >
         <XStack gap="$3" alignItems="stretch">
@@ -93,7 +95,7 @@ const AadhaarUploadErrorScreen: React.FC = () => {
               Try Again
             </PrimaryButton>
           </YStack>
-          <YStack flex={1}>
+          {/* <YStack flex={1}>
             <SecondaryButton
               onPress={() => {
                 trackEvent(AadhaarEvents.HELP_BUTTON_PRESSED, { errorType });
@@ -102,7 +104,7 @@ const AadhaarUploadErrorScreen: React.FC = () => {
             >
               Need Help?
             </SecondaryButton>
-          </YStack>
+          </YStack> */}
         </XStack>
       </YStack>
     </YStack>
