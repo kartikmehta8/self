@@ -51,11 +51,13 @@ const SelfQRcode = ({
   // Refs for callbacks to avoid unnecessary WebSocket reconnections.
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
+  const selfAppRef = useRef(selfApp);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
     onErrorRef.current = onError;
-  }, [onSuccess, onError]);
+    selfAppRef.current = selfApp;
+  }, [onSuccess, onError, selfApp]);
 
   useEffect(() => {
     setSessionId(uuidv4());
@@ -67,7 +69,7 @@ const SelfQRcode = ({
       socketRef.current = initWebSocket(
         websocketUrl,
         {
-          ...selfApp,
+          ...selfAppRef.current,
           sessionId: sessionId,
         },
         type,
@@ -84,7 +86,7 @@ const SelfQRcode = ({
         socketRef.current = null;
       }
     };
-  }, [sessionId, type, websocketUrl, selfApp]);
+  }, [sessionId, type, websocketUrl]);
 
   if (!sessionId) {
     return null;
