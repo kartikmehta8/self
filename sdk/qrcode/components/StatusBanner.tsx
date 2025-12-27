@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 import selfLogo from '../assets/self-logo.svg';
 import { statusBannerLogoStyle, statusBannerStyle } from '../utils/styles.js';
@@ -9,16 +9,16 @@ interface StatusBannerProps {
   qrSize: number;
 }
 
-const StatusBanner: React.FC<StatusBannerProps> = ({ proofStep, qrSize }) => {
+const StatusBanner = memo(({ proofStep, qrSize }: StatusBannerProps) => {
   const showLogo =
     proofStep === QRcodeSteps.DISCONNECTED || proofStep === QRcodeSteps.WAITING_FOR_MOBILE;
 
   return (
-    <div style={statusBannerStyle(qrSize)}>
+    <div style={statusBannerStyle(qrSize)} role="status" aria-live="polite">
       {showLogo && <img src={selfLogo} alt="Self Logo" style={statusBannerLogoStyle} />}
       {getStatusText(proofStep)}
     </div>
   );
-};
+});
 
 export default StatusBanner;
