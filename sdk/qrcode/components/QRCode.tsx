@@ -15,7 +15,6 @@ interface QRCodeProps {
 }
 
 const QRCode: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => {
-  console.log('Rendering QRCode with proofStep:', proofStep);
   const isInitialState =
     proofStep === QRcodeSteps.DISCONNECTED || proofStep === QRcodeSteps.WAITING_FOR_MOBILE;
 

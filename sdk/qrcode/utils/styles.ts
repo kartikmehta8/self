@@ -1,17 +1,19 @@
 import React from 'react';
 
+import { QRcodeSteps } from './utils.js';
+
 const getBorderColor = (step: number): string => {
   switch (step) {
-    case 0: // DISCONNECTED.
-    case 1: // WAITING_FOR_MOBILE.
+    case QRcodeSteps.DISCONNECTED:
+    case QRcodeSteps.WAITING_FOR_MOBILE:
       return '#E2E8F0';
-    case 2: // MOBILE_CONNECTED.
-    case 3: // PROOF_GENERATION_STARTED.
-    case 5: // PROOF_GENERATED.
+    case QRcodeSteps.MOBILE_CONNECTED:
+    case QRcodeSteps.PROOF_GENERATION_STARTED:
+    case QRcodeSteps.PROOF_GENERATED:
       return '#3B82F6';
-    case 4: // PROOF_GENERATION_FAILED.
+    case QRcodeSteps.PROOF_GENERATION_FAILED:
       return '#EF4444';
-    case 6: // PROOF_VERIFIED.
+    case QRcodeSteps.PROOF_VERIFIED:
       return '#01BFFF';
     default:
       return '#E2E8F0';
