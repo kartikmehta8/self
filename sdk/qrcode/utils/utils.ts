@@ -1,6 +1,9 @@
 import { statusConnecting, statusError, statusFailed, statusSuccess } from '../animations/index.js';
 import selfLogoBlack from '../assets/self-logo-qr.svg';
 
+/**
+ * Enum representing the different states of the QR code authentication flow
+ */
 export const QRcodeSteps = {
   DISCONNECTED: 0,
   WAITING_FOR_MOBILE: 1,
@@ -9,8 +12,13 @@ export const QRcodeSteps = {
   PROOF_GENERATION_FAILED: 4,
   PROOF_GENERATED: 5,
   PROOF_VERIFIED: 6,
-};
+} as const;
 
+/**
+ * Get the appropriate animation based on the current proof step
+ * @param proofStep - Current step in the authentication flow
+ * @returns Animation data for the current step
+ */
 export const getStatusAnimation = (proofStep: number) => {
   switch (proofStep) {
     case QRcodeSteps.MOBILE_CONNECTED:
@@ -26,6 +34,11 @@ export const getStatusAnimation = (proofStep: number) => {
   }
 };
 
+/**
+ * Get the appropriate icon based on the current proof step
+ * @param proofStep - Current step in the authentication flow
+ * @returns Icon URL or empty string
+ */
 export const getStatusIcon = (proofStep: number): string => {
   switch (proofStep) {
     case QRcodeSteps.DISCONNECTED:
@@ -36,6 +49,11 @@ export const getStatusIcon = (proofStep: number): string => {
   }
 };
 
+/**
+ * Get the appropriate status text based on the current proof step
+ * @param proofStep - Current step in the authentication flow
+ * @returns Status message for the current step
+ */
 export const getStatusText = (proofStep: number): string => {
   switch (proofStep) {
     case QRcodeSteps.DISCONNECTED:

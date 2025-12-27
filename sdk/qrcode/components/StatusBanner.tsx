@@ -9,16 +9,19 @@ interface StatusBannerProps {
   qrSize: number;
 }
 
-const StatusBanner: React.FC<StatusBannerProps> = ({ proofStep, qrSize }) => {
+const StatusBannerComponent: React.FC<StatusBannerProps> = ({ proofStep, qrSize }) => {
   const showLogo =
     proofStep === QRcodeSteps.DISCONNECTED || proofStep === QRcodeSteps.WAITING_FOR_MOBILE;
 
   return (
-    <div style={statusBannerStyle(qrSize)}>
+    <div style={statusBannerStyle(qrSize)} role="status" aria-live="polite">
       {showLogo && <img src={selfLogo} alt="Self Logo" style={statusBannerLogoStyle} />}
       {getStatusText(proofStep)}
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+const StatusBanner = React.memo(StatusBannerComponent);
 
 export default StatusBanner;

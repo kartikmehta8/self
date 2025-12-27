@@ -1,11 +1,16 @@
 import Lottie from 'lottie-react';
+import type { LottieComponentProps } from 'lottie-react';
 import { QRCodeSVG } from 'qrcode.react';
 import React from 'react';
 
 import { qrAnimationOverlayStyle, qrContainerStyle } from '../utils/styles.js';
 import { getStatusAnimation, getStatusIcon, QRcodeSteps } from '../utils/utils.js';
 
-const LottieComponent = Lottie.default || Lottie;
+// Handle both default and named exports from lottie-react
+const LottieComponent = (Lottie.default || Lottie) as React.ComponentType<LottieComponentProps>;
+
+// Constants
+const QR_IMAGE_SIZE_RATIO = 0.32; // 32% of QR code size for the center image
 
 interface QRCodeProps {
   value: string;
@@ -14,7 +19,7 @@ interface QRCodeProps {
   proofStep: number;
 }
 
-const QRCode: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => {
+const QRCodeComponent: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => {
   const isInitialState =
     proofStep === QRcodeSteps.DISCONNECTED || proofStep === QRcodeSteps.WAITING_FOR_MOBILE;
 
@@ -28,7 +33,7 @@ const QRCode: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => 
   const statusIcon = getStatusIcon(proofStep);
   const bgColor = darkMode ? '#000000' : '#ffffff';
   const fgColor = darkMode ? '#ffffff' : '#000000';
-  const imageSize = size * 0.32;
+  const imageSize = size * QR_IMAGE_SIZE_RATIO;
 
   return (
     <div style={qrContainerStyle(size)}>
@@ -51,7 +56,6 @@ const QRCode: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => 
       />
       {showAnimation && (
         <div style={qrAnimationOverlayStyle(imageSize)}>
-          {/* @ts-expect-error Lottie typings don't match the default export shape */}
           <LottieComponent
             animationData={getStatusAnimation(proofStep)}
             loop={isConnectingState}
@@ -62,5 +66,8 @@ const QRCode: React.FC<QRCodeProps> = ({ value, size, darkMode, proofStep }) => 
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+const QRCode = React.memo(QRCodeComponent);
 
 export default QRCode;

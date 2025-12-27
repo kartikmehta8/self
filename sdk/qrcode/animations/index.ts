@@ -1,3 +1,7 @@
+/**
+ * Lottie animation exports for QR code status indicators
+ * These animations are displayed during various stages of the authentication flow
+ */
 import statusConnecting from './status-connecting.json' with { type: 'json' };
 import statusError from './status-error.json' with { type: 'json' };
 import statusFailed from './status-failed.json' with { type: 'json' };
