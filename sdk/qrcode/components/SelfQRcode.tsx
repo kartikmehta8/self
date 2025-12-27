@@ -96,7 +96,7 @@ const SelfQRcode = ({
     type === 'websocket'
       ? `${REDIRECT_URL}?sessionId=${sessionId}`
       : getUniversalLink({
-          ...selfApp,
+          ...selfAppRef.current,
           sessionId: sessionId,
         });
 
