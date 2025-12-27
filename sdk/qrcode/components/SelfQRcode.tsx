@@ -51,10 +51,10 @@ const SelfQRcodeWrapper = (props: SelfQRcodeProps) => {
 
 /**
  * Self QR Code Component
- * 
+ *
  * Displays an animated QR code for Self authentication with real-time status updates.
  * Supports both WebSocket and deeplink connection modes.
- * 
+ *
  * @example
  * ```tsx
  * <SelfQRcode
